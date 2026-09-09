@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تقرير الطالب | بوابة ولي الأمر</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cairo:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-main:#F5F9FF; --bg-secondary:#DCE8FB; --bg-dark-beige:#CFE4FB;
+    --card-bg:#FFFFFF; --text-main:#10151D; --text-secondary:#4B5A70;
+    --petrol:#1565C0; --petrol-dark:#0D47A1; --wood:#2E8BF0; --wood-light:#7FB2F5;
+    --border:#D6E7FA;
+    --ink:var(--text-main); --ink-2:var(--petrol-dark); --paper:var(--bg-main); --card:var(--card-bg); --line:var(--border);
+    --gold:var(--petrol); --gold-2:var(--petrol-dark); --gold-soft:rgba(40,86,90,0.09);
+    --success:#5B8C6E; --success-soft:rgba(91,140,110,0.14);
+    --warning:#B98A4A; --warning-soft:rgba(185,138,74,0.14);
+    --error:#B5555A; --error-soft:rgba(181,85,90,0.14);
+    --muted:var(--text-secondary); --cream-bg-1:var(--bg-main); --cream-bg-2:var(--bg-secondary);
+    --shadow-sm:0 2px 8px rgba(48,47,44,0.06); --shadow-md:0 4px 16px rgba(48,47,44,0.08); --shadow-lg:0 8px 24px rgba(48,47,44,0.10);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Cairo','Inter',sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(29,65,69,0.05), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(150,115,84,0.03), transparent 45%),
+      linear-gradient(160deg, var(--cream-bg-1), var(--cream-bg-2));
+    color:var(--ink); min-height:100vh; padding:32px 20px 64px;
+  }
+  [dir="ltr"] body{ font-family:'Inter','Cairo',sans-serif; }
+  .num{ font-family:'Space Grotesk',sans-serif; }
+  .wrap{ max-width:880px; margin:0 auto; position:relative; }
+
+  /* Language switcher */
+  .lang-switch{
+    position:absolute; top:0; left:0; display:flex; gap:5px;
+    background:var(--card); border:1px solid var(--line); border-radius:11px; padding:5px; box-shadow:var(--shadow-sm);
+    z-index:5;
+  }
+  [dir="rtl"] .lang-switch{ left:0; right:auto; }
+  [dir="ltr"] .lang-switch{ right:0; left:auto; }
+  .lang-switch button{
+    padding:8px 13px; border-radius:8px; border:none; background:transparent;
+    color:var(--muted); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; transition:all .15s ease;
+  }
+  .lang-switch button:hover{ color:var(--ink); }
+  .lang-switch button.active{
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); color:#FFF;
+    box-shadow:0 4px 10px rgba(29,65,69,0.18);
+  }
+
+  /* Back-to-home button (top, opposite corner from language switcher) */
+  .back-top-btn{
+    position:absolute; top:0; z-index:5;
+    display:inline-flex; align-items:center; gap:6px;
+    height:auto; padding:8px 14px; border-radius:11px;
+    background:var(--card); border:1px solid var(--line); color:var(--ink);
+    font-family:inherit; font-weight:700; font-size:12px;
+    cursor:pointer; box-shadow:var(--shadow-sm); text-decoration:none;
+    transition:all .15s ease;
+  }
+  [dir="rtl"] .back-top-btn{ right:0; left:auto; }
+  [dir="ltr"] .back-top-btn{ left:0; right:auto; }
+  .back-top-btn:hover{ box-shadow:var(--shadow-md); transform:translateY(-1px); color:var(--ink); }
+  .back-top-btn svg{ width:16px; height:16px; transform:scaleX(-1); flex-shrink:0; }
+  [dir="rtl"] .back-top-btn svg{ transform:none; }
+
+  /* Header */
+  .topbar{ display:flex; align-items:center; gap:14px; margin-bottom:28px; justify-content:center; text-align:center; flex-direction:column; padding-top:6px; }
+  .brand-mark{
+    height:84px; background:transparent;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand-mark img{ height:100%; width:auto; object-fit:contain; }
+  .topbar h1{ font-family:'Cairo','Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold-2); margin-top:14px; }
+  [dir="ltr"] .topbar h1{ font-family:'Cormorant Garamond',serif; }
+  .topbar p{ font-size:13px; color:var(--muted); margin-top:4px; }
+
+  /* Search card */
+  .search-card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:24px; box-shadow:var(--shadow-lg); margin-bottom:24px;
+  }
+  .search-card label{ font-size:12.5px; font-weight:700; color:var(--gold-2); display:block; margin-bottom:8px; }
+  .search-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .search-row input{
+    flex:1; min-width:220px; padding:14px 16px; border-radius:11px; border:1px solid var(--line);
+    background:var(--paper); font-family:'Cairo','Inter',sans-serif; font-size:15px; color:var(--ink); outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .search-row input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .search-btn, .scan-btn{
+    padding:14px 22px; border-radius:11px; border:none; cursor:pointer;
+    font-family:'Cairo','Inter',sans-serif; font-weight:700; font-size:14.5px;
+    display:flex; align-items:center; gap:8px; transition:all .18s ease; white-space:nowrap;
+  }
+  .search-btn{
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); color:#FFF;
+    box-shadow:0 6px 16px rgba(29,65,69,0.22);
+  }
+  .search-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(29,65,69,0.28); }
+  .search-btn:disabled{ opacity:.6; cursor:default; transform:none; }
+  .scan-btn{
+    background:var(--paper); color:var(--gold-2); border:1px solid var(--line);
+  }
+  .scan-btn:hover{ border-color:var(--gold); background:var(--gold-soft); }
+  .search-hint{ font-size:11.5px; color:var(--muted); margin-top:10px; }
+
+  /* States */
+  .state-msg{
+    display:none; align-items:center; justify-content:center; gap:10px;
+    padding:48px 10px; color:var(--muted); font-size:14px; text-align:center; flex-direction:column;
+  }
+  .state-msg.show{ display:flex; }
+  .state-msg.err{ color:var(--error); }
+  .spinner{
+    width:20px; height:20px; border-radius:50%; border:2px solid rgba(29,65,69,0.12);
+    border-top-color:var(--gold); animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* Multi-match picker */
+  .picker{ display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+  .picker-item{
+    background:var(--card); border:1px solid var(--line); border-radius:13px; padding:16px 18px;
+    display:flex; align-items:center; justify-content:space-between; cursor:pointer; gap:12px;
+    transition:all .15s ease;
+  }
+  .picker-item:hover{ border-color:var(--gold); box-shadow:var(--shadow-sm); transform:translateY(-1px); }
+  .picker-item .pname{ font-weight:700; font-size:15px; }
+  .picker-item .pgrade{ font-size:12px; color:var(--muted); margin-top:3px; }
+  .picker-item .arrow{ font-size:18px; color:var(--gold); }
+
+  /* Report */
+  .report{ display:none; }
+  .report.show{ display:block; }
+  .report-head{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 24px;
+    box-shadow:var(--shadow-lg); margin-bottom:20px;
+  }
+  .report-head .name{ font-family:'Cairo','Cormorant Garamond',serif; font-size:23px; font-weight:700; color:var(--gold-2); }
+  .report-head .grade-tag{
+    font-size:11.5px; font-weight:700; color:var(--gold); background:var(--gold-soft);
+    padding:4px 12px; border-radius:999px; display:inline-block; margin-top:6px;
+  }
+  .back-btn{
+    padding:10px 16px; border-radius:9px; border:1px solid var(--line); background:var(--paper);
+    color:var(--ink); font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer;
+  }
+  .back-btn:hover{ border-color:var(--gold); }
+  .pdf-btn{
+    padding:10px 18px; border-radius:9px; border:none; cursor:pointer;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); color:#FFF;
+    font-family:inherit; font-weight:700; font-size:12.5px; display:flex; align-items:center; gap:7px;
+    box-shadow:0 6px 14px rgba(29,65,69,0.2);
+  }
+  .head-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  .kpi-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+  .kpi-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:15px; padding:18px;
+    transition:box-shadow .18s ease, transform .18s ease;
+  }
+  .kpi-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-2px); }
+  .kpi-label{ font-size:10.5px; color:var(--muted); font-weight:700; letter-spacing:.04em; margin-bottom:9px; }
+  .kpi-value{ font-size:23px; font-weight:700; color:var(--ink); }
+  .kpi-sub{ font-size:11px; color:var(--muted); margin-top:7px; }
+
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+  .chart-card{ background:var(--paper); border:1px solid var(--line); border-radius:15px; padding:18px; }
+  .section-title{
+    display:flex; align-items:center; gap:8px; font-family:'Cairo','Cormorant Garamond',serif;
+    font-weight:700; font-size:16.5px; color:var(--gold-2); margin-bottom:13px;
+  }
+  [dir="ltr"] .section-title{ font-family:'Cormorant Garamond',serif; }
+  .chart-box{ position:relative; height:200px; }
+  .chart-empty{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    color:var(--muted); font-size:12px; text-align:center; padding:0 16px;
+  }
+  .chart-empty.show{ display:flex; }
+
+  .contact-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+  .contact-card{ background:var(--paper); border:1px solid var(--line); border-radius:15px; padding:16px 18px; }
+  .contact-card .lbl{ font-size:11px; color:var(--muted); font-weight:700; margin-bottom:5px; }
+  .contact-card .val{ font-size:14.5px; font-weight:700; color:var(--ink); }
+  .contact-card a{ color:var(--gold-2); text-decoration:none; }
+  .contact-card a:hover{ text-decoration:underline; }
+
+  .exam-card{ background:var(--paper); border:1px solid var(--line); border-radius:15px; padding:20px; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  thead th{
+    text-align:right; padding:10px 12px; background:var(--card); color:var(--gold-2);
+    font-weight:700; font-size:11px; border-bottom:1px solid var(--line);
+  }
+  [dir="ltr"] thead th{ text-align:left; }
+  tbody td{ padding:10px 12px; border-bottom:1px solid var(--line); color:var(--ink); }
+  tbody tr:last-child td{ border-bottom:none; }
+  .chip{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .chip.paid{ background:var(--success-soft); color:var(--success); }
+  .chip.unpaid{ background:var(--error-soft); color:var(--error); }
+  .empty-note{ text-align:center; color:var(--muted); font-size:12.5px; padding:18px 0; }
+
+  .month-history-card{ background:var(--paper); border:1px solid var(--line); border-radius:15px; padding:20px; margin-bottom:20px; }
+  .month-chip-list{ display:flex; flex-wrap:wrap; gap:10px; }
+  .month-chip{
+    display:flex; align-items:center; gap:8px; background:var(--success-soft); color:var(--success);
+    border-radius:11px; padding:9px 14px; font-size:12.5px; font-weight:700;
+  }
+  .month-chip .m-amt{ color:var(--muted); font-weight:600; font-size:11px; }
+  .month-chip .m-icon{ font-size:13px; }
+
+  .footer-note{
+    text-align:center; font-size:11.5px; color:var(--muted); margin-top:26px;
+    display:flex; align-items:center; justify-content:center; gap:7px; opacity:0.65;
+  }
+  .footer-note::before{ content:"🔒"; font-size:11px; }
+
+  /* QR scan modal */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(48,47,44,0.50); z-index:80;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:var(--card); border-radius:16px; max-width:420px; width:100%;
+    padding:20px; box-shadow:var(--shadow-lg); border:1px solid var(--line);
+  }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .modal-close{ border:none; background:none; font-size:22px; cursor:pointer; color:var(--muted); line-height:1; }
+  .modal-close:hover{ color:var(--ink); }
+  #qrReaderBox{ border-radius:12px; overflow:hidden; background:#0B1220; min-height:260px; }
+  .qr-hint{ font-size:11.5px; color:var(--muted); margin-top:10px; text-align:center; }
+  .qr-error{ font-size:12.5px; color:var(--error); margin-top:10px; text-align:center; display:none; }
+  .qr-error.show{ display:block; }
+
+  @media (max-width:700px){
+    .kpi-grid{ grid-template-columns:repeat(2,1fr); }
+    .two-col, .contact-grid{ grid-template-columns:1fr; }
+    .lang-switch{ position:static; margin-bottom:12px; justify-content:center; display:flex; }
+    .back-top-btn{ position:static; display:inline-flex; margin-bottom:12px; }
+  }
+
+  .two-col,
+.contact-grid,
+.exam-card,
+.kpi-grid,
+.report-head{
+  float:none !important;
+  clear:both !important;
+  width:auto;
+}
+
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back-top-btn" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span data-i18n="backToHome">رجوع</span>
+  </a>
+
+  <div class="lang-switch" id="langSwitch">
+    <button type="button" data-lang="ar" onclick="setLanguage('ar')">العربية</button>
+    <button type="button" data-lang="en" onclick="setLanguage('en')">English</button>
+  </div>
+
+  <div class="topbar">
+    <div class="brand-mark">
+<img src="logo.png" alt="Logo">    </div>
+    <h1 data-i18n="title">بوابة ولي الأمر</h1>
+    <p data-i18n="subtitle">اطّلع على تقرير الحضور والدرجات والمدفوعات لابنك</p>
+  </div>
+
+  <div class="search-card" id="searchCard">
+    <label for="lookupInput" data-i18n="searchLabel">رقم هاتف الطالب / رقم هاتف ولي الأمر / كود QR</label>
+    <div class="search-row">
+      <input type="text" id="lookupInput" data-i18n-ph="searchPlaceholder" placeholder="اكتب الرقم أو كود QR هنا…" onkeydown="if(event.key==='Enter') runSearch()">
+      <button class="scan-btn" id="scanBtn" onclick="openScanner()">
+        <span>📷</span> <span data-i18n="scanBtn">مسح QR</span>
+      </button>
+      <button class="search-btn" id="searchBtn" onclick="runSearch()">
+        <span>🔍</span> <span data-i18n="searchBtn">بحث</span>
+      </button>
+    </div>
+    <div class="search-hint" data-i18n="searchHint">أدخل رقم الهاتف المسجل (هاتفك أو هاتف ابنك) أو كود الـ QR الخاص بالطالب، أو اضغط "مسح QR" لتصوير الكود مباشرة بالكاميرا.</div>
+  </div>
+
+  <div class="state-msg" id="loadingMsg">
+    <span class="spinner"></span> <span data-i18n="loading">جاري البحث…</span>
+  </div>
+  <div class="state-msg err" id="errorMsg"></div>
+  <div class="state-msg" id="emptyMsg">
+    <div style="font-size:32px;">🔎</div>
+    <div style="font-weight:700; margin-top:4px;" data-i18n="emptyTitle">لم يتم العثور على نتائج</div>
+    <div style="font-size:12.5px;" data-i18n="emptyDesc">تأكد من كتابة الرقم كما هو مسجل لدى المركز، أو جرّب كود الـ QR.</div>
+  </div>
+
+  <div class="picker" id="pickerList"></div>
+
+  <div class="report" id="reportView">
+    <div class="report-head">
+      <div>
+        <div class="name" id="repName">—</div>
+        <div class="grade-tag" id="repGrade">—</div>
+      </div>
+      <div class="head-actions">
+        <button class="back-btn" onclick="resetToSearch()"><span id="backArrow">↩</span> <span data-i18n="backBtn">بحث جديد</span></button>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kAttRateLabel">نسبة الحضور</div>
+        <div class="kpi-value num" id="kAttRate">–</div>
+        <div class="kpi-sub" id="kAttSub"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kLastAttLabel">آخر حضور</div>
+        <div class="kpi-value" id="kLastAtt" style="font-size:16px;">–</div>
+        <div class="kpi-sub" data-i18n="kLastAttSub">تاريخ آخر يوم حضور مسجّل</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kPayLabel">حالة الدفع</div>
+        <div class="kpi-value" id="kPayStatus" style="font-size:16px;">–</div>
+        <div class="kpi-sub" id="kPaySub"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kExamLabel">متوسط الامتحانات</div>
+        <div class="kpi-value num" id="kExamAvg">–</div>
+        <div class="kpi-sub" id="kExamSub"></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="section-title" data-i18n="attChartTitle">الحضور والغياب</div>
+        <div class="chart-box">
+          <canvas id="attChart"></canvas>
+          <div class="chart-empty" id="attChartEmpty" data-i18n="attChartEmpty">لا توجد بيانات حضور بعد</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="section-title" data-i18n="examChartTitle">تطور درجات الامتحانات</div>
+        <div class="chart-box">
+          <canvas id="examTrendChart"></canvas>
+          <div class="chart-empty" id="examTrendEmpty" data-i18n="examChartEmpty">لا توجد درجات امتحانات مسجّلة بعد</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="month-history-card">
+      <div class="section-title" data-i18n="paymentHistoryTitle">الشهور المدفوعة</div>
+      <div class="month-chip-list" id="monthChipList"></div>
+      <div class="empty-note" id="monthHistoryEmpty" style="display:none;" data-i18n="noPaymentHistory">لا يوجد سجل مدفوعات شهرية بعد</div>
+    </div>
+
+    <div class="contact-grid">
+      <div class="contact-card">
+        <div class="lbl" data-i18n="studentPhoneLabel">هاتف الطالب</div>
+        <div class="val" id="cStudentPhone">—</div>
+      </div>
+      <div class="contact-card">
+        <div class="lbl" data-i18n="parentPhoneLabel">هاتف ولي الأمر</div>
+        <div class="val" id="cParentPhone">—</div>
+      </div>
+      <div class="contact-card">
+        <div class="lbl" data-i18n="cityLabel">المدينة</div>
+        <div class="val" id="cCity">—</div>
+      </div>
+      <div class="contact-card">
+        <div class="lbl" data-i18n="groupLabel">المجموعة</div>
+        <div class="val" id="cGroupName">—</div>
+      </div>
+    </div>
+
+    <div class="exam-card">
+      <div class="section-title" data-i18n="examTableTitle">درجات الامتحانات بالتفصيل</div>
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="colExam">الامتحان</th>
+            <th data-i18n="colScore">الدرجة</th>
+            <th data-i18n="colOutOf">من إجمالي</th>
+            <th data-i18n="colPercent">النسبة</th>
+          </tr>
+        </thead>
+        <tbody id="examTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- QR scanner modal -->
+<div class="modal-overlay" id="scanModalOverlay" onclick="if(event.target===this) closeScanner()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="section-title" style="margin-bottom:0;" data-i18n="scanModalTitle">وجّه الكاميرا نحو كود QR</div>
+      <button class="modal-close" onclick="closeScanner()">×</button>
+    </div>
+    <div id="qrReaderBox"><div id="qrReader" style="width:100%;"></div></div>
+    <div class="qr-hint" data-i18n="scanModalHint">امسك الهاتف بثبات حتى يتم التعرف على الكود تلقائيًا.</div>
+    <div class="qr-error" id="qrErrorMsg"></div>
+  </div>
+</div>
+
+<script>
+  /* ============================================================
+     SUPABASE CONNECTION (same project/credentials as the main dashboard)
+     ============================================================ */
+  const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ----------------------------------------------------------------
+     GRADE MODEL: every grade is "<level>_<stage>"
+     level: first | second | third   (أولى / تانية / تالتة)
+     stage: prep | secondary          (إعدادي / ثانوي)
+     Real Arabic table names in Supabase follow: حضور_<level>_<stage> / دفع_<level>_<stage>
+     ---------------------------------------------------------------- */
+  const LEVEL_AR = { first: "أولى", second: "تانية", third: "تالتة" };
+  const STAGE_AR = { prep: "إعدادي", secondary: "ثانوي" };
+  function splitGrade(g){ const i = g.indexOf("_"); return { level: g.slice(0,i), stage: g.slice(i+1) }; }
+
+  const SCHEMA = {
+    attendanceTable: (g) => { const { level, stage } = splitGrade(g); return `حضور_${LEVEL_AR[level]}_${STAGE_AR[stage]}`; },
+    paymentsTable: (g) => { const { level, stage } = splitGrade(g); return `دفع_${LEVEL_AR[level]}_${STAGE_AR[stage]}`; },
+    col: {
+      fullName: "full_name", qrCode: "qr_code", studentPhone: "student_phone", parentPhone: "parent_phone",
+      city: "city", groupName: "group_name",
+      attendanceCount: "attendance_count", absenceCount: "absence_count", lastAttendance: "last_attendance_date",
+      amountPaid: "amount_paid", paymentStatus: "payment_status", lastPaymentDate: "last_payment_date"
+    }
+  };
+  const EXAMS_SCHEMA = { table: "الامتحانات", col: { id: "id", name: "exam_name", maxScore: "max_score", grade: "grade", createdAt: "created_at" } };
+  const SCORES_SCHEMA = { table: "نتائج_الامتحانات", col: { id: "id", examId: "exam_id", studentCode: "student_code", score: "score" } };
+  const PAYMENT_HISTORY_SCHEMA = { table: "payment_history", col: { qrCode: "qr_code", month: "month", year: "year", amountPaid: "amount_paid", createdAt: "created_at" } };
+
+  const GRADES = ["first_prep","second_prep","third_prep","first_secondary","second_secondary","third_secondary"];
+  const GRADE_LABELS = {
+    first_prep:      { ar: "الصف الأول الإعدادي",  en: "First Prep" },
+    second_prep:      { ar: "الصف الثاني الإعدادي", en: "Second Prep" },
+    third_prep:      { ar: "الصف الثالث الإعدادي", en: "Third Prep" },
+    first_secondary:  { ar: "الصف الأول الثانوي",   en: "First Secondary" },
+    second_secondary: { ar: "الصف الثاني الثانوي",  en: "Second Secondary" },
+    third_secondary:  { ar: "الصف الثالث الثانوي",  en: "Third Secondary" }
+  };
+  const MONTH_NAMES = {
+    ar: ["", "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+    en: ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  };
+  function monthName(m){ return MONTH_NAMES[currentLang][Number(m)] || m; }
+
+  /* ============================================================
+     I18N (Arabic / English)
+     ============================================================ */
+  const I18N = {
+    ar: {
+      title: "بوابة ولي الأمر", subtitle: "اطّلع على تقرير الحضور والدرجات والمدفوعات لابنك",
+      backToHome: "رجوع",
+      searchLabel: "رقم هاتف الطالب / رقم هاتف ولي الأمر / كود QR",
+      searchPlaceholder: "اكتب الرقم أو كود QR هنا…",
+      scanBtn: "مسح QR", searchBtn: "بحث",
+      searchHint: "أدخل رقم الهاتف المسجل (هاتفك أو هاتف ابنك) أو كود الـ QR الخاص بالطالب، أو اضغط \"مسح QR\" لتصوير الكود مباشرة بالكاميرا.",
+      loading: "جاري البحث…",
+      emptyTitle: "لم يتم العثور على نتائج", emptyDesc: "تأكد من كتابة الرقم كما هو مسجل لدى المركز، أو جرّب كود الـ QR.",
+      backBtn: "بحث جديد",
+      kAttRateLabel: "نسبة الحضور", kLastAttLabel: "آخر حضور", kLastAttSub: "تاريخ آخر يوم حضور مسجّل",
+      kPayLabel: "حالة الدفع", kExamLabel: "متوسط الامتحانات",
+      attChartTitle: "الحضور والغياب", examChartTitle: "تطور درجات الامتحانات",
+      attChartEmpty: "لا توجد بيانات حضور بعد", examChartEmpty: "لا توجد درجات امتحانات مسجّلة بعد",
+      paymentHistoryTitle: "الشهور المدفوعة", noPaymentHistory: "لا يوجد سجل مدفوعات شهرية بعد",
+      studentPhoneLabel: "هاتف الطالب", parentPhoneLabel: "هاتف ولي الأمر",
+      cityLabel: "المدينة", groupLabel: "المجموعة",
+      examTableTitle: "درجات الامتحانات بالتفصيل",
+      colExam: "الامتحان", colScore: "الدرجة", colOutOf: "من إجمالي", colPercent: "النسبة",
+      footerNote: "تُقرأ البيانات مباشرة من نظام المركز باستخدام مفتاح قراءة فقط",
+      scanModalTitle: "وجّه الكاميرا نحو كود QR", scanModalHint: "امسك الهاتف بثبات حتى يتم التعرف على الكود تلقائيًا.",
+      present: "حضور", absent: "غياب", present_absent_sub: (p,a) => `${p} حضور / ${a} غياب`,
+      paid: "مدفوع", unpaid: "غير مدفوع", noPayRecord: "لا يوجد سجل دفع", noExamRecord: "لا توجد درجات بعد",
+      examsRecorded: (n) => `${n} امتحان مسجّل`, noExamsYet: "لا توجد امتحانات مسجّلة لهذا الصف بعد",
+      searchErrTitle: "تعذّر البحث", loadErrTitle: "تعذّر تحميل بيانات الطالب",
+      cameraErr: "تعذّر تشغيل الكاميرا — تأكد من السماح بالوصول للكاميرا من إعدادات المتصفح.",
+      gradeLabels: Object.fromEntries(GRADES.map(g => [g, GRADE_LABELS[g].ar]))
+    },
+    en: {
+      title: "Parent Portal", subtitle: "View your child's attendance, grades, and payment report",
+      backToHome: "Back",
+      searchLabel: "Student phone / Parent phone / QR code",
+      searchPlaceholder: "Type the number or QR code here…",
+      scanBtn: "Scan QR", searchBtn: "Search",
+      searchHint: "Enter the registered phone number (yours or your child's) or the student's QR code, or press \"Scan QR\" to scan it with your camera.",
+      loading: "Searching…",
+      emptyTitle: "No results found", emptyDesc: "Double-check the number as registered with the center, or try the QR code.",
+      backBtn: "New search",
+      kAttRateLabel: "Attendance Rate", kLastAttLabel: "Last Attendance", kLastAttSub: "Date of the last recorded attendance",
+      kPayLabel: "Payment Status", kExamLabel: "Exam Average",
+      attChartTitle: "Attendance vs. Absence", examChartTitle: "Exam Score Trend",
+      attChartEmpty: "No attendance data yet", examChartEmpty: "No exam scores recorded yet",
+      paymentHistoryTitle: "Paid Months", noPaymentHistory: "No monthly payment history yet",
+      studentPhoneLabel: "Student Phone", parentPhoneLabel: "Parent Phone",
+      cityLabel: "City", groupLabel: "Group",
+      examTableTitle: "Detailed Exam Scores",
+      colExam: "Exam", colScore: "Score", colOutOf: "Out of", colPercent: "Percentage",
+      footerNote: "Data is read live from the center's system using a read-only key",
+      scanModalTitle: "Point the camera at the QR code", scanModalHint: "Hold the phone steady until the code is recognized automatically.",
+      present: "present", absent: "absent", present_absent_sub: (p,a) => `${p} present / ${a} absent`,
+      paid: "Paid", unpaid: "Unpaid", noPayRecord: "No payment record", noExamRecord: "No scores yet",
+      examsRecorded: (n) => `${n} exam${n===1?"":"s"} recorded`, noExamsYet: "No exams recorded for this grade yet",
+      searchErrTitle: "Couldn't search", loadErrTitle: "Couldn't load student data",
+      cameraErr: "Couldn't start the camera — check camera permissions in your browser settings.",
+      gradeLabels: Object.fromEntries(GRADES.map(g => [g, GRADE_LABELS[g].en]))
+    }
+  };
+
+  let currentLang = localStorage.getItem("parentPortalLang") || "ar";
+  function t(key){ return I18N[currentLang][key]; }
+  function tGrade(g){ return I18N[currentLang].gradeLabels[g] || g; }
+
+  function applyTranslations(){
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      const val = I18N[currentLang][el.dataset.i18n];
+      if(typeof val === "string") el.textContent = val;
+    });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+      el.placeholder = I18N[currentLang][el.dataset.i18nPh];
+    });
+  }
+
+  function setLanguage(lang){
+    currentLang = (lang === "en") ? "en" : "ar";
+    localStorage.setItem("parentPortalLang", currentLang);
+    document.documentElement.lang = currentLang;
+    document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+    document.getElementById("backArrow").textContent = currentLang === "ar" ? "↩" : "↩";
+    document.querySelectorAll("#langSwitch button").forEach(b => {
+      b.classList.toggle("active", b.dataset.lang === currentLang);
+    });
+    applyTranslations();
+    // Re-render whichever dynamic view is currently visible so generated text updates too.
+    if(currentStudent && document.getElementById("reportView").classList.contains("show")){
+      renderReport();
+    } else if(window.__pickerMatches && document.getElementById("pickerList").style.display === "flex"){
+      renderPicker(window.__pickerMatches);
+    }
+  }
+
+  let currentStudent = null;
+  let currentExamRows = []; // [{name, maxScore, score}]
+  let currentPaymentHistory = []; // [{month, year, amountPaid}]
+  let reportCharts = { att: null, exam: null };
+
+  function isPaid(status){
+    const s = String(status ?? "").trim().toLowerCase();
+    return s === "paid" || s === "true" || s === "yes" || s === "1";
+  }
+  function pct(att, abs){
+    const a = Number(att) || 0, b = Number(abs) || 0;
+    const total = a + b;
+    return total > 0 ? Math.round((a / total) * 100) : null;
+  }
+  function fmtEGP(n){ return `EGP ${Number(n || 0).toLocaleString('en-US')}`; }
+  function getScoreColor(score){
+    if(score >= 90) return "rgba(29,65,69,1)";
+    if(score >= 75) return "rgba(40,86,90,1)";
+    if(score >= 60) return "rgba(184,155,122,1)";
+    return "rgba(150,115,84,1)";
+  }
+
+  function setState(state){ // 'idle' | 'loading' | 'error' | 'empty' | 'picker' | 'report'
+    document.getElementById("searchCard").style.display = (state === "report") ? "none" : "block";
+    document.getElementById("loadingMsg").classList.toggle("show", state === "loading");
+    document.getElementById("errorMsg").classList.toggle("show", state === "error");
+    document.getElementById("emptyMsg").classList.toggle("show", state === "empty");
+    document.getElementById("pickerList").style.display = (state === "picker") ? "flex" : "none";
+    document.getElementById("reportView").classList.toggle("show", state === "report");
+  }
+
+  function resetToSearch(){
+    setState("idle");
+    document.getElementById("lookupInput").value = "";
+    document.getElementById("lookupInput").focus();
+  }
+
+  /* ---------- Search across all grades (prep + secondary) by phone or QR code ---------- */
+  async function runSearch(){
+    const raw = document.getElementById("lookupInput").value.trim();
+    if(!raw){ document.getElementById("lookupInput").focus(); return; }
+
+    const btn = document.getElementById("searchBtn");
+    btn.disabled = true;
+    setState("loading");
+
+    try{
+      const col = SCHEMA.col;
+      const matches = [];
+
+      for(const grade of GRADES){
+        const { data, error } = await supa
+          .from(SCHEMA.attendanceTable(grade))
+          .select("*")
+          .or(`${col.studentPhone}.eq.${raw},${col.parentPhone}.eq.${raw},${col.qrCode}.eq.${raw}`);
+        if(error) continue; // table might not exist / RLS — just skip this grade
+        (data || []).forEach(row => matches.push({ grade, row }));
+      }
+
+      if(!matches.length){ setState("empty"); return; }
+
+      if(matches.length === 1){
+        await openStudentReport(matches[0].grade, matches[0].row);
+      } else {
+        renderPicker(matches);
+        setState("picker");
+      }
+    }catch(err){
+      console.error(err);
+      document.getElementById("errorMsg").innerHTML = `
+        <div style="font-weight:700;">${t('searchErrTitle')}</div>
+        <div style="font-size:12px; max-width:420px;">${err.message || err}</div>`;
+      setState("error");
+    }finally{
+      btn.disabled = false;
+    }
+  }
+
+  function renderPicker(matches){
+    const col = SCHEMA.col;
+    const el = document.getElementById("pickerList");
+    el.innerHTML = matches.map((m,i) => `
+      <div class="picker-item" onclick="pickMatch(${i})">
+        <div>
+          <div class="pname">${m.row[col.fullName] || "—"}</div>
+          <div class="pgrade">${tGrade(m.grade)}</div>
+        </div>
+        <div class="arrow">${currentLang === 'ar' ? '←' : '→'}</div>
+      </div>
+    `).join("");
+    window.__pickerMatches = matches;
+  }
+  async function pickMatch(i){
+    const m = window.__pickerMatches[i];
+    await openStudentReport(m.grade, m.row);
+  }
+
+  /* ---------- Build the full report for one student ---------- */
+  async function openStudentReport(grade, attRow){
+    setState("loading");
+    const col = SCHEMA.col;
+
+    try{
+      // Payment record for this student
+      const { data: payData } = await supa
+        .from(SCHEMA.paymentsTable(grade)).select("*").eq(col.qrCode, attRow[col.qrCode]).limit(1);
+      const pay = (payData && payData[0]) || {};
+
+      currentStudent = {
+        grade,
+        name: attRow[col.fullName] ?? "",
+        qrCode: attRow[col.qrCode] ?? "",
+        studentPhone: attRow[col.studentPhone] ?? "",
+        parentPhone: attRow[col.parentPhone] ?? "",
+        city: attRow[col.city] ?? "",
+        groupName: attRow[col.groupName] ?? "",
+        attendanceCount: Number(attRow[col.attendanceCount] || 0),
+        absenceCount: Number(attRow[col.absenceCount] || 0),
+        lastAttendance: attRow[col.lastAttendance] ?? "",
+        paymentStatus: pay[col.paymentStatus] ?? "",
+        amountPaid: Number(pay[col.amountPaid] || 0),
+        lastPaymentDate: pay[col.lastPaymentDate] ?? ""
+      };
+
+      // Exam scores for this student's grade
+      currentExamRows = await fetchStudentExamScores(grade, attRow[col.qrCode]);
+
+      // Monthly payment history for this student
+      currentPaymentHistory = await fetchPaymentHistory(attRow[col.qrCode]);
+
+      renderReport();
+      setState("report");
+    }catch(err){
+      console.error(err);
+      document.getElementById("errorMsg").innerHTML = `
+        <div style="font-weight:700;">${t('loadErrTitle')}</div>
+        <div style="font-size:12px; max-width:420px;">${err.message || err}</div>`;
+      setState("error");
+    }
+  }
+
+  async function fetchStudentExamScores(grade, qrCode){
+    const ecol = EXAMS_SCHEMA.col, scol = SCORES_SCHEMA.col;
+    try{
+      const { data: exams, error: examsErr } = await supa
+        .from(EXAMS_SCHEMA.table).select("*").eq(ecol.grade, grade).order(ecol.createdAt, { ascending: true });
+      if(examsErr) throw examsErr;
+      const examRows = exams || [];
+      if(!examRows.length) return [];
+
+      const ids = examRows.map(e => e[ecol.id]);
+      const { data: scores, error: scoresErr } = await supa
+        .from(SCORES_SCHEMA.table).select("*").in(scol.examId, ids).eq(scol.studentCode, qrCode);
+      const scoreRows = scoresErr ? [] : (scores || []);
+
+      return examRows.map(e => {
+        const row = scoreRows.find(s => s[scol.examId] === e[ecol.id]);
+        return { name: e[ecol.name], maxScore: Number(e[ecol.maxScore]) || 100, score: row ? Number(row[scol.score]) : null };
+      });
+    }catch(err){
+      return [];
+    }
+  }
+
+  async function fetchPaymentHistory(qrCode){
+    const pcol = PAYMENT_HISTORY_SCHEMA.col;
+    try{
+      const { data, error } = await supa
+        .from(PAYMENT_HISTORY_SCHEMA.table)
+        .select("*")
+        .eq(pcol.qrCode, qrCode)
+        .order(pcol.year, { ascending: true })
+        .order(pcol.month, { ascending: true });
+      if(error) throw error;
+      return (data || []).map(r => ({
+        month: Number(r[pcol.month]),
+        year: Number(r[pcol.year]),
+        amountPaid: Number(r[pcol.amountPaid] || 0)
+      }));
+    }catch(err){
+      console.error(err);
+      return [];
+    }
+  }
+
+  /* ---------- Render the report UI ---------- */
+  function renderReport(){
+    const s = currentStudent;
+    document.getElementById("repName").textContent = s.name || "—";
+    document.getElementById("repGrade").textContent = tGrade(s.grade);
+
+    const attRate = pct(s.attendanceCount, s.absenceCount);
+    document.getElementById("kAttRate").textContent = attRate != null ? `${attRate}%` : "–";
+    document.getElementById("kAttSub").textContent = t('present_absent_sub')(s.attendanceCount, s.absenceCount);
+
+    document.getElementById("kLastAtt").textContent = s.lastAttendance || "—";
+
+    const hasPaymentRecord = s.paymentStatus !== "";
+    const paid = isPaid(s.paymentStatus);
+    document.getElementById("kPayStatus").innerHTML = hasPaymentRecord
+      ? `<span class="chip ${paid ? 'paid' : 'unpaid'}">${paid ? t('paid') : t('unpaid')}</span>`
+      : "—";
+    document.getElementById("kPaySub").textContent = hasPaymentRecord ? fmtEGP(s.amountPaid) : t('noPayRecord');
+
+    const validScores = currentExamRows.filter(e => e.score != null);
+    const avg = validScores.length
+      ? Math.round(validScores.reduce((sum,e) => sum + (e.score / e.maxScore) * 100, 0) / validScores.length)
+      : null;
+    document.getElementById("kExamAvg").textContent = avg != null ? `${avg}%` : "–";
+    document.getElementById("kExamSub").textContent = validScores.length ? t('examsRecorded')(validScores.length) : t('noExamRecord');
+
+    document.getElementById("cStudentPhone").innerHTML = s.studentPhone
+      ? `<a href="tel:${s.studentPhone}">${s.studentPhone}</a>` : "—";
+    document.getElementById("cParentPhone").innerHTML = s.parentPhone
+      ? `<a href="tel:${s.parentPhone}">${s.parentPhone}</a>` : "—";
+    document.getElementById("cCity").textContent = s.city || "—";
+    document.getElementById("cGroupName").textContent = s.groupName || "—";
+
+    renderExamTable();
+    renderAttChart(attRate);
+    renderExamTrendChart();
+    renderPaymentHistory();
+  }
+
+  function renderPaymentHistory(){
+    const listEl = document.getElementById("monthChipList");
+    const emptyEl = document.getElementById("monthHistoryEmpty");
+    if(!currentPaymentHistory.length){
+      listEl.innerHTML = "";
+      emptyEl.style.display = "block";
+      return;
+    }
+    emptyEl.style.display = "none";
+    listEl.innerHTML = currentPaymentHistory.map(p => `
+      <div class="month-chip">
+        <span class="m-icon">✅</span>
+        <span>${monthName(p.month)} ${p.year}</span>
+        <span class="m-amt">· ${fmtEGP(p.amountPaid)}</span>
+      </div>
+    `).join("");
+  }
+
+  function renderExamTable(){
+    const body = document.getElementById("examTableBody");
+    if(!currentExamRows.length){
+      body.innerHTML = `<tr><td colspan="4" class="empty-note">${t('noExamsYet')}</td></tr>`;
+      return;
+    }
+    body.innerHTML = currentExamRows.map(e => {
+      if(e.score == null) return `<tr><td>${e.name}</td><td>—</td><td>${e.maxScore}</td><td>—</td></tr>`;
+      const p = Math.round((e.score / e.maxScore) * 100);
+      return `<tr><td>${e.name}</td><td>${e.score}</td><td>${e.maxScore}</td><td style="color:${getScoreColor(p)}; font-weight:700;">${p}%</td></tr>`;
+    }).join("");
+  }
+
+  function destroyChart(key){ if(reportCharts[key]){ reportCharts[key].destroy(); reportCharts[key] = null; } }
+  const chartLibReady = () => typeof Chart !== "undefined";
+
+  function renderAttChart(attRate){
+    const canvas = document.getElementById("attChart");
+    const emptyEl = document.getElementById("attChartEmpty");
+    destroyChart("att");
+    const s = currentStudent;
+    if(!chartLibReady() || (s.attendanceCount + s.absenceCount) === 0){
+      canvas.style.display = "none"; emptyEl.classList.add("show"); return;
+    }
+    canvas.style.display = "block"; emptyEl.classList.remove("show");
+    reportCharts.att = new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: [t('present'), t('absent')],
+        datasets: [{ data: [s.attendanceCount, s.absenceCount], backgroundColor: ["rgba(40,86,90,0.75)", "rgba(150,115,84,0.70)"], borderWidth: 0 }]
+      },
+      options: {
+        maintainAspectRatio: false, cutout: "68%",
+        plugins: { legend: { position: "bottom", labels: { font: { family: currentLang === 'ar' ? "Cairo" : "Inter", size: 12 }, padding: 14 } } }
+      }
+    });
+  }
+
+  function renderExamTrendChart(){
+    const canvas = document.getElementById("examTrendChart");
+    const emptyEl = document.getElementById("examTrendEmpty");
+    destroyChart("exam");
+    const points = currentExamRows.filter(e => e.score != null);
+    if(!chartLibReady() || points.length < 1){
+      canvas.style.display = "none"; emptyEl.classList.add("show"); return;
+    }
+    canvas.style.display = "block"; emptyEl.classList.remove("show");
+    reportCharts.exam = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: points.map(p => p.name),
+        datasets: [{
+          label: t('colScore'),
+          data: points.map(p => Math.round((p.score / p.maxScore) * 100)),
+          borderColor: "rgba(29,65,69,0.85)", backgroundColor: "rgba(29,65,69,0.10)",
+          fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "rgba(29,65,69,1)"
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw}%` } } },
+        scales: {
+          y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(29,65,69,0.05)" } },
+          x: { ticks: { font: { size: 10, family: currentLang === 'ar' ? "Cairo" : "Inter" } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  /* ============================================================
+     QR CODE SCANNER (camera-based, via html5-qrcode)
+     ============================================================ */
+  let qrScannerInstance = null;
+
+  function openScanner(){
+    document.getElementById("qrErrorMsg").classList.remove("show");
+    document.getElementById("scanModalOverlay").classList.add("show");
+
+    if(typeof Html5Qrcode === "undefined"){
+      document.getElementById("qrErrorMsg").textContent = t('cameraErr');
+      document.getElementById("qrErrorMsg").classList.add("show");
+      return;
+    }
+
+    qrScannerInstance = new Html5Qrcode("qrReader");
+    Html5Qrcode.getCameras().then(cameras => {
+      if(!cameras || !cameras.length){ throw new Error("no-camera"); }
+      // Prefer a back/rear camera on phones if one is reported.
+      const back = cameras.find(c => /back|rear|environment/i.test(c.label));
+      const cameraId = back ? back.id : cameras[0].id;
+
+      qrScannerInstance.start(
+        cameraId,
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        (decodedText) => {
+          document.getElementById("lookupInput").value = decodedText;
+          closeScanner();
+          runSearch();
+        },
+        () => { /* per-frame scan failures are normal — ignore */ }
+      ).catch(err => {
+        console.error(err);
+        document.getElementById("qrErrorMsg").textContent = t('cameraErr');
+        document.getElementById("qrErrorMsg").classList.add("show");
+      });
+    }).catch(err => {
+      console.error(err);
+      document.getElementById("qrErrorMsg").textContent = t('cameraErr');
+      document.getElementById("qrErrorMsg").classList.add("show");
+    });
+  }
+
+  function closeScanner(){
+    document.getElementById("scanModalOverlay").classList.remove("show");
+    if(qrScannerInstance){
+      qrScannerInstance.stop().then(() => {
+        qrScannerInstance.clear();
+        qrScannerInstance = null;
+      }).catch(() => { qrScannerInstance = null; });
+    }
+  }
+
+
+  /* ---------- Startup ---------- */
+  setLanguage(currentLang);
+  setState("idle");
+</script>
+
+  <footer style="text-align:center; padding:18px 10px 22px; font-size:13px; color:#8698B3; opacity:0.85;">
+    Powered by <a href="milex.html" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline; font-weight:600;">MilEX</a>
+  </footer>
+</body>
+</html>
