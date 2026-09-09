@@ -1,0 +1,1992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Attendance Scanner</title>
+<script>
+  // Apply saved theme + language before first paint to avoid a flash of the wrong look.
+  (function(){
+    try{
+      var theme = localStorage.getItem('scannerTheme') || 'light';
+      var lang = localStorage.getItem('scannerLang') || 'en';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute('lang', lang);
+      document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    }catch(e){}
+  })();
+</script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="prefetch" href="dashboard.html">
+<link rel="prefetch" href="student_serch.html">
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://evbjulsahncllewwvlxp.supabase.co">
+<style>
+  /*
+    Design: "The Register" — a class-attendance ledger.
+    Palette: parchment paper + deep forest ink + brass stamp accent.
+    Signature: the scan result reads like an ink stamp landing on a ledger page,
+    and the card carries a faint ruled-paper texture instead of a plain flat surface.
+  */
+  :root{
+    --bg-main:#F5F9FF; --bg-secondary:#DCE8FB; --bg-dark-beige:#CFE4FB;
+    --card-bg:#FFFFFF; --text-main:#10151D; --text-secondary:#4B5A70;
+    --petrol:#1565C0; --petrol-dark:#0D47A1; --wood:#2E8BF0; --wood-light:#7FB2F5;
+    --border:#D6E7FA;
+
+    --ink:var(--text-main);
+    --ink-2:var(--petrol-dark);
+    --muted:var(--text-secondary);
+    --paper:var(--bg-main);
+    --card:var(--card-bg);
+    --field:#FFFFFF;
+    --line:rgba(16,21,29,0.14);
+    --gold-rgb:21,101,192;
+    --gold-2-rgb:13,71,161;
+    --gold:rgb(var(--gold-rgb));
+    --gold-2:rgb(var(--gold-2-rgb));
+    --gold-soft:rgba(var(--gold-rgb),0.08);
+    --gold-soft-2:rgba(var(--gold-rgb),0.15);
+    --success-rgb:91,140,110;
+    --warning-rgb:185,138,74;
+    --error-rgb:181,85,90;
+    --success:rgb(var(--success-rgb));
+    --warning:rgb(var(--warning-rgb));
+    --error:rgb(var(--error-rgb));
+    --success-soft:rgba(var(--success-rgb),0.13);
+    --warning-soft:rgba(var(--warning-rgb),0.14);
+    --error-soft:rgba(var(--error-rgb),0.13);
+    --cream-bg-1:var(--bg-secondary);
+    --cream-bg-2:var(--bg-main);
+    --surface-off:var(--bg-secondary);
+    --scrim:rgba(16,21,29,0.50);
+    --btn-ink:#FFFFFF;
+    --shadow-sm:0 1px 3px rgba(16,21,29,0.07);
+    --shadow-md:0 8px 24px rgba(16,21,29,0.09);
+    --shadow-lg:0 22px 52px rgba(16,21,29,0.14);
+    --accent:var(--gold);
+    --accent-2:var(--gold-2);
+    --glass-border:var(--line);
+  }
+
+  :root[data-theme="dark"]{
+    --ink:#DCE8FB;
+    --ink-2:#F5F9FF;
+    --muted:#7E93AC;
+    --paper:#0B1220;
+    --card:#101B2E;
+    --field:#101B2E;
+    --line:rgba(255,255,255,0.08);
+    --gold-rgb:59,130,246;
+    --gold-2-rgb:127,178,245;
+    --gold-soft:rgba(var(--gold-rgb),0.16);
+    --gold-soft-2:rgba(var(--gold-rgb),0.24);
+    --success-rgb:111,169,138;
+    --warning-rgb:199,154,92;
+    --error-rgb:199,115,120;
+    --success-soft:rgba(var(--success-rgb),0.16);
+    --warning-soft:rgba(var(--warning-rgb),0.16);
+    --error-soft:rgba(var(--error-rgb),0.16);
+    --cream-bg-1:#0B1220;
+    --cream-bg-2:#0F1B2E;
+    --surface-off:#0F1B2E;
+    --scrim:rgba(16,21,29,0.6);
+    --shadow-sm:0 1px 3px rgba(16,21,29,0.35);
+    --shadow-md:0 8px 24px rgba(16,21,29,0.4);
+    --shadow-lg:0 22px 52px rgba(16,21,29,0.5);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html[dir="rtl"] body{ font-family:'Tajawal','Manrope',sans-serif; }
+  html[dir="rtl"] h1, html[dir="rtl"] .result-title, html[dir="rtl"] .auth-card h1{ font-family:'Tajawal',serif; }
+  body{
+    font-family:'Manrope',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:48px 20px;
+    color:var(--ink);
+    background:
+      repeating-linear-gradient( to bottom, rgba(var(--gold-rgb),0.05) 0px, rgba(var(--gold-rgb),0.05) 1px, transparent 1px, transparent 34px),
+      radial-gradient(circle at 12% 8%, rgba(var(--gold-rgb),0.06), transparent 45%),
+      radial-gradient(circle at 88% 92%, rgba(var(--gold-2-rgb),0.05), transparent 45%),
+      linear-gradient(160deg, var(--cream-bg-1), var(--cream-bg-2));
+    transition:background .25s ease, color .25s ease;
+  }
+  .container{
+    width:100%; max-width:480px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 32px 30px;
+    text-align:center;
+    position:relative;
+    box-shadow:var(--shadow-lg);
+    animation:containerIn .4s ease;
+  }
+  .container::before{
+    content:"";
+    position:absolute; top:10px; left:22px; right:22px; height:5px;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    opacity:0.7; pointer-events:none;
+  }
+  @keyframes containerIn{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .header-actions{
+    position:absolute; top:30px; left:0; right:0; padding:0 22px;
+    display:flex; justify-content:space-between; align-items:center;
+}
+  .header-actions-group{
+    display:flex; align-items:center; gap:8px;
+  }
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--field);
+    color:var(--gold-2); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+    position:static !important;
+    box-shadow:0 1px 2px rgba(16,21,29,0.06);
+  }
+  .icon-btn:hover{ color:var(--accent); border-color:var(--accent-2); background:var(--gold-soft-2); box-shadow:0 3px 8px rgba(var(--gold-rgb),0.18); transform:translateY(-1px); }
+  .icon-btn:active{ transform:translateY(0) scale(0.94); }
+  #settingsBtn{ right:18px; }
+  html[dir="rtl"] #settingsBtn{ right:auto; }
+
+  .brand-logo{
+    width:230px; height:auto; aspect-ratio:606/453;
+    margin:35px auto 24px;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+-webkit-mask-image:url("logo.png");    -webkit-mask-repeat:no-repeat;
+    -webkit-mask-position:center;
+    -webkit-mask-size:contain;
+mask-image:url("logo.png");    mask-repeat:no-repeat;
+    mask-position:center;
+    mask-size:contain;
+  }
+
+  .session-bar{ margin-top:18px; margin-bottom:8px; }
+  .start-session-btn{
+    width:100%; padding:16px; border:none; border-radius:12px; cursor:pointer;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:var(--btn-ink); display:flex; align-items:center; justify-content:center; gap:10px;
+    position:relative;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.22),
+      inset 0 -2px 0 rgba(16,21,29,0.12),
+      0 8px 20px rgba(var(--gold-rgb),0.3);
+    transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
+  }
+  html[dir="rtl"] .start-session-btn{ font-family:'Tajawal',sans-serif; }
+  .start-session-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.24),
+      inset 0 -2px 0 rgba(16,21,29,0.12),
+      0 12px 26px rgba(var(--gold-rgb),0.36);
+    filter:brightness(1.05);
+  }
+  .start-session-btn:active{
+    transform:translateY(0) scale(0.985);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.18),
+      inset 0 -1px 0 rgba(16,21,29,0.12),
+      0 5px 12px rgba(var(--gold-rgb),0.3);
+  }
+  .start-session-btn:disabled{ opacity:0.65; cursor:not-allowed; transform:none; }
+
+  .session-active-card{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:11px 14px; border-radius:12px;
+    background:var(--success-soft); border:1px solid rgba(var(--success-rgb),0.32);
+  }
+  .session-info{ display:flex; align-items:center; gap:10px; text-align:left; min-width:0; }
+  html[dir="rtl"] .session-info{ text-align:right; }
+  .session-pulse{
+    width:9px; height:9px; border-radius:50%; background:var(--success);
+    box-shadow:0 0 8px var(--success); animation:pulse 1.6s infinite; flex-shrink:0;
+  }
+  .session-text{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .session-label{ font-size:12px; font-weight:700; color:var(--success); }
+  .session-sub{ font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .session-timer{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px;
+    color:var(--gold-2); letter-spacing:0.02em; min-width:48px; text-align:center; flex-shrink:0;
+  }
+  .end-session-btn{
+    border:1px solid rgba(var(--error-rgb),0.35); background:rgba(var(--error-rgb),0.08); color:var(--error);
+    padding:8px 13px; border-radius:999px; font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0;
+    font-family:'Manrope',sans-serif; transition:background .18s ease, transform .15s ease, box-shadow .18s ease;
+  }
+  html[dir="rtl"] .end-session-btn{ font-family:'Tajawal',sans-serif; }
+  .end-session-btn:hover{ background:rgba(var(--error-rgb),0.18); box-shadow:0 3px 8px rgba(var(--error-rgb),0.2); transform:translateY(-1px); }
+  .end-session-btn:active{ transform:translateY(0) scale(0.96); }
+
+  .toolbar{
+    display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:20px;
+    margin-top:20px;
+  }
+  .tool-btn{
+    position:relative;
+    padding:14px 16px; border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--field); color:var(--gold-2);
+    font-family:'Manrope',sans-serif; font-size:14px; font-weight:700;
+    letter-spacing:0.01em;
+    cursor:pointer; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    display:flex; flex-direction:row; align-items:center; justify-content:center; gap:8px;
+    box-shadow:0 1px 0 var(--line), 0 4px 10px rgba(16,21,29,0.05);
+    overflow:hidden;
+  }
+  html[dir="rtl"] .tool-btn{ font-family:'Tajawal',sans-serif; }
+  .tool-btn span:first-child{ font-size:17px; line-height:1; }
+  .tool-btn::after{
+    content:""; position:absolute; left:14%; right:14%; bottom:0; height:2px;
+    background:var(--gold); transform:scaleX(0); transform-origin:center;
+    transition:transform .22s ease;
+  }
+  .tool-btn:hover{ border-color:var(--accent-2); background:var(--gold-soft); transform:translateY(-3px); box-shadow:0 8px 16px rgba(var(--gold-rgb),0.16); }
+  .tool-btn:hover::after{ transform:scaleX(1); }
+  .tool-btn:active{ transform:translateY(-1px) scale(0.97); }
+
+  .mode-toggle{
+    display:flex; gap:8px; margin-bottom:20px;
+    background:var(--gold-soft);
+    border:1px solid var(--glass-border);
+    border-radius:12px; padding:5px;
+  }
+  .mode-btn{
+    flex:1; border:none; cursor:pointer;
+    padding:12px 10px; border-radius:8px;
+    font-family:'Manrope',sans-serif; font-size:14px; font-weight:600;
+    background:transparent; color:var(--muted);
+    transition:background .2s ease, color .2s ease, box-shadow .2s ease, transform .15s ease;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  html[dir="rtl"] .mode-btn{ font-family:'Tajawal',sans-serif; }
+  .mode-btn.active{
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:var(--btn-ink);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(var(--gold-rgb),0.28);
+  }
+  .mode-btn:not(.active):hover{ color:var(--gold-2); background:rgba(var(--gold-rgb),0.08); }
+  .mode-btn:active{ transform:scale(0.97); }
+
+  .payment-fields{
+    display:none;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .payment-fields.visible{ display:flex; }
+
+  .grade-field{ margin-bottom:16px; text-align:left; }
+  html[dir="rtl"] .grade-field{ text-align:right; }
+  .grade-field label{
+    display:block; font-size:11px; color:var(--gold-2);
+    text-transform:uppercase; letter-spacing:0.06em;
+    margin-bottom:6px; font-weight:600;
+  }
+  html[dir="rtl"] .grade-field label{ text-transform:none; }
+  .grade-select-wrap{ position:relative; }
+  .grade-field select{
+    width:100%; padding:10px 12px;
+    background:var(--field);
+    border:1px solid var(--glass-border);
+    border-radius:9px; color:var(--ink);
+    font-family:'Manrope',sans-serif; font-size:14px;
+    outline:none; appearance:none; cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238b2022'/></svg>");
+    background-repeat:no-repeat; background-position:right 14px center;
+  }
+  html[dir="rtl"] .grade-field select{ font-family:'Tajawal',sans-serif; background-position:left 14px center; }
+  .grade-field select:focus{ border-color:var(--accent-2); }
+  .grade-field select option{ background:var(--field); color:var(--ink); }
+  .grade-field select:disabled{
+    cursor:not-allowed; opacity:0.6; background-color:var(--gold-soft);
+  }
+  .grade-lock-overlay{
+    position:absolute; inset:0; display:none; cursor:not-allowed; z-index:2; border-radius:9px;
+  }
+  .grade-lock-overlay.show{ display:block; }
+  .grade-lock-hint{
+    font-size:11px; color:var(--muted); margin-top:6px; display:none;
+  }
+  .grade-lock-hint.show{ display:block; }
+  .field-group{
+    flex:1; text-align:left;
+  }
+  html[dir="rtl"] .field-group{ text-align:right; }
+  .field-group label{
+    display:block; font-size:11px; color:var(--gold-2);
+    text-transform:uppercase; letter-spacing:0.06em;
+    margin-bottom:6px; font-weight:600;
+  }
+  html[dir="rtl"] .field-group label{ text-transform:none; }
+  .field-group input{
+    width:100%; padding:10px 12px;
+    background:var(--field);
+    border:1px solid var(--glass-border);
+    border-radius:9px; color:var(--ink);
+    font-family:'Manrope',sans-serif; font-size:14px;
+    outline:none;
+  }
+  .field-group input:focus{ border-color:var(--accent-2); }
+  .field-group input::-webkit-calendar-picker-indicator{ filter:invert(0.3); }
+  html[data-theme="dark"] .field-group input::-webkit-calendar-picker-indicator{ filter:invert(0.85); }
+  .hint{
+    font-size:11px; color:var(--error); text-align:center;
+    margin-bottom:14px; min-height:14px;
+  }
+
+  .scan-frame{
+    position:relative; border-radius:14px; overflow:hidden;
+    border:1px solid var(--glass-border);
+    background:#0B1220;
+    transition:opacity .2s ease, background .2s ease;
+  }
+  .scan-frame.hidden{ display:none; }
+  #reader{ width:100%; }
+  #reader video{ width:100% !important; display:block; }
+  .corner{
+    position:absolute; width:22px; height:22px; z-index:3; pointer-events:none;
+    border-color:var(--gold);
+  }
+  .corner.tl{ top:10px; left:10px; border-top:2.5px solid; border-left:2.5px solid; border-radius:3px 0 0 0; }
+  .corner.tr{ top:10px; right:10px; border-top:2.5px solid; border-right:2.5px solid; border-radius:0 3px 0 0; }
+  .corner.bl{ bottom:10px; left:10px; border-bottom:2.5px solid; border-left:2.5px solid; border-radius:0 0 0 3px; }
+  .corner.br{ bottom:10px; right:10px; border-bottom:2.5px solid; border-right:2.5px solid; border-radius:0 0 3px 0; }
+  .scan-line{
+    position:absolute; left:6%; width:88%; height:2px; z-index:2;
+    background:var(--gold);
+    animation:sweep 2s linear infinite;
+  }
+  @keyframes sweep{
+    0%{ top:8%; }
+    100%{ top:92%; }
+  }
+  .scan-frame.locked .scan-line{ display:none; }
+  .scan-frame.locked #reader{ visibility:hidden; }
+
+  .scan-frame.session-off{ background:var(--surface-off); }
+  .scan-frame.session-off .corner,
+  .scan-frame.session-off .scan-line,
+  .scan-frame.session-off #reader{ display:none; }
+  .scan-placeholder{
+    display:none; padding:52px 20px; text-align:center; color:var(--muted); font-size:13px;
+    flex-direction:column; align-items:center; gap:10px;
+  }
+  .scan-frame.session-off .scan-placeholder{ display:flex; }
+  .scan-placeholder .icon{ font-size:30px; opacity:0.7; }
+
+  .cooldown-badge{
+    position:absolute; top:10px; left:50%; transform:translateX(-50%);
+    z-index:4; background:var(--card); border:1px solid var(--gold);
+    color:var(--gold-2); font-size:12px; font-weight:700;
+    padding:5px 12px; border-radius:999px; display:none;
+  }
+  .cooldown-badge.show{ display:block; }
+
+  #status{
+    margin-top:20px;
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:15px; font-weight:600;
+    padding:10px 18px; border-radius:999px;
+    background:var(--gold-soft);
+    border:1px solid var(--glass-border);
+    transition:all 0.25s ease;
+    color:var(--ink);
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .wait .dot{ background:var(--gold); box-shadow:0 0 8px var(--gold); animation:pulse 1.4s infinite; }
+  .success{ color:var(--success); border-color:var(--success-soft) !important; background:var(--success-soft) !important; }
+  .success .dot{ background:var(--success); box-shadow:0 0 8px var(--success); }
+  .duplicate{ color:var(--warning); border-color:var(--warning-soft) !important; background:var(--warning-soft) !important; }
+  .duplicate .dot{ background:var(--warning); box-shadow:0 0 8px var(--warning); }
+  .warning{ color:var(--warning); border-color:var(--warning-soft) !important; background:var(--warning-soft) !important; }
+  .warning .dot{ background:var(--warning); box-shadow:0 0 8px var(--warning); }
+  .error{ color:var(--error); border-color:var(--error-soft) !important; background:var(--error-soft) !important; }
+  .error .dot{ background:var(--error); box-shadow:0 0 8px var(--error); }
+  .wait{ color:var(--gold-2); }
+
+  @keyframes pulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:0.35; }
+  }
+
+  #status.detailed{
+    display:block; width:100%; text-align:left; border-radius:14px;
+    padding:0; font-weight:400; line-height:1.6; overflow:hidden;
+  }
+  html[dir="rtl"] #status.detailed{ text-align:right; }
+  #status.detailed .dot{ display:none; }
+
+  .result-card{ padding:20px 20px 18px; position:relative; }
+  .result-check{
+    width:52px; height:52px; margin:0 auto 8px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; border:2px solid rgba(var(--gold-rgb),0.55);
+    animation:stampDown .42s cubic-bezier(.2,1.4,.5,1);
+  }
+  .success .result-check{ border-color:rgba(var(--success-rgb),0.55); color:var(--success); }
+  .warning .result-check{ border-color:rgba(var(--warning-rgb),0.55); color:var(--warning); }
+  @keyframes stampDown{
+    0%{ transform:scale(2); opacity:0; }
+    55%{ transform:scale(0.94); opacity:1; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .result-title{
+    text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-size:16px; margin-bottom:12px; color:var(--gold-2);
+    text-transform:uppercase; letter-spacing:0.05em;
+  }
+  html[dir="rtl"] .result-title{ text-transform:none; letter-spacing:0; }
+  .result-divider{ height:1px; background:var(--glass-border); margin:12px 0; }
+  .result-student{
+    display:flex; align-items:center; gap:12px; margin-bottom:4px;
+  }
+  .result-photo{
+    width:52px; height:52px; border-radius:10px; object-fit:cover; flex-shrink:0;
+    border:1px solid var(--glass-border); background:var(--gold-soft);
+  }
+  .result-photo-fallback{
+    width:52px; height:52px; border-radius:10px; flex-shrink:0;
+    border:1px solid var(--glass-border); background:var(--gold-soft);
+    display:flex; align-items:center; justify-content:center; font-size:22px;
+  }
+  .result-name{ font-weight:700; font-size:15px; color:var(--ink); }
+  .result-sub{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .result-stats{
+    display:flex; gap:8px; margin-top:14px;
+  }
+  .result-stat{
+    flex:1; background:var(--gold-soft); border:1px solid var(--glass-border);
+    border-radius:9px; padding:8px 4px; text-align:center;
+  }
+  .result-stat .num{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:var(--gold-2); }
+  .result-stat .lab{ font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; }
+  html[dir="rtl"] .result-stat .lab{ text-transform:none; }
+  .chip{
+    display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700;
+  }
+  .chip.paid{ background:var(--success-soft); color:var(--success); }
+  .chip.unpaid{ background:var(--error-soft); color:var(--error); }
+
+  .next-scan-btn{
+    width:100%; margin-top:14px; padding:11px; border:none; border-radius:9px;
+    cursor:pointer; font-weight:700; font-size:13px; font-family:'Manrope',sans-serif;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); color:var(--btn-ink);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(var(--gold-rgb),0.22);
+    transition:transform .15s ease, box-shadow .18s ease, filter .18s ease;
+  }
+  html[dir="rtl"] .next-scan-btn{ font-family:'Tajawal',sans-serif; }
+  .next-scan-btn:hover{ filter:brightness(1.05); transform:translateY(-1px); box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 16px rgba(var(--gold-rgb),0.28); }
+  .next-scan-btn:active{ transform:translateY(0) scale(0.98); }
+  .auto-resume-note{
+    text-align:center; font-size:11px; color:var(--muted); margin-top:8px;
+  }
+
+  .spinner{
+    width:16px; height:16px; border-radius:50%;
+    border:2px solid var(--gold-soft-2); border-top-color:var(--gold-2);
+    animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .history{ margin-top:22px; text-align:left; }
+  html[dir="rtl"] .history{ text-align:right; }
+  .history-title{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--gold-2); font-weight:700; margin-bottom:10px;
+  }
+  html[dir="rtl"] .history-title{ text-transform:none; }
+  .history-list{ display:flex; flex-direction:column; gap:0; }
+  .history-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 2px; border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .history-item:last-child{ border-bottom:none; }
+  .history-name{ display:flex; align-items:center; gap:8px; color:var(--ink); }
+  .history-time{ color:var(--muted); font-size:12px; font-family:'Space Grotesk',sans-serif; }
+  .history-empty{ color:var(--muted); font-size:12px; text-align:center; padding:10px 0; }
+
+  .footer{
+    margin-top:22px; font-size:12px; color:var(--muted);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .footer::before, .footer::after{ content:""; flex:1; height:1px; background:var(--glass-border); }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:var(--scrim);
+    display:none; align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal{
+    width:100%; max-width:400px; max-height:85vh; overflow-y:auto;
+    background:var(--card); border:1px solid var(--glass-border); border-radius:14px;
+    padding:22px 20px; text-align:left;
+    box-shadow:0 8px 30px rgba(16,21,29,0.22);
+  }
+  html[dir="rtl"] .modal{ text-align:right; }
+  .modal-header{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+  }
+  .modal-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:var(--gold-2); }
+  html[dir="rtl"] .modal-title{ font-family:'Tajawal',sans-serif; }
+  .modal-close{
+    background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; line-height:1;
+  }
+  .modal-close:hover{ color:var(--gold-2); }
+  .modal-section{
+    border:1px solid var(--glass-border); border-radius:12px; padding:14px; margin-bottom:14px;
+    background:var(--gold-soft);
+  }
+  .modal-section-head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .modal-section-icon{
+    width:32px; height:32px; border-radius:8px; flex-shrink:0;
+    background:linear-gradient(135deg, var(--gold-2), var(--gold));
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  .modal-section-title{ font-size:13px; font-weight:700; color:var(--ink); }
+  .modal-section-sub{ font-size:11px; color:var(--muted); margin-top:1px; }
+  .theme-options{ display:flex; gap:10px; }
+  .theme-option{
+    flex:1; border:1.5px solid var(--glass-border); border-radius:10px; padding:8px; cursor:pointer;
+    background:var(--field); text-align:center; transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+  .theme-option:hover{ transform:translateY(-2px); }
+  .theme-option.selected{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .theme-swatch{ height:34px; border-radius:7px; margin-bottom:6px; }
+  .theme-swatch.light{ background:linear-gradient(135deg,#F5F9FF,#DCE8FB); border:1px solid rgba(16,21,29,0.16); }
+  .theme-swatch.dark{ background:linear-gradient(135deg,#101B2E,#0B1220); border:1px solid rgba(255,255,255,0.1); }
+  .theme-option-label{ font-size:12px; font-weight:600; color:var(--ink); }
+  html[dir="rtl"] .theme-option-label{ font-family:'Tajawal',sans-serif; }
+  .lang-toggle{
+    display:flex; gap:6px; background:var(--field); border:1px solid var(--glass-border);
+    border-radius:10px; padding:4px;
+  }
+  .lang-btn{
+    flex:1; border:none; cursor:pointer; padding:9px 6px; border-radius:7px;
+    font-size:13px; font-weight:600; background:transparent; color:var(--muted);
+    transition:background .15s ease, color .15s ease, transform .15s ease; font-family:'Manrope',sans-serif;
+  }
+  .lang-btn[data-lang="ar"]{ font-family:'Tajawal',sans-serif; }
+  .lang-btn.active{ background:linear-gradient(135deg, var(--gold-2), var(--gold)); color:var(--btn-ink); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2); }
+  .lang-btn:active{ transform:scale(0.96); }
+  .modal input[type="text"], .modal input[type="number"], .modal input[type="url"], .modal select{
+    width:100%; padding:10px 12px; margin-bottom:12px;
+    background:var(--field); border:1px solid var(--glass-border);
+    border-radius:9px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:14px; outline:none;
+  }
+  html[dir="rtl"] .modal input, html[dir="rtl"] .modal select{ font-family:'Tajawal',sans-serif; }
+  .modal select{ cursor:pointer; appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238b2022'/></svg>");
+    background-repeat:no-repeat; background-position:right 14px center;
+  }
+  html[dir="rtl"] .modal select{ background-position:left 14px center; }
+  .modal select option{ background:var(--field); color:var(--ink); }
+  .modal input:focus{ border-color:var(--accent-2); }
+  .modal label{
+    display:block; font-size:11px; color:var(--gold-2); text-transform:uppercase;
+    letter-spacing:0.06em; margin-bottom:6px; font-weight:600;
+  }
+  html[dir="rtl"] .modal label{ text-transform:none; }
+  .modal-btn{
+    width:100%; padding:12px; border:none; border-radius:9px; cursor:pointer;
+    font-weight:700; font-size:14px; margin-top:4px;
+    background:linear-gradient(135deg, var(--gold-2), var(--gold)); color:var(--btn-ink);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(var(--gold-rgb),0.22);
+    transition:transform .15s ease, box-shadow .18s ease, filter .18s ease;
+  }
+  html[dir="rtl"] .modal-btn{ font-family:'Tajawal',sans-serif; }
+  .modal-btn:hover{ filter:brightness(1.06); transform:translateY(-1px); box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 16px rgba(var(--gold-rgb),0.28); }
+  .modal-btn:active{ transform:translateY(0) scale(0.98); }
+  .modal-error{
+    font-size:12px; color:var(--error); text-align:center; margin-top:-4px; margin-bottom:10px; min-height:14px;
+  }
+
+  .toast{
+    position:fixed; top:18px; left:50%; transform:translateX(-50%);
+    background:var(--gold-2); color:var(--btn-ink); padding:11px 18px; border-radius:9px;
+    font-size:13px; font-weight:600; z-index:200; box-shadow:0 6px 18px rgba(16,21,29,0.25);
+    opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+    max-width:88%; text-align:center;
+  }
+  html[dir="rtl"] .toast{ font-family:'Tajawal',sans-serif; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(4px); }
+
+  @media (prefers-reduced-motion: reduce){
+    .scan-line, .dot, .result-check, .spinner, .session-pulse, .container{
+      animation:none !important;
+    }
+  }
+
+  .session-ended-overlay{
+    position:fixed; inset:0; z-index:150; display:none;
+    align-items:center; justify-content:center; padding:20px;
+    background:var(--scrim);
+  }
+  .session-ended-card{
+    width:100%; max-width:360px; text-align:center;
+    background:var(--card); border:1px solid var(--glass-border);
+    border-radius:16px; padding:32px 26px;
+    box-shadow:var(--shadow-lg);
+  }
+  .session-ended-icon{ font-size:34px; margin-bottom:12px; }
+  .session-ended-title{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px;
+    color:var(--gold-2); margin-bottom:8px;
+  }
+  html[dir="rtl"] .session-ended-title{ font-family:'Tajawal',sans-serif; }
+  .session-ended-text{ font-size:13px; color:var(--muted); line-height:1.6; }
+  .session-ended-countdown{
+    margin-top:14px; font-size:12px; color:var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="mainContainer">
+  <div class="header-actions">
+    <div class="header-actions-group">
+      <button type="button" class="icon-btn" id="backBtn" onclick="goBack()" data-i18n-title="title_back" title="Back">↩️</button>
+      <button type="button" class="icon-btn" id="settingsBtn" onclick="openModal('settingsModal')" data-i18n-title="title_settings" title="Settings">⚙️</button>
+    </div>
+  </div>
+
+<div class="brand-logo" role="img" aria-label="Logo"></div>  <div class="eyebrow" data-i18n="eyebrow_scanner">Live scanner</div>
+  <h1 data-i18n="title_app">Student Attendance System</h1>
+
+  <div class="session-bar" id="sessionBar">
+    <button type="button" class="start-session-btn" id="startSessionBtn" onclick="startSession()">
+      ▶️ <span data-i18n="btn_start_session">Start Session</span>
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <button type="button" class="tool-btn" onclick="window.location.href='student_serch.html'"><span>🔍</span> <span data-i18n="btn_search">Search</span></button>
+  </div>
+
+  <div class="mode-toggle">
+    <button type="button" class="mode-btn active" id="modeAttendance" onclick="setMode('attendance')">
+      🎓 <span data-i18n="mode_attendance">Attendance</span>
+    </button>
+    <button type="button" class="mode-btn" id="modePayment" onclick="setMode('payment')">
+      💳 <span data-i18n="mode_payment">Payment</span>
+    </button>
+  </div>
+
+  <div class="grade-field">
+    <label for="gradeLevel" data-i18n="label_grade">Grade Level</label>
+    <div class="grade-select-wrap">
+      <select id="gradeLevel" onchange="setGrade(this.value)"></select>
+      <div class="grade-lock-overlay" id="gradeLockOverlay" onclick="notifyGradeLocked()"></div>
+    </div>
+    <div class="grade-lock-hint" id="gradeLockHint" data-i18n="grade_lock_hint">End the session to change grade level</div>
+  </div>
+
+  <div class="grade-field">
+    <label for="groupLevel" data-i18n="label_group">Group</label>
+    <div class="grade-select-wrap">
+      <select id="groupLevel" onchange="setGroup(this.value)"></select>
+      <div class="grade-lock-overlay" id="groupLockOverlay" onclick="notifyGroupLocked()"></div>
+    </div>
+    <div class="grade-lock-hint" id="groupLockHint" data-i18n="group_lock_hint">End the session to change group</div>
+  </div>
+
+  <div class="payment-fields" id="paymentFields">
+    <div class="field-group">
+      <label for="payMonth" data-i18n="label_month">Month</label>
+      <input type="month" id="payMonth">
+    </div>
+    <div class="field-group">
+      <label for="payAmount" data-i18n="label_amount">Amount (EGP)</label>
+      <input type="number" id="payAmount" placeholder="e.g. 300" min="0">
+    </div>
+  </div>
+  <div class="hint" id="paymentHint"></div>
+
+  <div class="scan-frame session-off" id="scanFrame">
+    <div class="cooldown-badge" id="cooldownBadge">⏳ <span data-i18n="cooldown_wait">Wait</span> <span id="cooldownSeconds">5</span><span data-i18n="cooldown_unit">s</span></div>
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <div class="scan-line"></div>
+    <div id="reader"></div>
+    <div class="scan-placeholder" id="scanPlaceholder">
+      <div class="icon">📷</div>
+      <div data-i18n="scan_placeholder">Start the session to activate the camera</div>
+    </div>
+  </div>
+
+  <div id="status" class="wait">
+    <span class="dot"></span>
+    <span id="status-text" data-i18n="status_wait_no_session">Start the session to begin scanning</span>
+  </div>
+
+  <div class="history">
+    <div class="history-title" data-i18n="history_title">Last Scans</div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty" id="historyEmpty" data-i18n="history_empty">No scans yet</div>
+    </div>
+  </div>
+
+  <div class="footer">Powered by <a href="milex.html" target="_blank" rel="noopener noreferrer" style="color:inherit;">MilEX</a></div>
+</div>
+
+
+<div class="session-ended-overlay" id="sessionEndedOverlay">
+  <div class="session-ended-card">
+    <div class="session-ended-icon">🔴</div>
+    <div class="session-ended-title" data-i18n="session_ended_title">Session Ended</div>
+    <div class="session-ended-text" id="sessionEndedText" data-i18n="session_ended_text">The attendance session has been ended by another user.</div>
+    <div class="session-ended-countdown"><span data-i18n="session_ended_returning">Returning to scanner in</span> <span id="sessionEndedCountdown">5</span>s…</div>
+  </div>
+</div>
+
+<div class="session-ended-overlay" id="sessionConflictOverlay">
+  <div class="session-ended-card">
+    <div class="session-ended-icon">⚠️</div>
+    <div class="session-ended-title" id="sessionConflictTitle">Active Session Found</div>
+    <div class="session-ended-text" id="sessionConflictText"></div>
+    <div style="display:flex; gap:10px; margin-top:18px;">
+      <button type="button" class="modal-btn" id="joinSessionBtn" style="margin-top:0;">Join</button>
+      <button type="button" class="end-session-btn" id="dismissSessionBtn" style="flex:1; padding:12px;">Not now</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastMsg"></div>
+
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" data-i18n="settings_title">Settings</div>
+      <button class="modal-close" onclick="closeModal('settingsModal')">×</button>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-head">
+        <div class="modal-section-icon">🎨</div>
+        <div>
+          <div class="modal-section-title" data-i18n="settings_appearance">Appearance</div>
+          <div class="modal-section-sub" data-i18n="settings_appearance_sub">Choose how the scanner looks</div>
+        </div>
+      </div>
+      <div class="theme-options">
+        <div class="theme-option" id="themeOptionLight" onclick="setTheme('light')">
+          <div class="theme-swatch light"></div>
+          <div class="theme-option-label" data-i18n="theme_light">Light</div>
+        </div>
+        <div class="theme-option" id="themeOptionDark" onclick="setTheme('dark')">
+          <div class="theme-swatch dark"></div>
+          <div class="theme-option-label" data-i18n="theme_dark">Dark</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-head">
+        <div class="modal-section-icon">🌐</div>
+        <div>
+          <div class="modal-section-title" data-i18n="settings_language">Language</div>
+          <div class="modal-section-sub" data-i18n="settings_language_sub">Switch the interface language</div>
+        </div>
+      </div>
+      <div class="lang-toggle">
+        <button type="button" class="lang-btn" id="langBtnEn" data-lang="en" onclick="setLanguage('en')">English</button>
+        <button type="button" class="lang-btn" id="langBtnAr" data-lang="ar" onclick="setLanguage('ar')">العربية</button>
+      </div>
+    </div>
+
+    <label for="setDefaultFee" data-i18n="settings_fee">Default Payment Amount (EGP)</label>
+    <input type="number" id="setDefaultFee" placeholder="e.g. 300" min="0">
+
+    <label for="setDefaultGrade" data-i18n="settings_default_grade">Default Grade Level</label>
+    <select id="setDefaultGrade"></select>
+
+    <label for="setDefaultGroup" data-i18n="settings_default_group">Default Group</label>
+    <select id="setDefaultGroup"></select>
+
+    <button class="modal-btn" onclick="saveSettings()"><span data-i18n="btn_save_settings">Save Settings</span></button>
+  </div>
+</div>
+
+<script>
+
+  function getScoreColor(score, alpha = 0.8) {
+    if (score >= 90) return `rgba(38, 110, 102, ${alpha})`;
+    if (score >= 70) return `rgba(180, 120, 30, ${alpha})`;
+    return `rgba(167, 58, 46, ${alpha})`;
+  }
+
+  const WEBHOOKS = {
+    attendance: "https://students.milestones-tech.com/webhook/scannerللعرض",
+    payment:    "https://students.milestones-tech.com/webhook/scannerللعرض",
+    session:    "https://students.milestones-tech.com/webhook/Attendance_Session_Managerللعرض"
+  };
+
+  const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const SESSION_TABLE = "attendance_sessions";
+  const SESSION_POLL_MS = 5000;
+  let lastSupabaseError = "";
+  let currentUser = null;
+  let activeSessionRow = null;
+  let sessionPollInterval = null;
+  let realtimeChannel = null;
+  let sessionEndInProgress = false;
+
+  function parseServerTimestamp(ts){
+    if(!ts) return null;
+    const hasTZ = /Z$|[+-]\d{2}:?\d{2}$/.test(ts);
+    return new Date(hasTZ ? ts : ts + 'Z').getTime();
+  }
+
+  function goBack(){
+    window.history.back();
+  }
+
+  const THEME_KEY = "scannerTheme";
+  let currentTheme = localStorage.getItem(THEME_KEY) || "light";
+
+  function setTheme(theme){
+    currentTheme = theme;
+    document.documentElement.setAttribute("data-theme", theme);
+    try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+    renderThemeOptions();
+  }
+
+  function renderThemeOptions(){
+    document.getElementById("themeOptionLight").classList.toggle("selected", currentTheme === "light");
+    document.getElementById("themeOptionDark").classList.toggle("selected", currentTheme === "dark");
+  }
+
+  const LANG_KEY = "scannerLang";
+  let currentLang = localStorage.getItem(LANG_KEY) || "en";
+
+  const GRADE_LABELS_EN = {
+    prep1: "First Preparatory", prep2: "Second Preparatory", prep3: "Third Preparatory",
+    first: "First Secondary", second: "Second Secondary", third: "Third Secondary"
+  };
+  const GRADE_LABELS_I18N = {
+    en: GRADE_LABELS_EN,
+    ar: {
+      prep1: "الصف الأول الإعدادي", prep2: "الصف الثاني الإعدادي", prep3: "الصف الثالث الإعدادي",
+      first: "الصف الأول الثانوي", second: "الصف الثاني الثانوي", third: "الصف الثالث الثانوي"
+    }
+  };
+  function gradeLabel(grade){ return (GRADE_LABELS_I18N[currentLang] || GRADE_LABELS_I18N.en)[grade] || grade; }
+
+  // Groups per grade, per the requested mapping:
+  //  prep1 -> Sat & Tue 3:00 | prep2 -> Sat & Tue 4:00 | prep3 -> Sat & Tue 2:00
+  //  first -> Sun & Wed 2:00 | second -> Sun & Wed 3:00 & 6:00 | third -> Sun & Wed 12:00 & 5:00
+  const GRADE_GROUPS = {
+    prep3: [
+      { id: "سبت وثلاث 2", en: "Sat & Tue - 2:00", ar: "السبت والثلاثاء - الساعة 2" }
+    ],
+    prep1: [
+      { id: "سبت وثلاث 3", en: "Sat & Tue - 3:00", ar: "السبت والثلاثاء - الساعة 3" }
+    ],
+    prep2: [
+      { id: "سبت وثلاث 4", en: "Sat & Tue - 4:00", ar: "السبت والثلاثاء - الساعة 4" }
+    ],
+    first: [
+      { id: "الأحد والأربعاء 2", en: "Sun & Wed - 2:00", ar: "الأحد والأربعاء - الساعة 2" }
+    ],
+    second: [
+      { id: "الأحد والأربعاء 3", en: "Sun & Wed - 3:00", ar: "الأحد والأربعاء - الساعة 3" },
+      { id: "الأحد والأربعاء 6", en: "Sun & Wed - 6:00", ar: "الأحد والأربعاء - الساعة 6" }
+    ],
+    third: [
+      { id: "الأحد والأربعاء 12", en: "Sun & Wed - 12:00", ar: "الأحد والأربعاء - الساعة 12" },
+      { id: "الأحد والأربعاء 5", en: "Sun & Wed - 5:00", ar: "الأحد والأربعاء - الساعة 5" }
+    ]
+  };
+
+  const GROUP_LABELS_EN = {};
+  const GROUP_LABELS_AR = {};
+  Object.values(GRADE_GROUPS).flat().forEach(g => {
+    GROUP_LABELS_EN[g.id] = g.en;
+    GROUP_LABELS_AR[g.id] = g.ar;
+  });
+
+  function groupsForGrade(grade){
+    return GRADE_GROUPS[grade] || [];
+  }
+
+  function groupLabel(group){
+    const g = groupsForGrade(currentGrade).find(x => x.id === group);
+    if(!g) return group;
+    return currentLang === "ar" ? g.ar : g.en;
+  }
+
+  function groupLabelFor(grade, group){
+    const g = (GRADE_GROUPS[grade] || []).find(x => x.id === group);
+    if(!g) return group;
+    return currentLang === "ar" ? g.ar : g.en;
+  }
+
+  const I18N = {
+    en: {
+      title_settings:"Settings", title_back:"Back",
+      eyebrow_scanner:"Live scanner", title_app:"Student Attendance System",
+      btn_start_session:"Start Session", btn_search:"Search", btn_exam:"Exam", btn_dash:"Dash",
+      mode_attendance:"Attendance", mode_payment:"Payment",
+      label_grade:"Grade Level", label_month:"Month", label_amount:"Amount (EGP)",
+      grade_lock_hint:"End the session to change grade level",
+      label_group:"Group", group_lock_hint:"End the session to change group",
+      settings_default_group:"Default Group",
+      cooldown_wait:"Wait", cooldown_unit:"s",
+      scan_placeholder:"Start the session to activate the camera",
+      status_wait_no_session:"Start the session to begin scanning",
+      status_wait_scanning:"Waiting for QR code…",
+      status_sending_attendance:"Sending attendance…",
+      status_confirming_payment:"Confirming payment…",
+      status_no_active_session:"No active attendance session.",
+      status_cant_connect:"Can't reach the server",
+      payment_hint_missing:"Please enter the month and amount first",
+      history_title:"Last Scans", history_empty:"No scans yet",
+      footer_text:"Powered by MilEX",
+
+      session_ended_title:"Session Ended",
+      session_ended_text:"The attendance session has been ended by another user.",
+      session_ended_returning:"Returning to scanner in",
+      session_conflict_title:"Active Session Found",
+      btn_join_session:"Join Session",
+      btn_dismiss_session:"Not Now",
+      settings_title:"Settings",
+      settings_appearance:"Appearance", settings_appearance_sub:"Choose how the scanner looks",
+      theme_light:"Light", theme_dark:"Dark",
+      settings_language:"Language", settings_language_sub:"Switch the interface language",
+      settings_fee:"Default Payment Amount (EGP)", settings_default_grade:"Default Grade Level",
+      btn_save_settings:"Save Settings",
+      start_session_label:"Start Session", session_active_label:"Session Active",
+      end_session_btn:"End Session",
+      toast_grade_locked:"End the current session before changing the grade level",
+      toast_start_fail:"Couldn't start the session — check your connection",
+      toast_end_fail:"Couldn't reach the server to end the session — try again",
+      confirm_end_session:"End the attendance session for everyone currently scanning?",
+      result_attendance_title:"Attendance Recorded", result_payment_title:"Payment Confirmed",
+      stat_attendance:"Attendance", stat_absence:"Absence", stat_month:"Month", stat_egp:"EGP",
+      stat_status:"Status", chip_paid:"Paid", chip_unpaid:"Unpaid",
+      stat_payment:"Payment", stat_last_session:"Last Session",
+      chip_present:"Attended", chip_absent:"Absent", chip_unknown:"–",
+      next_scan_btn:"Scan Next Student",
+      auto_resume_note:"Next scan opens automatically in {s}s",
+      status_generic_error:"Something went wrong"
+    },
+    ar: {
+      title_settings:"الإعدادات", title_back:"رجوع",
+      eyebrow_scanner:"الماسح المباشر", title_app:"نظام حضور الطلاب",
+      btn_start_session:"بدء الجلسة", btn_search:"بحث", btn_exam:"الامتحان", btn_dash:"لوحة",
+      mode_attendance:"الحضور", mode_payment:"الدفع",
+      label_grade:"المرحلة الدراسية", label_month:"الشهر", label_amount:"المبلغ (جنيه)",
+      grade_lock_hint:"أنهِ الجلسة لتغيير المرحلة الدراسية",
+      label_group:"المجموعة", group_lock_hint:"أنهِ الجلسة لتغيير المجموعة",
+      settings_default_group:"المجموعة الافتراضية",
+      cooldown_wait:"انتظر", cooldown_unit:"ث",
+      scan_placeholder:"ابدأ الجلسة لتفعيل الكاميرا",
+      status_wait_no_session:"ابدأ الجلسة لبدء المسح",
+      status_wait_scanning:"في انتظار رمز QR…",
+      status_sending_attendance:"جارٍ تسجيل الحضور…",
+      status_confirming_payment:"جارٍ تأكيد الدفع…",
+      status_no_active_session:"لا توجد جلسة حضور نشطة.",
+      status_cant_connect:"تعذّر الوصول إلى الخادم",
+      payment_hint_missing:"من فضلك أدخل الشهر والمبلغ أولاً",
+      history_title:"آخر عمليات المسح", history_empty:"لا توجد عمليات مسح بعد",
+      footer_text:"بدعم من MilEX",
+
+      session_ended_title:"انتهت الجلسة",
+      session_ended_text:"تم إنهاء جلسة الحضور بواسطة مستخدم آخر.",
+      session_ended_returning:"سيتم الرجوع للماسح خلال",
+      session_conflict_title:"فيه جلسة شغالة بالفعل",
+      btn_join_session:"انضم للجلسة",
+      btn_dismiss_session:"مش دلوقتي",
+      settings_title:"الإعدادات",
+      settings_appearance:"المظهر", settings_appearance_sub:"اختر شكل الماسح",
+      theme_light:"فاتح", theme_dark:"داكن",
+      settings_language:"اللغة", settings_language_sub:"غيّر لغة الواجهة",
+      settings_fee:"المبلغ الافتراضي للدفع (جنيه)", settings_default_grade:"المرحلة الدراسية الافتراضية",
+      btn_save_settings:"حفظ الإعدادات",
+      start_session_label:"بدء الجلسة", session_active_label:"الجلسة نشطة",
+      end_session_btn:"إنهاء الجلسة",
+      toast_grade_locked:"أنهِ الجلسة الحالية قبل تغيير المرحلة الدراسية",
+      toast_start_fail:"تعذّر بدء الجلسة — تحقق من الاتصال",
+      toast_end_fail:"تعذّر الوصول إلى الخادم لإنهاء الجلسة — حاول مرة أخرى",
+      confirm_end_session:"هل تريد إنهاء جلسة الحضور لكل من يقوم بالمسح الآن؟",
+      result_attendance_title:"تم تسجيل الحضور", result_payment_title:"تم تأكيد الدفع",
+      stat_attendance:"الحضور", stat_absence:"الغياب", stat_month:"الشهر", stat_egp:"جنيه",
+      stat_status:"الحالة", chip_paid:"مدفوع", chip_unpaid:"غير مدفوع",
+      stat_payment:"الاشتراك", stat_last_session:"الحصة السابقة",
+      chip_present:"حضر", chip_absent:"غايب", chip_unknown:"–",
+      next_scan_btn:"مسح الطالب التالي",
+      auto_resume_note:"سيبدأ المسح التالي تلقائيًا خلال {s}ث",
+      status_generic_error:"حدث خطأ ما"
+    }
+  };
+
+  function t(key){
+    const dict = I18N[currentLang] || I18N.en;
+    return dict[key] !== undefined ? dict[key] : (I18N.en[key] !== undefined ? I18N.en[key] : key);
+  }
+
+  let idleStatusKey = "status_wait_no_session";
+
+  function refreshIdleStatus(){
+    if(!sending){
+      idleStatusKey = canScan() ? "status_wait_scanning" : "status_wait_no_session";
+      setStatus(t(idleStatusKey), "wait");
+    }
+  }
+
+  function setLanguage(lang){
+    currentLang = lang;
+    document.documentElement.setAttribute("lang", lang);
+    document.documentElement.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+    try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
+
+    document.querySelectorAll("[data-i18n]").forEach(el=>{
+      el.textContent = t(el.getAttribute("data-i18n"));
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach(el=>{
+      el.setAttribute("title", t(el.getAttribute("data-i18n-title")));
+    });
+
+    renderLangButtons();
+    renderGradeOptions();
+    renderGroupOptions();
+    renderSessionBar();
+    refreshIdleStatus();
+  }
+
+  function renderLangButtons(){
+    document.getElementById("langBtnEn").classList.toggle("active", currentLang === "en");
+    document.getElementById("langBtnAr").classList.toggle("active", currentLang === "ar");
+  }
+
+  function renderGradeOptions(){
+    const grades = ["prep1","prep2","prep3","first","second","third"];
+    const selects = [document.getElementById("gradeLevel"), document.getElementById("setDefaultGrade")];
+    selects.forEach(sel=>{
+      if(!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = grades.map(g => `<option value="${g}">${gradeLabel(g)}</option>`).join("");
+      sel.value = grades.includes(prev) ? prev : (sel.id === "gradeLevel" ? currentGrade : settings.defaultGrade);
+    });
+  }
+
+  function renderGroupOptions(){
+    const groups = groupsForGrade(currentGrade);
+    const sel = document.getElementById("groupLevel");
+    if(sel){
+      const prev = sel.value;
+      sel.innerHTML = groups.map(g =>
+        `<option value="${g.id}">${currentLang === "ar" ? g.ar : g.en}</option>`
+      ).join("");
+      sel.value = groups.some(g => g.id === prev)
+        ? prev
+        : (groups.some(g => g.id === currentGroup) ? currentGroup : (groups[0] ? groups[0].id : ""));
+      currentGroup = sel.value;
+    }
+
+    const sel2 = document.getElementById("setDefaultGroup");
+    if(sel2){
+      const defGrade = document.getElementById("setDefaultGrade") ? document.getElementById("setDefaultGrade").value : (settings.defaultGrade || currentGrade);
+      const defGroups = groupsForGrade(defGrade);
+      const prev2 = sel2.value;
+      sel2.innerHTML = defGroups.map(g =>
+        `<option value="${g.id}">${currentLang === "ar" ? g.ar : g.en}</option>`
+      ).join("");
+      sel2.value = defGroups.some(g => g.id === prev2) ? prev2 : (defGroups[0] ? defGroups[0].id : "");
+    }
+  }
+
+  async function fetchActiveSession(){
+    const { data, error } = await supabaseClient
+      .from(SESSION_TABLE)
+      .select('*')
+      .eq('status', 'active')
+      .order('start_time', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if(error){
+      console.error(error);
+      lastSupabaseError = error.message || 'unknown error';
+      return undefined;
+    }
+    return data || null;
+}
+
+  function showJoinSessionPrompt(row){
+    const dismissedId = sessionStorage.getItem('dismissedSessionId');
+    if(dismissedId === String(row.id)) return;
+
+    const overlay = document.getElementById('sessionConflictOverlay');
+    document.getElementById('sessionConflictTitle').textContent = t('session_conflict_title');
+
+    const startedAt = new Date(parseServerTimestamp(row.start_time)).toLocaleTimeString();
+    document.getElementById('sessionConflictText').textContent =
+      `${gradeLabel(row.grade)} · ${groupLabelFor(row.grade, row.group_name)} — ${startedAt}`;
+
+    document.getElementById('joinSessionBtn').textContent = t('btn_join_session');
+    document.getElementById('dismissSessionBtn').textContent = t('btn_dismiss_session');
+
+    overlay.style.display = 'flex';
+
+    document.getElementById('joinSessionBtn').onclick = ()=>{
+      overlay.style.display = 'none';
+      sessionStorage.setItem('joinedActiveSession', String(row.id));
+      sessionStorage.removeItem('dismissedSessionId');
+      refreshSessionState();
+    };
+    document.getElementById('dismissSessionBtn').onclick = ()=>{
+      overlay.style.display = 'none';
+      sessionStorage.setItem('dismissedSessionId', String(row.id));
+    };
+  }
+
+  async function refreshSessionState(){
+    const row = await fetchActiveSession();
+    if(row === undefined) return;
+
+    const wasActive = sessionActive;
+
+    if(row){
+      if(!wasActive){
+        const joinedId = sessionStorage.getItem('joinedActiveSession');
+        if(joinedId !== String(row.id)){
+          activeSessionRow = row;
+          showJoinSessionPrompt(row);
+          return; // Wait for the user's decision — don't touch their local grade/group choice.
+        }
+      }
+
+      activeSessionRow = row;
+      const joiningFresh = !wasActive;
+      sessionActive = true;
+      currentGrade = row.grade || currentGrade;
+      currentGroup = row.group_name || currentGroup;
+
+      if(joiningFresh){
+        sessionStartTime = parseServerTimestamp(row.start_time);
+
+        renderGroupOptions();
+        document.getElementById("gradeLevel").value = currentGrade;
+        document.getElementById("gradeLevel").disabled = true;
+        document.getElementById("gradeLockHint").classList.add("show");
+        document.getElementById("gradeLockOverlay").classList.add("show");
+        document.getElementById("groupLevel").value = currentGroup;
+        document.getElementById("groupLevel").disabled = true;
+        document.getElementById("groupLockHint").classList.add("show");
+        document.getElementById("groupLockOverlay").classList.add("show");
+
+        renderSessionBar();
+        tickSessionTimer();
+        if(sessionTimerInterval) clearInterval(sessionTimerInterval);
+        sessionTimerInterval = setInterval(tickSessionTimer, 1000);
+
+        document.getElementById("scanFrame").classList.remove("session-off");
+        startScanner();
+      }
+    } else {
+      if(wasActive && !sessionEndInProgress){
+        handleSessionEndedRemotely();
+      }
+      activeSessionRow = null;
+      sessionActive = false;
+      sessionStorage.removeItem('joinedActiveSession');
+      sessionStorage.removeItem('dismissedSessionId');
+    }
+  }
+
+  function subscribeToSessionChanges(){
+    if(realtimeChannel) return;
+    realtimeChannel = supabaseClient
+      .channel('attendance_sessions_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: SESSION_TABLE }, () => {
+        refreshSessionState();
+      })
+      .subscribe();
+  }
+
+  function cleanupRealtime(){
+    if(realtimeChannel){
+      supabaseClient.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+    }
+    if(sessionPollInterval){
+      clearInterval(sessionPollInterval);
+      sessionPollInterval = null;
+    }
+  }
+
+  function pauseSessionSync(){
+    cleanupRealtime();
+  }
+
+  function resumeSessionSync(){
+    subscribeToSessionChanges();
+    if(!sessionPollInterval){
+      sessionPollInterval = setInterval(refreshSessionState, SESSION_POLL_MS);
+    }
+  }
+
+  function handleSessionEndedRemotely(){
+    stopScannerFully();
+    sending = false;
+    if(resumeTimer){ clearTimeout(resumeTimer); resumeTimer = null; }
+    if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval = null; }
+
+    sessionActive = false;
+    activeSessionRow = null;
+    sessionStartTime = null;
+    sessionStorage.removeItem('joinedActiveSession');
+    sessionStorage.removeItem('dismissedSessionId');
+
+    document.getElementById("gradeLevel").disabled = false;
+    document.getElementById("gradeLockHint").classList.remove("show");
+    document.getElementById("gradeLockOverlay").classList.remove("show");
+    document.getElementById("groupLevel").disabled = false;
+    document.getElementById("groupLockHint").classList.remove("show");
+    document.getElementById("groupLockOverlay").classList.remove("show");
+
+    const frame = document.getElementById("scanFrame");
+    frame.classList.add("session-off");
+    document.getElementById("cooldownBadge").classList.remove("show");
+
+    showSessionEndedOverlay();
+  }
+
+  function showSessionEndedOverlay(){
+    const overlay = document.getElementById('sessionEndedOverlay');
+    const countdownEl = document.getElementById('sessionEndedCountdown');
+    overlay.style.display = 'flex';
+    let remaining = 5;
+    countdownEl.textContent = remaining;
+    const timer = setInterval(()=>{
+      remaining -= 1;
+      countdownEl.textContent = Math.max(remaining, 0);
+      if(remaining <= 0){
+        clearInterval(timer);
+        window.location.reload();
+      }
+    }, 1000);
+  }
+
+  const RESULT_DISPLAY_MS = 3000;
+
+  let settings = {
+    defaultFee: "",
+    defaultGrade: "prep1",
+    defaultGroup: ""
+  };
+
+  const savedSettings = localStorage.getItem("scannerSettings");
+  if(savedSettings){
+     settings = JSON.parse(savedSettings);
+  }
+
+  let currentMode = "attendance";
+  let currentGrade = "prep1";
+  let currentGroup = "";
+  let settingsInitialized = false;
+  let scanner;
+  let cameraActive = false;   // true once getUserMedia has succeeded and the camera is live
+  let scannerPaused = false;  // true while the camera is live but decoding is paused
+  let sending = false;
+  let resumeTimer = null;
+  let lastScanTimes = {};
+  const COOLDOWN_MS = 5000;
+  let history = [];
+  const HISTORY_LIMIT = 8;
+
+  let sessionActive = false;
+  let sessionStartTime = null;
+  let sessionTimerInterval = null;
+
+  function canScan(){
+    return sessionActive || currentMode === "payment";
+  }
+
+  function showToast(message){
+    const toast = document.getElementById('toastMsg');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>{ toast.classList.remove('show'); }, 2400);
+  }
+
+  function notifyGradeLocked(){
+    if(sessionActive){
+      showToast(t('toast_grade_locked'));
+    }
+  }
+
+  function notifyGroupLocked(){
+    if(sessionActive){
+      showToast(t('toast_grade_locked'));
+    }
+  }
+
+  function applySettings(){
+    document.getElementById("setDefaultFee").value = settings.defaultFee;
+
+    if(!settingsInitialized){
+      const savedGrade = localStorage.getItem("selectedGrade");
+      currentGrade = savedGrade || settings.defaultGrade;
+      settingsInitialized = true;
+    }
+    renderGradeOptions();
+    document.getElementById("gradeLevel").value = currentGrade;
+    document.getElementById("setDefaultGrade").value = settings.defaultGrade;
+
+    const savedGroup = localStorage.getItem("selectedGroup");
+    const groups = groupsForGrade(currentGrade);
+    currentGroup = (savedGroup && groups.some(g => g.id === savedGroup))
+      ? savedGroup
+      : (settings.defaultGroup && groups.some(g => g.id === settings.defaultGroup))
+        ? settings.defaultGroup
+        : (groups[0] ? groups[0].id : "");
+
+    renderGroupOptions();
+  }
+
+  function saveSettings(){
+    settings.defaultFee = document.getElementById("setDefaultFee").value;
+    settings.defaultGrade = document.getElementById("setDefaultGrade").value;
+    const selG = document.getElementById("setDefaultGroup");
+    settings.defaultGroup = selG ? selG.value : "";
+
+    localStorage.setItem("scannerSettings", JSON.stringify(settings));
+    applySettings();
+    if(!sessionActive){
+      const savedGrade = localStorage.getItem("selectedGrade");
+      currentGrade = savedGrade || settings.defaultGrade;
+      document.getElementById("gradeLevel").value = currentGrade;
+      renderGroupOptions();
+    }
+    closeModal('settingsModal');
+  }
+
+  function openModal(id){
+    if(id === 'settingsModal'){
+      renderThemeOptions();
+      renderLangButtons();
+      renderGroupOptions();
+    }
+    document.getElementById(id).classList.add('open');
+  }
+  function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(ov=>{
+    ov.addEventListener('click', e=>{
+      if(e.target === ov){
+        ov.classList.remove('open');
+      }
+    });
+  });
+
+  function formatElapsed(ms){
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const m = String(Math.floor(totalSec / 60)).padStart(2, "0");
+    const s = String(totalSec % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function renderSessionBar(){
+    const bar = document.getElementById("sessionBar");
+    if(sessionActive){
+      bar.innerHTML = `
+        <div class="session-active-card">
+          <div class="session-info">
+            <span class="session-pulse"></span>
+            <div class="session-text">
+              <span class="session-label">${t('session_active_label')}</span>
+              <span class="session-sub">${gradeLabel(currentGrade)} · ${groupLabel(currentGroup)}</span>
+            </div>
+          </div>
+          <span class="session-timer" id="sessionTimer">00:00</span>
+          <button type="button" class="end-session-btn" onclick="endSession()">${t('end_session_btn')}</button>
+        </div>`;
+    } else {
+      bar.innerHTML = `
+        <button type="button" class="start-session-btn" id="startSessionBtn" onclick="startSession()">
+          ▶️ ${t('start_session_label')}
+        </button>`;
+    }
+  }
+
+  function tickSessionTimer(){
+    const el = document.getElementById("sessionTimer");
+    if(!el || !sessionStartTime) return;
+    el.textContent = formatElapsed(Date.now() - sessionStartTime);
+  }
+
+  async function startSession(){
+    if(sessionActive) return;
+
+    const btn = document.getElementById('startSessionBtn');
+    if(btn){ btn.disabled = true; }
+
+    pauseSessionSync();
+
+    try{
+      const existing = await fetchActiveSession();
+      if(existing === undefined){
+        showToast(t('toast_start_fail'));
+        resumeSessionSync();
+        return;
+      }
+      if(existing){
+        sessionStorage.removeItem('dismissedSessionId');
+        resumeSessionSync();
+        await refreshSessionState();
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from(SESSION_TABLE)
+        .insert({
+          status: 'active',
+          started_by: currentUser?.email || 'unknown',
+          start_time: new Date().toISOString(),
+          grade: currentGrade,
+          group_name: currentGroup,
+          mode: currentMode
+        })
+        .select()
+        .single();
+
+      if(error){
+        console.error(error);
+        showToast(t('toast_start_fail'));
+        resumeSessionSync();
+        await refreshSessionState();
+        return;
+      }
+      activeSessionRow = data;
+      sessionStorage.setItem('joinedActiveSession', String(data.id));
+    }catch(e){
+      console.error(e);
+      showToast(t('toast_start_fail'));
+      resumeSessionSync();
+      return;
+    }finally{
+      if(btn){ btn.disabled = false; }
+    }
+
+    sessionActive = true;
+    sessionStartTime = Date.now();
+    renderSessionBar();
+    tickSessionTimer();
+    if(sessionTimerInterval) clearInterval(sessionTimerInterval);
+    sessionTimerInterval = setInterval(tickSessionTimer, 1000);
+
+    document.getElementById("scanFrame").classList.remove("session-off");
+    startScanner();
+
+    document.getElementById("gradeLevel").disabled = true;
+    document.getElementById("gradeLockHint").classList.add("show");
+    document.getElementById("gradeLockOverlay").classList.add("show");
+    document.getElementById("groupLevel").disabled = true;
+    document.getElementById("groupLockHint").classList.add("show");
+    document.getElementById("groupLockOverlay").classList.add("show");
+
+    // grade_label/group_label always stay in English here — the scanner's
+    // display language never changes what n8n receives.
+    fetch(WEBHOOKS.session, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "session_start",
+        grade: currentGrade,
+        grade_label: GRADE_LABELS_EN[currentGrade],
+        group: currentGroup,
+        group_label: GROUP_LABELS_EN[currentGroup],
+        mode: currentMode,
+        started_by: currentUser?.email || 'unknown',
+        timestamp: new Date().toISOString()
+      })
+    }).catch(()=>{});
+
+    resumeSessionSync();
+  }
+
+  async function endSession(){
+    if(!sessionActive) return;
+    if(!confirm(t('confirm_end_session'))) return;
+
+    sessionEndInProgress = true;
+    pauseSessionSync();
+
+    const endedGrade = currentGrade;
+    const endedGroup = currentGroup;
+    const endedMode = currentMode;
+
+    try{
+      if(activeSessionRow){
+        await supabaseClient
+          .from(SESSION_TABLE)
+          .update({
+            status: 'ended',
+            end_time: new Date().toISOString(),
+            ended_by: currentUser?.email || 'unknown'
+          })
+          .eq('id', activeSessionRow.id);
+      }
+    }catch(e){
+      console.error(e);
+      showToast(t('toast_end_fail'));
+      sessionEndInProgress = false;
+      resumeSessionSync();
+      return;
+    }
+
+    stopScannerFully();
+
+    sessionStorage.removeItem('joinedActiveSession');
+    sessionStorage.removeItem('dismissedSessionId');
+
+    try{
+      await fetch(WEBHOOKS.session, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "session_end",
+          grade: endedGrade,
+          grade_label: GRADE_LABELS_EN[endedGrade],
+          group: endedGroup,
+          group_label: GROUP_LABELS_EN[endedGroup],
+          mode: endedMode,
+          ended_by: currentUser?.email || 'unknown',
+          timestamp: new Date().toISOString()
+        })
+      });
+    }catch(e){}
+
+    window.location.reload();
+  }
+
+  function setMode(mode){
+    currentMode = mode;
+    document.getElementById("modeAttendance").classList.toggle("active", mode === "attendance");
+    document.getElementById("modePayment").classList.toggle("active", mode === "payment");
+    document.getElementById("paymentFields").classList.toggle("visible", mode === "payment");
+    document.getElementById("paymentHint").textContent = "";
+
+    if(mode === "payment"){
+      if(!document.getElementById("payMonth").value){
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, "0");
+        document.getElementById("payMonth").value = `${yyyy}-${mm}`;
+      }
+      if(!document.getElementById("payAmount").value && settings.defaultFee){
+        document.getElementById("payAmount").value = settings.defaultFee;
+      }
+    }
+
+    if(!sessionActive){
+      const frame = document.getElementById("scanFrame");
+      if(mode === "payment"){
+        frame.classList.remove("session-off");
+        startScanner();
+      } else {
+        stopScannerFully();
+        sending = false;
+        if(resumeTimer){ clearTimeout(resumeTimer); resumeTimer = null; }
+        frame.classList.add("session-off");
+        document.getElementById("cooldownBadge").classList.remove("show");
+      }
+    }
+
+    refreshIdleStatus();
+  }
+
+  function setGrade(grade){
+    if(sessionActive){
+      document.getElementById("gradeLevel").value = currentGrade;
+      notifyGradeLocked();
+      return;
+    }
+    currentGrade = grade;
+    localStorage.setItem("selectedGrade", grade);
+    renderGroupOptions();
+  }
+
+  function setGroup(group){
+    if(sessionActive){
+      document.getElementById("groupLevel").value = currentGroup;
+      notifyGroupLocked();
+      return;
+    }
+    currentGroup = group;
+    localStorage.setItem("selectedGroup", group);
+  }
+
+  function beep(type){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = "sine";
+      if(type === "success"){ o.frequency.value = 880; g.gain.value = 0.15; }
+      else if(type === "duplicate"){ o.frequency.value = 520; g.gain.value = 0.12; }
+      else { o.frequency.value = 220; g.gain.value = 0.15; }
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      o.stop(ctx.currentTime + 0.35);
+    }catch(e){}
+  }
+
+  function setStatus(message, type, detailed){
+    const status = document.getElementById("status");
+    status.className = type + (detailed ? " detailed" : "");
+    status.innerHTML = `<span class="dot"></span><span id="status-text">${message}</span>`;
+    document.getElementById("scanFrame").classList.toggle("locked", type !== "wait");
+  }
+
+  function setLoadingStatus(message){
+    const status = document.getElementById("status");
+    status.className = "wait";
+    status.innerHTML = `<div class="spinner"></div><span id="status-text">${message}</span>`;
+    document.getElementById("scanFrame").classList.add("locked");
+  }
+
+  function renderResultCard(kind, s, extra, ok){
+    const status = document.getElementById("status");
+    status.className = (ok ? "success" : "warning") + " detailed";
+
+    const photoHtml = s.image_url
+      ? `<img class="result-photo" src="${s.image_url}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'result-photo-fallback',innerText:'👤'}))">`
+      : `<div class="result-photo-fallback">👤</div>`;
+
+    let statsHtml = "";
+    if(kind === "attendance"){
+      // payment_status comes back as "Paid" / "Unpaid" (case-insensitive).
+      const isPaid = String(s.payment_status ?? "").toLowerCase() === "paid";
+      const hasPaymentInfo = s.payment_status != null && s.payment_status !== "";
+      const paymentChipClass = hasPaymentInfo ? (isPaid ? "paid" : "unpaid") : "";
+      const paymentChipLabel = hasPaymentInfo ? (isPaid ? t('chip_paid') : t('chip_unpaid')) : t('chip_unknown');
+
+      // previous_session_status comes back as "Present" / "Absent" (case-insensitive).
+      const hasLastSessionInfo = s.previous_session_status != null && s.previous_session_status !== "";
+      const wasPresent = String(s.previous_session_status ?? "").toLowerCase() === "present";
+      const lastSessionChipClass = hasLastSessionInfo ? (wasPresent ? "paid" : "unpaid") : "";
+      const lastSessionChipLabel = hasLastSessionInfo ? (wasPresent ? t('chip_present') : t('chip_absent')) : t('chip_unknown');
+
+      statsHtml = `
+        <div class="result-stats">
+          <div class="result-stat"><div class="num">${s.attendance_count ?? "–"}</div><div class="lab">${t('stat_attendance')}</div></div>
+          <div class="result-stat"><div class="num">${s.absence_count ?? "–"}</div><div class="lab">${t('stat_absence')}</div></div>
+        </div>
+        <div class="result-stats">
+          <div class="result-stat"><div class="chip ${paymentChipClass}">${paymentChipLabel}</div><div class="lab">${t('stat_payment')}</div></div>
+          <div class="result-stat"><div class="chip ${lastSessionChipClass}">${lastSessionChipLabel}</div><div class="lab">${t('stat_last_session')}</div></div>
+        </div>`;
+    } else {
+      statsHtml = `
+        <div class="result-stats">
+          <div class="result-stat"><div class="num">${s.month ?? extra.month ?? "–"}</div><div class="lab">${t('stat_month')}</div></div>
+          <div class="result-stat"><div class="num">${s.amount ?? extra.amount ?? "–"}</div><div class="lab">${t('stat_egp')}</div></div>
+          <div class="result-stat"><div class="chip paid">${t('chip_paid')}</div><div class="lab">${t('stat_status')}</div></div>
+        </div>`;
+    }
+
+    status.innerHTML = `
+      <div class="result-card">
+        <div class="result-check">${ok ? "✅" : "⚠️"}</div>
+        <div class="result-title">${kind === "payment" ? t('result_payment_title') : t('result_attendance_title')}</div>
+        <div class="result-divider"></div>
+        <div class="result-student">
+          ${photoHtml}
+          <div>
+            <div class="result-name">${s.name ?? s.full_name ?? ""}</div>
+            <div class="result-sub">${kind === "payment" ? (s.time ?? "") : `${s.grade ?? gradeLabel(currentGrade)} · ${s.time ?? ""}`}</div>
+          </div>
+        </div>
+        ${statsHtml}
+        <button type="button" class="next-scan-btn" onclick="scanNext()">📷 ${t('next_scan_btn')}</button>
+        <div class="auto-resume-note" id="autoResumeNote"></div>
+      </div>`;
+    document.getElementById("scanFrame").classList.add("locked");
+    armAutoResume(true);
+  }
+
+  function pushHistory(name, time, ok){
+    history.unshift({ name, time, ok });
+    if(history.length > HISTORY_LIMIT) history.pop();
+    renderHistory();
+  }
+
+  function renderHistory(){
+    const list = document.getElementById("historyList");
+    if(history.length === 0){
+      list.innerHTML = `<div class="history-empty" id="historyEmpty">${t('history_empty')}</div>`;
+      return;
+    }
+    list.innerHTML = history.map(h => `
+      <div class="history-item">
+        <div class="history-name">${h.ok ? "✔" : "✖"} ${h.name}</div>
+        <div class="history-time">${h.time}</div>
+      </div>
+    `).join("");
+  }
+
+  function isOnCooldown(code){
+    const last = lastScanTimes[code];
+    if(!last) return 0;
+    const elapsed = Date.now() - last;
+    return elapsed < COOLDOWN_MS ? COOLDOWN_MS - elapsed : 0;
+  }
+
+  function showCooldownBadge(remainingMs){
+    const badge = document.getElementById("cooldownBadge");
+    const secondsEl = document.getElementById("cooldownSeconds");
+    let remaining = Math.ceil(remainingMs / 1000);
+    secondsEl.textContent = remaining;
+    badge.classList.add("show");
+    const interval = setInterval(()=>{
+      remaining -= 1;
+      if(remaining <= 0){
+        clearInterval(interval);
+        badge.classList.remove("show");
+      } else {
+        secondsEl.textContent = remaining;
+      }
+    }, 1000);
+  }
+
+  // Single auto-resume timer used both after a full result card (showNote=true,
+  // updates the countdown note in the card) and after a plain status message
+  // (showNote=false, just resumes scanning after RESULT_DISPLAY_MS).
+  function armAutoResume(showNote){
+    if(resumeTimer) clearTimeout(resumeTimer);
+
+    if(!showNote){
+      resumeTimer = setTimeout(scanNext, RESULT_DISPLAY_MS);
+      return;
+    }
+
+    let remaining = Math.ceil(RESULT_DISPLAY_MS / 1000);
+    const note = document.getElementById("autoResumeNote");
+    if(note) note.textContent = t('auto_resume_note').replace('{s}', remaining);
+    const tick = setInterval(()=>{
+      remaining -= 1;
+      const n = document.getElementById("autoResumeNote");
+      if(!n){ clearInterval(tick); return; }
+      if(remaining <= 0){ clearInterval(tick); }
+      else n.textContent = t('auto_resume_note').replace('{s}', remaining);
+    }, 1000);
+    resumeTimer = setTimeout(()=>{
+      clearInterval(tick);
+      scanNext();
+    }, RESULT_DISPLAY_MS);
+  }
+
+  function scanNext(){
+    if(resumeTimer){ clearTimeout(resumeTimer); resumeTimer = null; }
+    if(!canScan()) return;
+    startScanner();
+  }
+
+  function onScanSuccess(decodedText){
+    if(sending) return;
+    if(!canScan()){
+      setStatus(t('status_no_active_session'), "error", false);
+      stopScannerFully();
+      armAutoResume(false);
+      return;
+    }
+
+    const cooldownRemaining = isOnCooldown(decodedText);
+    if(cooldownRemaining > 0){
+      showCooldownBadge(cooldownRemaining);
+      return;
+    }
+
+    let month = "";
+    let amount = "";
+    if(currentMode === "payment"){
+      month = document.getElementById("payMonth").value;
+      amount = document.getElementById("payAmount").value;
+      if(!month || !amount){
+        document.getElementById("paymentHint").textContent = t('payment_hint_missing');
+        return;
+      }
+    }
+
+    lastScanTimes[decodedText] = Date.now();
+    sending = true;
+    pauseScanner();
+
+    const webhookUrl = WEBHOOKS[currentMode];
+    setLoadingStatus(currentMode === "payment" ? t('status_confirming_payment') : t('status_sending_attendance'));
+
+    // Payload sent to n8n uses fixed English keys/labels — unaffected by the UI language.
+    const payload = {
+      qr_code: decodedText,
+      mode: currentMode,
+      grade: currentGrade,
+      grade_label: GRADE_LABELS_EN[currentGrade],
+      group: currentGroup,
+      group_label: GROUP_LABELS_EN[currentGroup],
+      lang: currentLang
+    };
+    if(currentMode === "payment"){
+      payload.month = month;
+      payload.amount = amount;
+    }
+
+    fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(async response => {
+      let data = {};
+      try{ data = await response.json(); }catch(e){}
+      sending = false;
+
+      if(data.success){
+        const s = data.student || {};
+        renderResultCard(currentMode, s, { month, amount }, true);
+        pushHistory(s.name || s.full_name || "Student", s.time || "", true);
+        beep("success");
+      } else {
+        const msg = data.message || t('status_generic_error');
+        const alreadyRecorded = data.already_recorded || /already|مسجل|مدفوع/i.test(msg);
+        setStatus((alreadyRecorded ? "🔴 " : "⚠️ ") + msg, alreadyRecorded ? "error" : "warning", false);
+        document.getElementById("scanFrame").classList.add("locked");
+        beep(alreadyRecorded ? "error" : "duplicate");
+        pushHistory(data.student?.name || "Unknown", new Date().toLocaleTimeString(), false);
+        armAutoResume(false);
+      }
+    })
+    .catch(error => {
+      console.error(error);
+      sending = false;
+      setStatus(t('status_cant_connect'), "error", false);
+      document.getElementById("scanFrame").classList.add("locked");
+      beep("error");
+      armAutoResume(false);
+    });
+  }
+
+  function onScanFailure(){}
+
+  // Pause decoding but leave the camera stream running — this is what makes
+  // back-to-back scans fast. The old code fully destroyed and recreated the
+  // camera (clear() + render()) after every single scan, which re-triggers
+  // camera acquisition/init each time and is the main source of the lag.
+  function pauseScanner(){
+    if(scanner && cameraActive && !scannerPaused){
+      try{
+        scanner.pause(true); // true = also freeze the visible video frame
+      }catch(e){}
+      scannerPaused = true;
+    }
+  }
+
+  // Fully release the camera. Only used when the camera should actually turn
+  // off (session ended, leaving payment mode with no session, no active session).
+  function stopScannerFully(){
+    scannerPaused = false;
+    if(scanner && cameraActive){
+      cameraActive = false;
+      const s = scanner;
+      scanner = null;
+      return s.stop().then(()=>s.clear()).catch(()=>{});
+    }
+    cameraActive = false;
+    return Promise.resolve();
+  }
+
+  async function startScanner(){
+    if(!canScan()) return;
+    sending = false;
+    document.getElementById("paymentHint").textContent = "";
+    idleStatusKey = "status_wait_scanning";
+    setStatus(t('status_wait_scanning'), "wait");
+
+    // Camera already warm from a previous scan — just resume decoding instead
+    // of tearing the camera down and re-requesting it. This is the fast path.
+    if(scanner && cameraActive){
+      if(scannerPaused){
+        try{
+          scanner.resume();
+          scannerPaused = false;
+          return;
+        }catch(e){
+          // Resume failed for some reason — fall through to a full restart.
+          await stopScannerFully();
+        }
+      } else {
+        return; // already running
+      }
+    }
+
+    document.getElementById("reader").innerHTML = "";
+    scanner = new Html5Qrcode("reader", { verbose: false });
+
+    try{
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 12, qrbox: 240, aspectRatio: 1.0 },
+        onScanSuccess,
+        onScanFailure
+      );
+      cameraActive = true;
+      scannerPaused = false;
+    }catch(e){
+      console.error(e);
+      cameraActive = false;
+      scanner = null;
+      setStatus(t('status_cant_connect'), "error", false);
+    }
+  }
+
+  window.addEventListener('beforeunload', ()=>{ stopScannerFully(); });
+
+  renderGradeOptions();
+  applySettings();
+  renderSessionBar();
+  renderThemeOptions();
+  renderLangButtons();
+  setLanguage(currentLang);
+
+  refreshSessionState();
+  resumeSessionSync();
+
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible'){
+      refreshSessionState();
+    }
+  });
+
+  window.addEventListener('pageshow', (e)=>{
+    if(e.persisted){
+      refreshSessionState();
+    }
+  });
+</script>
+</body>
+</html>
