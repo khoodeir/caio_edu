@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Registration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&family=Cairo:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Light Premium — Off White / Beige / Petrol / Wood palette */
+  --bg-0:#F5F9FF; --bg-1:#DCE8FB; --bg-2:#CFE4FB;
+  --card:rgba(255,255,255,0.85); --card-border:rgba(40,86,90,0.18);
+  --gold:#1565C0; --gold-light:#3B82F6; --gold-deep:#0D47A1; --bronze:#2E8BF0;
+  --text:#10151D; --muted:#4B5A70; --border:rgba(40,86,90,0.16);
+  --error:#B5555A; --success:#5B8C6E; --radius:14px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; min-height:100vh;
+  background: linear-gradient(165deg, var(--bg-0) 0%, var(--bg-1) 55%, var(--bg-2) 100%);
+  font-family:'Inter', 'Segoe UI', Arial, sans-serif;
+  display:flex; align-items:center; justify-content:center; padding:48px 16px; color:var(--text);
+  transition: background .2s ease;
+}
+[dir="rtl"] body{ font-family:'Cairo','Inter',sans-serif; }
+[dir="rtl"] h1,
+[dir="rtl"] #successView h2{ font-family:'Cairo','Cormorant Garamond',serif; }
+[dir="rtl"] label{ direction:rtl; }
+
+.card{
+  position:relative; width:100%; max-width:540px;
+  background:var(--card);
+  -webkit-backdrop-filter: blur(16px) saturate(110%);
+  backdrop-filter: blur(16px) saturate(110%);
+  border-radius:20px; padding:38px 38px 34px;
+  box-shadow:0 18px 40px rgba(48,47,44,0.14);
+  border:1px solid var(--card-border);
+  animation:cardIn .5s ease both;
+}
+@keyframes cardIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+@media (prefers-reduced-motion: reduce){ .card{ animation:none; } }
+
+/* ===== Language toggle ===== */
+.lang-toggle{
+  position:absolute; top:18px; right:18px; display:flex; gap:3px;
+  background:rgba(40,86,90,0.07); border:1px solid var(--border);
+  border-radius:999px; padding:4px; z-index:5;
+}
+[dir="rtl"] .lang-toggle{ right:auto; left:18px; }
+.lang-toggle button{
+  border:none; background:transparent; padding:6px 13px; border-radius:999px;
+  font-family:inherit; font-size:11.5px; font-weight:700; color:var(--muted);
+  cursor:pointer; letter-spacing:.3px; transition:all .15s ease;
+}
+.lang-toggle button:hover{ color:var(--gold-light); }
+.lang-toggle button.active{ background:var(--gold-deep); color:#FFFFFF; }
+
+.title-wrap{
+  text-align:center;
+  margin-bottom:24px;
+}
+
+.crest{
+  width:125px;
+  margin:0 auto 10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.crest img{
+  width:100%;
+  height:auto;
+  display:block;
+}
+
+h1{
+  font-family:'Cormorant Garamond', 'Poppins', serif;
+  font-weight:600;
+  font-size:27px;
+  letter-spacing:0.2px;
+  margin:0 0 8px;
+  color:var(--gold-light);
+}
+
+.divider{
+  width:42px;
+  height:1px;
+  margin:0 auto 12px;
+  border:none;
+  background:var(--border);
+}
+
+.teacher-name{
+  text-align:center;
+  font-size:15px;
+  font-weight:700;
+  color:var(--gold-deep);
+  letter-spacing:0.1px;
+  margin:0 0 8px;
+}
+
+.teacher-tagline{
+  text-align:center;
+  font-size:12.5px;
+  font-weight:500;
+  font-style:italic;
+  color:var(--bronze);
+  margin:0 0 18px;
+}
+
+.subtitle{
+  text-align:center;
+  color:var(--muted);
+  font-size:13.5px;
+  line-height:1.6;
+  margin:0 auto 26px;
+  padding:0 10px;
+  max-width:460px;
+}
+label{ display:flex; align-items:center; gap:4px; font-weight:600; font-size:13px; margin-bottom:9px; color:var(--gold-light); text-transform:uppercase; letter-spacing:0.6px; }
+label .req{ color:var(--error); text-transform:none; }
+label .note{ color:var(--muted); font-size:10.5px; font-weight:500; text-transform:none; letter-spacing:0.2px; }
+.field{ margin-bottom:22px; }
+
+input[type="text"], input[type="tel"], select{
+  width:100%; padding:13px 15px; border:1.5px solid var(--border); border-radius:10px;
+  font-family:inherit; font-size:15px; color:var(--text); background:rgba(255,255,255,0.6); outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  appearance:none; -webkit-appearance:none;
+}
+input::placeholder{ color:#4B5A70; }
+select{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'><path d='M1 1l6 6 6-6' stroke='%2328565A' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat; background-position:right 16px center; padding-right:40px; cursor:pointer;
+}
+[dir="rtl"] select{
+  background-position:left 16px center; padding-right:15px; padding-left:40px;
+}
+select:invalid{ color:#4B5A70; }
+select option{ color:var(--text); background:#F5F9FF; }
+select option:checked, select option:hover{ background:var(--gold-deep); color:#FFFFFF; }
+.group-time{ font-size:10.5px; color:rgba(40,86,90,0.38); font-weight:400; letter-spacing:0; text-transform:none; margin-left:8px; }
+[dir="rtl"] .group-time{ margin-left:0; margin-right:8px; }
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--text);
+  caret-color:var(--text);
+  transition:background-color 9999s ease-in-out 0s;
+  box-shadow:0 0 0 1000px rgba(255,255,255,0.55) inset;
+}
+input:hover, select:hover{ border-color:rgba(40,86,90,0.36); }
+input:focus, select:focus{ border-color:var(--gold); background:rgba(255,255,255,0.85); box-shadow:0 0 0 3px rgba(40,86,90,0.14); }
+input.invalid{ border-color:var(--error); }
+input.invalid:focus{ box-shadow:0 0 0 3px rgba(181,85,90,0.16); }
+
+.hint{ font-size:12.5px; color:var(--muted); margin-top:7px; }
+.error-msg{ font-size:12.5px; color:var(--error); margin-top:7px; display:none; font-weight:500; }
+.field.has-error .error-msg{ display:block; }
+.field.has-error .hint{ display:none; }
+
+button.submit{
+  width:100%; padding:14px; margin-top:10px;
+  background: linear-gradient(135deg, var(--gold-deep) 0%, var(--gold) 100%);
+  color:#FFFFFF; border:none;
+  border-radius:10px; font-family:inherit; font-size:15.5px; font-weight:700; cursor:pointer;
+  letter-spacing:0.2px; box-shadow:0 6px 16px rgba(48,47,44,0.22);
+  transition:filter .15s ease, box-shadow .15s ease;
+}
+button.submit:hover{ filter:brightness(1.06); box-shadow:0 8px 20px rgba(48,47,44,0.28); }
+button.submit:active{ filter:brightness(0.96); }
+button.submit:disabled{ opacity:0.5; cursor:not-allowed; box-shadow:none; }
+
+.status{
+  margin-top:18px; text-align:center; font-size:14px; font-weight:500; padding:12px 14px;
+  border-radius:10px; display:none;
+}
+.status.success{ color:var(--success); background:rgba(91,140,110,0.1); border:1px solid rgba(91,140,110,0.28); display:block; }
+.status.failure{ color:var(--error); background:rgba(181,85,90,0.08); border:1px solid rgba(181,85,90,0.28); display:block; }
+
+@media (max-width:480px){ .card{ padding:34px 22px 28px; } h1{ font-size:25px; } .lang-toggle{ top:12px; right:12px; } [dir="rtl"] .lang-toggle{ left:12px; } }
+
+#successView{ display:none; text-align:center; }
+.icon-circle{
+  width:72px; height:72px; margin:4px auto 24px; border-radius:50%;
+  background:var(--success);
+  opacity:0.9;
+  display:flex; align-items:center; justify-content:center;
+  animation:popIn .4s ease .1s both;
+}
+@keyframes popIn{ from{ opacity:0; transform:scale(0.85); } to{ opacity:0.9; transform:scale(1); } }
+#successView h2{ font-family:'Cormorant Garamond', 'Poppins', serif; font-size:25px; font-weight:700; margin:0 0 12px; color:var(--gold-light); }
+#successView p{ font-size:15px; line-height:1.75; color:var(--muted); margin:0; }
+.qr-wrap{
+  display:none;
+  margin:22px auto 6px;
+  padding:18px;
+  background:#FFFFFF;
+  border:1px solid var(--border);
+  border-radius:14px;
+  width:fit-content;
+  box-shadow:0 8px 18px rgba(48,47,44,0.1);
+}
+.qr-wrap img{
+  display:block;
+  width:190px;
+  height:190px;
+  object-fit:contain;
+  margin:0 auto;
+}
+.qr-caption{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:10px;
+  text-align:center;
+}
+.qr-actions{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  margin-top:14px;
+}
+.qr-download, .qr-print{
+  font-size:13px;
+  font-weight:600;
+  color:var(--gold-light);
+  text-decoration:none;
+  border-bottom:1px solid var(--gold-light);
+  padding-bottom:1px;
+  background:none;
+  border-top:none; border-left:none; border-right:none;
+  font-family:inherit;
+  cursor:pointer;
+}
+@media print{
+  body *{ visibility:hidden; }
+  .qr-wrap, .qr-wrap *{ visibility:visible; }
+  .qr-actions{ display:none !important; }
+  .qr-wrap{
+    position:absolute; top:0; left:0; margin:0;
+    box-shadow:none; border:none; width:100%;
+  }
+}
+
+.powered-by{
+  margin-top:32px; text-align:center; font-size:11.5px; letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--bronze);
+}
+.powered-by span{ color:var(--gold); font-weight:600; }
+
+/* ===== Admin panel ===== */
+#adminOverlay{ display:none; width:100%; max-width:640px; }
+.admin-card{
+  background:var(--card); -webkit-backdrop-filter: blur(16px) saturate(110%); backdrop-filter: blur(16px) saturate(110%);
+  border-radius:20px; padding:32px; box-shadow:0 18px 40px rgba(48,47,44,0.14); border:1px solid var(--card-border);
+}
+.admin-gate{ max-width:360px; margin:0 auto; text-align:center; }
+.admin-gate h2{ font-family:'Cormorant Garamond','Poppins',serif; color:var(--gold-light); font-size:23px; margin:0 0 18px; }
+.admin-gate input{ width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:10px; font-family:inherit; font-size:15px; background:rgba(255,255,255,0.6); outline:none; text-align:center; letter-spacing:2px; }
+.admin-gate input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px rgba(40,86,90,0.14); }
+.admin-gate .error-msg{ display:block; margin-top:10px; }
+.admin-gate button{ margin-top:14px; }
+.admin-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:10px; }
+.admin-top h2{ font-family:'Cormorant Garamond','Poppins',serif; color:var(--gold-light); font-size:22px; margin:0; }
+.admin-link, .btn-mini{
+  font-size:12.5px; font-weight:700; color:var(--gold-light); text-decoration:none; cursor:pointer;
+  background:rgba(40,86,90,0.08); border:1px solid var(--border); border-radius:999px; padding:7px 14px;
+  font-family:inherit;
+}
+.admin-link:hover, .btn-mini:hover{ background:rgba(40,86,90,0.14); }
+.stage-block{ border:1.5px solid var(--border); border-radius:14px; padding:16px 16px 18px; margin-bottom:16px; background:rgba(255,255,255,0.4); }
+.stage-block-head{ display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.stage-block-head input{ flex:1; min-width:160px; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:14.5px; font-weight:700; color:var(--gold-deep); background:rgba(255,255,255,0.7); }
+.grade-block{ border:1px dashed var(--border); border-radius:10px; padding:12px; margin:10px 0; background:rgba(255,255,255,0.5); }
+.grade-block-head{ display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.grade-block-head input{ flex:1; min-width:140px; padding:9px 11px; border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:13.5px; font-weight:600; background:rgba(255,255,255,0.75); }
+.group-row{ display:flex; align-items:center; gap:6px; margin-bottom:7px; flex-wrap:wrap; }
+.group-row input{ padding:8px 10px; border:1.5px solid var(--border); border-radius:7px; font-family:inherit; font-size:13px; background:rgba(255,255,255,0.85); }
+.group-row input.g-dayar{ width:130px; }
+.group-row input.g-time{ width:80px; }
+.field-tag{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-right:2px; }
+[dir="rtl"] .field-tag{ margin-right:0; margin-left:2px; }
+.btn-x{
+  border:none; background:rgba(181,85,90,0.12); color:var(--error); width:24px; height:24px; border-radius:50%;
+  cursor:pointer; font-size:13px; line-height:1; font-weight:700; flex-shrink:0;
+}
+.btn-x:hover{ background:rgba(181,85,90,0.22); }
+.btn-add-inline{
+  border:1px dashed var(--gold-light); background:transparent; color:var(--gold-light); font-weight:700;
+  font-size:12px; border-radius:8px; padding:6px 11px; cursor:pointer; font-family:inherit; margin-top:2px;
+}
+.btn-add-inline:hover{ background:rgba(40,86,90,0.08); }
+.admin-actions{ display:flex; gap:10px; margin-top:22px; flex-wrap:wrap; }
+.admin-actions button{ flex:1; min-width:140px; }
+.btn-secondary{
+  background:transparent; color:var(--gold-light); border:1.5px solid var(--gold-light);
+  padding:12px; border-radius:10px; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;
+}
+.btn-secondary:hover{ background:rgba(40,86,90,0.06); }
+.pw-change{ margin-top:26px; padding-top:18px; border-top:1px solid var(--border); }
+.pw-change h3{ font-size:13.5px; color:var(--gold-deep); margin:0 0 10px; }
+.pw-change-row{ display:flex; gap:8px; flex-wrap:wrap; }
+.pw-change-row input{ flex:1; min-width:130px; padding:9px 11px; border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px; background:rgba(255,255,255,0.7); }
+.admin-status{ margin-top:14px; text-align:center; font-size:13px; font-weight:600; padding:10px; border-radius:8px; display:none; }
+.admin-status.show-success{ display:block; color:var(--success); background:rgba(91,140,110,0.1); border:1px solid rgba(91,140,110,0.28); }
+.admin-status.show-error{ display:block; color:var(--error); background:rgba(181,85,90,0.08); border:1px solid rgba(181,85,90,0.28); }
+.admin-section-title{ font-family:'Cormorant Garamond','Poppins',serif; color:var(--gold-light); font-size:19px; font-weight:700; margin:26px 0 14px; padding-top:18px; border-top:1px solid var(--border); }
+.city-row{ display:flex; align-items:center; gap:6px; margin-bottom:7px; flex-wrap:wrap; }
+.city-row input{ flex:1; min-width:140px; padding:8px 10px; border:1.5px solid var(--border); border-radius:7px; font-family:inherit; font-size:13px; background:rgba(255,255,255,0.85); }
+
+/* Governorate visibility checklist */
+.gov-visibility-box{ border:1.5px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:16px; background:rgba(255,255,255,0.4); max-height:260px; overflow-y:auto; }
+.gov-visibility-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+.gov-visibility-head span{ font-size:13px; font-weight:700; color:var(--gold-deep); }
+.gov-visibility-quick{ display:flex; gap:6px; }
+.gov-toggle-row{ display:flex; align-items:center; gap:9px; padding:6px 2px; border-bottom:1px dashed var(--border); }
+.gov-toggle-row:last-child{ border-bottom:none; }
+.gov-toggle-row input[type="checkbox"]{ width:17px; height:17px; accent-color:var(--gold); cursor:pointer; flex-shrink:0; }
+.gov-toggle-row label{ margin:0; text-transform:none; letter-spacing:0; font-weight:500; font-size:13.5px; color:var(--text); cursor:pointer; flex:1; }
+.gov-toggle-row.is-hidden label{ color:var(--muted); text-decoration:line-through; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lang-toggle" id="langToggle">
+    <button type="button" data-lang="en" class="active">EN</button>
+    <button type="button" data-lang="ar">AR</button>
+  </div>
+
+  <div class="title-wrap">
+    <div class="crest">
+<img src="logo.png" alt="logo">    </div>
+    <h1 data-i18n="title">Student Registration</h1>
+    <hr class="divider">
+  </div>
+  <p class="subtitle" data-i18n="subtitle">Fill out the form to register. A QR code will appear after submission — keep it, you'll need it to attend.</p>
+
+  <form id="regForm" novalidate>
+    <div class="field" id="fullNameField">
+      <label for="fullName" data-i18n="labelFullName">Full Name</label>
+      <input type="text" id="fullName" name="fullName" data-i18n-ph="phFullName" placeholder="Enter student's full name" required>
+      <div class="hint" data-i18n="hintName">Letters only, no numbers or symbols</div>
+      <div class="error-msg" data-i18n="errName">Full name must contain letters only</div>
+    </div>
+
+    <div class="field" id="studentPhoneField">
+      <label for="studentPhone"><span data-i18n="labelStudentPhone">Student Phone</span></label>
+      <input type="tel" id="studentPhone" name="studentPhone" inputmode="numeric" maxlength="11" data-i18n-ph="phPhone" placeholder="01xxxxxxxxx" required>
+      <div class="hint" data-i18n="hintPhone">11 digits, starting with 01 (e.g. 01012345678)</div>
+      <div class="error-msg" data-i18n="errPhone">Enter a valid 11-digit number starting with 01</div>
+    </div>
+
+    <div class="field" id="parentPhoneField">
+      <label for="parentPhone" data-i18n="labelParentPhone">Parent Phone</label>
+      <input type="tel" id="parentPhone" name="parentPhone" inputmode="numeric" maxlength="11" data-i18n-ph="phPhone" placeholder="01xxxxxxxxx" required>
+      <div class="hint" data-i18n="hintPhone">11 digits, starting with 01 (e.g. 01012345678)</div>
+      <div class="error-msg" data-i18n="errPhone">Enter a valid 11-digit number starting with 01</div>
+    </div>
+
+    <div class="field" id="governorateField">
+      <label for="governorate" data-i18n="labelGovernorate">Governorate</label>
+      <select id="governorate" name="governorate" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+      </select>
+    </div>
+
+    <div class="field" id="cityField">
+      <label for="city" data-i18n="labelCity">City</label>
+      <select id="city" name="city" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="stage" data-i18n="labelStage">Educational Stage</label>
+      <select id="stage" name="stage" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+        <option value="Preparatory" data-i18n="stagePreparatory">Preparatory</option>
+        <option value="Secondary" data-i18n="stageSecondary">Secondary</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="grade" data-i18n="labelGrade">Grade</label>
+      <select id="grade" name="grade" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="group" data-i18n="labelGroup">Group</label>
+      <select id="group" name="group" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+      </select>
+    </div>
+
+    <button type="submit" class="submit" id="submitBtn" data-i18n="btnSubmit">Submit</button>
+    <div class="status" id="status"></div>
+  </form>
+
+  <div id="successView">
+    <div class="icon-circle">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 13l4 4L19 7" stroke="#0D47A1" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2 data-i18n="successTitle">Registration Submitted!</h2>
+    <p data-i18n="successText">Thanks for registering. Here is your QR code.</p>
+
+    <div class="qr-wrap" id="qrWrap">
+      <img id="qrImage" src="" alt="QR Code">
+      <div class="qr-caption" data-i18n="qrCaption">Keep this QR code — you'll need it to attend</div>
+      <div class="qr-actions">
+        <a href="#" download="student-qr.png" class="qr-download" id="qrDownload" data-i18n="qrDownload">Download QR</a>
+        <button type="button" class="qr-print" id="qrPrint" data-i18n="qrPrint">Print</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="powered-by"><span data-i18n="poweredBy">Powered by</span> <span><a href="milex.html" target="_blank" rel="noopener noreferrer" style="color:inherit;">MilEX</a></span></div>
+</div>
+
+<div id="adminOverlay">
+  <div class="admin-card">
+
+    <div id="adminGate" class="admin-gate">
+      <h2>لوحة التحكم</h2>
+      <input type="password" id="adminPasswordInput" name="adminPassField_noauto" placeholder="ادخل الباسورد" autocomplete="new-password">
+      <div class="error-msg" id="adminGateError">باسورد غلط، حاول تاني</div>
+      <button type="button" class="submit" id="adminGateBtn" style="margin-top:14px;">دخول</button>
+      <div style="margin-top:16px;"><a href="#" class="admin-link" id="adminBackFromGate">رجوع للصفحة الرئيسية</a></div>
+    </div>
+
+    <div id="adminPanel" style="display:none;">
+      <div class="admin-top">
+        <h2>تعديل السنين الدراسية والمجاميع</h2>
+        <a href="#" class="admin-link" id="adminBackTop">رجوع للتسجيل</a>
+      </div>
+
+      <div id="stagesContainer"></div>
+
+      <button type="button" class="btn-add-inline" id="addStageBtn">+ إضافة مرحلة دراسية</button>
+
+      <div class="admin-section-title">المحافظات والمدن</div>
+
+      <div class="gov-visibility-box">
+        <div class="gov-visibility-head">
+          <span>المحافظات اللي هتظهر في نموذج التسجيل</span>
+          <div class="gov-visibility-quick">
+            <button type="button" class="btn-mini" id="govShowAllBtn">إظهار الكل</button>
+            <button type="button" class="btn-mini" id="govHideAllBtn">إخفاء الكل</button>
+          </div>
+        </div>
+        <div id="govVisibilityList"></div>
+      </div>
+
+      <div class="field" style="margin-bottom:14px;">
+        <select id="adminGovSelect" style="width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:9px; font-family:inherit; font-size:14.5px; font-weight:600; color:var(--gold-deep); background:rgba(255,255,255,0.75); cursor:pointer;"></select>
+      </div>
+
+      <div id="govsContainer"></div>
+
+      <button type="button" class="btn-add-inline" id="addGovBtn">+ إضافة محافظة جديدة</button>
+
+      <div class="admin-actions">
+        <button type="button" class="submit" id="saveDataBtn">حفظ التعديلات</button>
+        <button type="button" class="btn-secondary" id="resetDataBtn">استرجاع الإعدادات الافتراضية</button>
+      </div>
+      <div class="admin-status" id="adminStatus"></div>
+
+      <div class="pw-change">
+        <h3>تغيير الباسورد</h3>
+        <div class="pw-change-row">
+          <input type="password" id="newPasswordInput" placeholder="باسورد جديد" autocomplete="off">
+          <button type="button" class="btn-mini" id="changePasswordBtn">تحديث الباسورد</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   LANGUAGE (English / Arabic) — UI text only.
+   ============================================================ */
+const I18N = {
+  en: {
+    title: "Student Registration",
+    subtitle: "Fill out the form to register. A QR code will appear after submission — keep it, you'll need it to attend.",
+    labelFullName: "Full Name",
+    phFullName: "Enter student's full name",
+    hintName: "Letters only, no numbers or symbols",
+    errName: "Full name must contain letters only",
+    labelStudentPhone: "Student Phone",
+    phPhone: "01xxxxxxxxx",
+    hintPhone: "11 digits, starting with 01 (e.g. 01012345678)",
+    errPhone: "Enter a valid 11-digit number starting with 01",
+    labelParentPhone: "Parent Phone",
+    labelGovernorate: "Governorate",
+    labelCity: "City",
+    labelStage: "Educational Stage",
+    labelGrade: "Grade",
+    labelGroup: "Group",
+    groupA: "A",
+    groupB: "B",
+    groupC: "C",
+    groupATime: "5:00",
+    groupBTime: "7:00",
+    groupCTime: "9:00",
+    selectPlaceholder: "Select an option ...",
+    stagePreparatory: "Preparatory",
+    stageSecondary: "Secondary",
+    gradeFirst: "First Grade",
+    gradeSecond: "Second Grade",
+    gradeThird: "Third Grade",
+    gradeThirdPrep: "Third Grade",
+    gradeFirstPrep: "First Grade",
+    gradeSecondPrep: "Second Grade",
+    btnSubmit: "Submit",
+    submitting: "Submitting...",
+    successTitle: "Registration Submitted!",
+    successText: "Thanks for registering. Here is your QR code.",
+    qrCaption: "Keep this QR code — you'll need it to attend",
+    qrDownload: "Download QR",
+    qrPrint: "Print",
+    poweredBy: "Powered by",
+    chatAssistant: "Teacher's assistant",
+    chatPlaceholder: "Ask about your schedule...",
+    chatSend: "Send",
+    errGeneric: "Something went wrong while submitting. Please try again.",
+    errRegistrationFailed: "Registration failed.",
+    chatNoResponse: "No response",
+    chatServerError: "Server Error"
+  },
+  ar: {
+    title: "تسجيل الطلاب",
+    subtitle: "املأ النموذج للتسجيل. هيظهرلك كود QR بعد التسجيل، لازم تحتفظ بيه عشان تحضر.",
+    labelFullName: "الاسم بالكامل",
+    phFullName: "اكتب اسمك بالكامل",
+    hintName: "حروف فقط، من غير أرقام أو رموز",
+    errName: "الاسم لازم يكون حروف فقط",
+    labelStudentPhone: "رقم هاتف الطالب",
+    phPhone: "01xxxxxxxxx",
+    hintPhone: "11 رقم، تبدأ بـ 01 (مثال: 01012345678)",
+    errPhone: "اكتب رقم صحيح مكوّن من 11 رقم يبدأ بـ 01",
+    labelParentPhone: "رقم هاتف ولي الأمر",
+    labelGovernorate: "المحافظة",
+    labelCity: "المدينة",
+    labelStage: "المرحلة الدراسية",
+    labelGrade: "الصف",
+    labelGroup: "المجموعة",
+    groupA: "A",
+    groupB: "B",
+    groupC: "C",
+    groupATime: "5:00",
+    groupBTime: "7:00",
+    groupCTime: "9:00",
+    selectPlaceholder: "اختر ...",
+    stagePreparatory: "المرحلة الإعدادية",
+    stageSecondary: "المرحلة الثانوية",
+    gradeFirst: "الصف الأول الثانوي",
+    gradeSecond: "الصف الثاني الثانوي",
+    gradeThird: "الصف الثالث الثانوي",
+    gradeThirdPrep: "الصف الثالث الإعدادي",
+    gradeFirstPrep: "الصف الأول الإعدادي",
+    gradeSecondPrep: "الصف الثاني الإعدادي",
+    btnSubmit: "تسجيل",
+    submitting: "جاري الإرسال...",
+    successTitle: "تم التسجيل بنجاح!",
+    successText: "شكرًا لتسجيلك. ده كود الـ QR بتاعك.",
+    qrCaption: "احتفظ بكود الـ QR ده، هتحتاجه عشان تحضر",
+    qrDownload: "تحميل الـ QR",
+    qrPrint: "طباعة",
+    poweredBy: "بدعم من",
+    chatAssistant: "مساعد المدرس",
+    chatPlaceholder: "اسأل عن جدولك...",
+    chatSend: "إرسال",
+    errGeneric: "حصل خطأ أثناء الإرسال. حاول تاني.",
+    errRegistrationFailed: "فشل التسجيل.",
+    chatNoResponse: "لا يوجد رد",
+    chatServerError: "خطأ في السيرفر"
+  }
+};
+
+let currentLang = localStorage.getItem("regLang") || "en";
+
+function t(key){
+  return (I18N[currentLang] && I18N[currentLang][key] != null) ? I18N[currentLang][key] : (I18N.en[key] || key);
+}
+
+/* ============================================================
+   DATA MODEL — stages -> grades -> groups
+   Editable from the /#admin panel; persisted in localStorage.
+   Falls back to these defaults the first time the page loads.
+   ============================================================ */
+const DEFAULT_REG_DATA = {
+  stages: [
+    {
+      key: "Preparatory", labelEn: "Preparatory", labelAr: "المرحلة الإعدادية",
+      grades: [
+        { value: "First Prep", labelEn: "First Grade", labelAr: "الصف الأول الإعدادي",
+          groups: [ { value: "prep1-sattue-3", dayEn: "Sat & Tue", dayAr: "سبت وتلات", time: "3:00" } ] },
+        { value: "Second Prep", labelEn: "Second Grade", labelAr: "الصف الثاني الإعدادي",
+          groups: [ { value: "prep2-sattue-4", dayEn: "Sat & Tue", dayAr: "سبت وتلات", time: "4:00" } ] },
+        { value: "Third Prep", labelEn: "Third Grade", labelAr: "الصف الثالث الإعدادي",
+          groups: [ { value: "prep3-sattue-2", dayEn: "Sat & Tue", dayAr: "سبت وتلات", time: "2:00" } ] }
+      ]
+    },
+    {
+      key: "Secondary", labelEn: "Secondary", labelAr: "المرحلة الثانوية",
+      grades: [
+        { value: "First Grade", labelEn: "First Grade", labelAr: "الصف الأول الثانوي",
+          groups: [ { value: "sec1-sunwed-2", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "2:00" } ] },
+        { value: "Second Grade", labelEn: "Second Grade", labelAr: "الصف الثاني الثانوي",
+          groups: [
+            { value: "sec2-sunwed-3", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "3:00" },
+            { value: "sec2-sunwed-6", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "6:00" }
+          ] },
+        { value: "Third Grade", labelEn: "Third Grade", labelAr: "الصف الثالث الثانوي",
+          groups: [
+            { value: "sec3-sunwed-12", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "12:00" },
+            { value: "sec3-sunwed-5", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "5:00" }
+          ] }
+      ]
+    }
+  ],
+  governorates: [
+    { key: "cairo", label: "القاهرة", cities: ["مدينة نصر","المعادي","حلوان","مصر الجديدة","الزيتون","شبرا","عين شمس","المرج","البساتين","دار السلام","السيدة زينب","الدرب الأحمر","وسط البلد","الزمالك","المقطم","القاهرة الجديدة","بدر","الشروق","العاصمة الإدارية الجديدة"].map(l=>({value:l,label:l})) },
+    { key: "giza", label: "الجيزة", cities: ["الجيزة","الدقي","العجوزة","إمبابة","بولاق الدكرور","الهرم","فيصل","أوسيم","كرداسة","أبو النمرس","الصف","أطفيح","البدرشين","منشأة القناطر","6 أكتوبر","الشيخ زايد","نزلة السمان","أبو رواش","منشأة دهشور","ساقية مكي","كفر طهرمس","الحوامدية","الطرانة","أبو غالب","إسطبل عنتر","البرجاية"].map(l=>({value:l,label:l})) },
+    { key: "alexandria", label: "الإسكندرية", cities: ["المنتزه","شرق","وسط","غرب","الجمرك","العامرية","برج العرب","العجمي","سيدي جابر","سموحة","ميامي","محرم بك","كرموز"].map(l=>({value:l,label:l})) },
+    { key: "dakahlia", label: "الدقهلية", cities: ["المنصورة","طلخا","ميت غمر","دكرنس","أجا","منية النصر","السنبلاوين","شربين","المنزلة","تمي الأمديد","الجمالية","بلقاس","نبروه","بني عبيد","المطرية","جمصة","دميرة","أبو الغيط","ميت الخولي","محلة دياي","شبراباص","ميت بدر حلاوة","كفر البيطاش","ميت الشرقي","جزيرة بني نصر","منية سمنود"].map(l=>({value:l,label:l})) },
+    { key: "sharqia", label: "الشرقية", cities: ["الزقازيق","بلبيس","منيا القمح","أبو حماد","أبو كبير","فاقوس","الحسينية","الإبراهيمية","ديرب نجم","كفر صقر","مشتول السوق","الصالحية الجديدة","ههيا","أولاد صقر","القرين","العاشر من رمضان","تل بسطة","كفر شبين","عرب غنيم","الصوالحة","ميت يعيش","كفر عبده","أولاد رزق","منشأة أبو عمر","كفر الحصر","أبو حجر"].map(l=>({value:l,label:l})) },
+    { key: "qalyubia", label: "القليوبية", cities: ["بنها","قليوب","شبرا الخيمة","القناطر الخيرية","طوخ","كفر شكر","الخانكة","شبين القناطر","العبور","الخصوص","مسطرد","سرياقوس","أبو زعبل","كفر العرب","أم دينار","بهتيم","شبرا النملة","كفر الجزار","ميت نما"].map(l=>({value:l,label:l})) },
+    { key: "gharbia", label: "الغربية", cities: ["طنطا","المحلة الكبرى","كفر الزيات","زفتى","سمنود","قطور","بسيون","السنطة","ميت حبيش","محلة مرحوم","سرسنا","منشأة سلطان","بشلا","كفر الشيخ إبراهيم","ميت النمر","ديروط الشريف","شبرا ملس","محلة أبو علي"].map(l=>({value:l,label:l})) },
+    { key: "monufia", label: "المنوفية", cities: ["شبين الكوم","منوف","سرس الليان","أشمون","الباجور","قويسنا","بركة السبع","تلا","الشهداء","السادات","شبرا بخوم","ميت حلفا","برهيم","كفر داود","منية عبيد","تتا","بجلة","ميت خلف","السبع آبار","شنشور"].map(l=>({value:l,label:l})) },
+    { key: "beheira", label: "البحيرة", cities: ["دمنهور","كفر الدوار","رشيد","إدكو","أبو حمص","أبو المطامير","إيتاي البارود","الدلنجات","المحمودية","الرحمانية","شبراخيت","كوم حمادة","بدر البحيرة","النوبارية","وادي النطرون","حوش عيسى","كفر جرجس","نقرها","الشونة","كوم الفرج","أبو خليل","الطواحن","صنهور","بولين","دهشتيت","كوم أشقر"].map(l=>({value:l,label:l})) },
+    { key: "kafr-elsheikh", label: "كفر الشيخ", cities: ["كفر الشيخ","دسوق","فوه","مطوبس","بلطيم","الحامول","بيلا","الرياض","سيدي سالم","قلين","البرلس","سيدي غازي","أبو الأسود","الغزيلة","الحدادي","تيدا","كفر الأشراف","منشأة كتخدا","بسنديلة","بلقطر"].map(l=>({value:l,label:l})) },
+    { key: "damietta", label: "دمياط", cities: ["دمياط","رأس البر","فارسكور","الزرقا","كفر سعد","كفر البطيخ","ميت أبو غالب","السرو","الروضة","عزبة البرج","شطا","جزيرة الوسطاني","الروضة الجديدة","كفر الرجال","الرمل","النخل الرمل","محلة روح"].map(l=>({value:l,label:l})) },
+    { key: "portsaid", label: "بورسعيد", cities: ["بورفؤاد","الشرق","الضواحي","المناخ","الزهور","الجنوب","حي العرب"].map(l=>({value:l,label:l})) },
+    { key: "ismailia", label: "الإسماعيلية", cities: ["الإسماعيلية","فايد","القنطرة شرق","القنطرة غرب","التل الكبير","أبو صوير","القصاصين","نفيشة","القصاصين الشرق","كوبري القديم","المحسمة","الفردان","الديفرسوار","تل المسخوطة","ساقية عبد الله"].map(l=>({value:l,label:l})) },
+    { key: "suez", label: "السويس", cities: ["السويس","عتاقة","الأربعين","الجناين","فيصل"].map(l=>({value:l,label:l})) },
+    { key: "north-sinai", label: "شمال سيناء", cities: ["العريش","الشيخ زويد","رفح","بئر العبد","الحسنة","نخل","الفلوسية","المهدية","الجورة","مسعيد","وادي العريش","أبو صياد","بئر لحفن","الريسة"].map(l=>({value:l,label:l})) },
+    { key: "south-sinai", label: "جنوب سيناء", cities: ["الطور","شرم الشيخ","دهب","نويبع","طابا","سانت كاترين","أبو رديس","رأس سدر","عيون موسى","أبو زنيمة","وادي فيران","نبق","وادي الشيخ","رأس محمد","الطرفة","وادي الغزالة","مويلح"].map(l=>({value:l,label:l})) },
+    { key: "fayoum", label: "الفيوم", cities: ["الفيوم","سنورس","إطسا","إبشواي","طامية","يوسف الصديق","قصر قارون","تونس","كوم أوشيم","سنهور","الديمة","الشوبك","عزبة الديمة","منشأة الكرام","جزيرة الذهب"].map(l=>({value:l,label:l})) },
+    { key: "beni-suef", label: "بني سويف", cities: ["بني سويف","الواسطى","ناصر","إهناسيا","ببا","سمسطا","الفشن","بياض العرب","الفنت","منقطين","النزلة","دميان","البهنسا","سدمنت الجبل","قلا الصمعان","الزرابي","بشواي"].map(l=>({value:l,label:l})) },
+    { key: "minya", label: "المنيا", cities: ["المنيا","ملوي","سمالوط","مغاغة","بني مزار","مطاي","أبو قرقاص","ديرمواس","العدوة","تونا الجبل","بني حسن","صنبو","نزلة الشيخ زيد","الشيخ عبادة","دير أبو حنس","كوم النجوم","بني خالد","عزبة الجزيرة"].map(l=>({value:l,label:l})) },
+    { key: "assiut", label: "أسيوط", cities: ["أسيوط","ديروط","منفلوط","القوصية","أبنوب","أبوتيج","صدفا","البدارى","ساحل سليم","الفتح","بني عدي","الحمراء","شطب","درنكة","الصوامعة","الوليدية","منقباد","البياضة","عرب المطاعنة"].map(l=>({value:l,label:l})) },
+    { key: "sohag", label: "سوهاج", cities: ["سوهاج","أخميم","جرجا","طهطا","طما","المراغة","البلينا","دار السلام","ساقلته","جهينة","المنشاة","العوامية","كوم الأحمر","الكولة","سمهود","شندويل","أولاد يحيى","الشيخ متولي","هو"].map(l=>({value:l,label:l})) },
+    { key: "qena", label: "قنا", cities: ["قنا","نجع حمادي","دشنا","أبوتشت","فرشوط","قوص","نقادة","الوقف","القلعة","أبو المنجا","أبو شوشة","فاو قبلي","دندرة","قفط","الدير","بهجورة","الطويرات"].map(l=>({value:l,label:l})) },
+    { key: "luxor", label: "الأقصر", cities: ["الأقصر","الزينية","البياضية","القرنة","الطود","أرمنت","إسنا","مدينة هابو","الكرنك","دير المدينة","الرزيقات","الرمادي","النجوع","القرنة الجديدة","مسعرة","جزيرة الموز"].map(l=>({value:l,label:l})) },
+    { key: "aswan", label: "أسوان", cities: ["أسوان","إدفو","كوم أمبو","دراو","نصر النوبة","البصيلية","السباعية","الرديسية","أبو سمبل","نجع الحصايه","غرب سهيل","جزيرة سهيل","النوبة الجديدة","الدكة","كلابشة","وادي السبوع","التوفيكية"].map(l=>({value:l,label:l})) },
+    { key: "new-valley", label: "الوادي الجديد", cities: ["الخارجة","الداخلة","الفرافرة","باريس","بلاط","القصر","بشندي","الماصرة","تنيدة","الشيخ واريد","عين أمور","الرشدة","موط","غرب المعصرة"].map(l=>({value:l,label:l})) },
+    { key: "matrouh", label: "مطروح", cities: ["مرسى مطروح","الحمام","العلمين","الضبعة","سيدي براني","السلوم","سيوة","النجيلة","الجارة","أغرمي","الظهر","مارينا","الساحل الشمالي","الزوايد","أبو منقار"].map(l=>({value:l,label:l})) },
+    { key: "red-sea", label: "البحر الأحمر", cities: ["الغردقة","سفاجا","القصير","مرسى علم","الشلاتين","حلايب","رأس غارب","الجونة","سهل حشيش","مرسى شاكر","وادي الجمال","رأس بناس","الكريمات","أم الحويطات","دهار"].map(l=>({value:l,label:l})) }
+  ]
+};
+
+const REG_DATA_KEY = "regFormData";
+const ADMIN_PASSWORD_KEY = "regAdminPassword";
+const DEFAULT_ADMIN_PASSWORD = "2026";
+
+function loadRegData(){
+  try{
+    const raw = localStorage.getItem(REG_DATA_KEY);
+    if (raw){
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.stages)){
+        if (!Array.isArray(parsed.governorates)){
+          parsed.governorates = [];
+        }
+        // Repair pass: make sure every default governorate (Cairo included)
+        // is present, even if a previous save left the list empty or
+        // missing an entry. Any governorate the admin added themselves is
+        // left untouched — this only ADDS back missing defaults, it never
+        // removes or overwrites existing entries.
+        const existingKeys = new Set(parsed.governorates.map(g => g.key));
+        let repaired = false;
+        DEFAULT_REG_DATA.governorates.forEach(defGov => {
+          if (!existingKeys.has(defGov.key)){
+            parsed.governorates.push(JSON.parse(JSON.stringify(defGov)));
+            repaired = true;
+          }
+        });
+        if (repaired){
+          localStorage.setItem(REG_DATA_KEY, JSON.stringify(parsed));
+        }
+        return parsed;
+      }
+    }
+  } catch(e){ /* fall through to defaults */ }
+  const fresh = JSON.parse(JSON.stringify(DEFAULT_REG_DATA));
+  localStorage.setItem(REG_DATA_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+
+function saveRegData(data){
+  localStorage.setItem(REG_DATA_KEY, JSON.stringify(data));
+}
+
+function getAdminPassword(){
+  return localStorage.getItem(ADMIN_PASSWORD_KEY) || DEFAULT_ADMIN_PASSWORD;
+}
+
+function makeSlug(prefix){
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/* Normalize a time string typed by the admin: a bare number like "6"
+   becomes "6:00", "6:5" becomes "6:05", already-valid values pass through. */
+function normalizeTimeValue(raw){
+  let v = String(raw == null ? '' : raw).trim();
+  if (!v) return v;
+  if (!v.includes(':')){
+    return `${v}:00`;
+  }
+  const parts = v.split(':');
+  const hh = parts[0].trim();
+  let mm = (parts[1] || '').trim();
+  if (mm.length === 0) mm = '00';
+  if (mm.length === 1) mm = '0' + mm;
+  return `${hh}:${mm}`;
+}
+
+let regData = loadRegData();
+
+function findStage(stageKey){
+  return regData.stages.find(s => s.key === stageKey);
+}
+function findGrade(stageKey, gradeValue){
+  const stage = findStage(stageKey);
+  return stage ? stage.grades.find(g => g.value === gradeValue) : null;
+}
+
+function getGroupLabel(groupValue){
+  for (const stage of regData.stages){
+    for (const grade of stage.grades){
+      const opt = grade.groups.find(o => o.value === groupValue);
+      if (opt){
+        const shortTime = opt.time.replace(':00', '');
+        return `${opt.dayAr} ${shortTime}`;
+      }
+    }
+  }
+  return groupValue;
+}
+
+function findGovernorate(govKey){
+  return regData.governorates.find(g => g.key === govKey);
+}
+function getGovernorateLabel(govKey){
+  const gov = findGovernorate(govKey);
+  return gov ? gov.label : govKey;
+}
+function getCityLabel(govKey, cityValue){
+  const gov = findGovernorate(govKey);
+  if (!gov) return cityValue;
+  const city = gov.cities.find(c => c.value === cityValue);
+  return city ? city.label : cityValue;
+}
+
+const stageSelect = document.getElementById('stage');
+const gradeSelect = document.getElementById('grade');
+const groupSelect = document.getElementById('group');
+const govSelect = document.getElementById('governorate');
+const citySelect = document.getElementById('city');
+
+function populateGovernorateOptions(preserveSelection){
+  const previousGov = preserveSelection ? govSelect.value : "";
+  govSelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  govSelect.appendChild(placeholder);
+
+  // Only governorates the admin has left visible (active !== false) show up
+  // on the public registration form.
+  regData.governorates.filter(gov => gov.active !== false).forEach(gov => {
+    const el = document.createElement('option');
+    el.value = gov.key;
+    el.textContent = gov.label;
+    if (preserveSelection && gov.key === previousGov){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    govSelect.appendChild(el);
+  });
+}
+
+function populateCityOptions(preserveSelection){
+  const govKey = govSelect.value;
+  const previousCity = preserveSelection ? citySelect.value : "";
+  const gov = findGovernorate(govKey);
+  const options = gov ? gov.cities : [];
+
+  citySelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  citySelect.appendChild(placeholder);
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    el.textContent = opt.label;
+    if (preserveSelection && opt.value === previousCity){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    citySelect.appendChild(el);
+  });
+
+  citySelect.disabled = options.length === 0;
+}
+
+govSelect.addEventListener('change', () => populateCityOptions(false));
+
+function populateStageOptions(preserveSelection){
+  const previousStage = preserveSelection ? stageSelect.value : "";
+  stageSelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  stageSelect.appendChild(placeholder);
+
+  regData.stages.forEach(stage => {
+    const el = document.createElement('option');
+    el.value = stage.key;
+    el.textContent = currentLang === 'ar' ? stage.labelAr : stage.labelEn;
+    if (preserveSelection && stage.key === previousStage){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    stageSelect.appendChild(el);
+  });
+}
+
+function populateGradeOptions(preserveSelection){
+  const stageValue = stageSelect.value;
+  const previousGrade = preserveSelection ? gradeSelect.value : "";
+  const stage = findStage(stageValue);
+  const options = stage ? stage.grades : [];
+
+  gradeSelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  gradeSelect.appendChild(placeholder);
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    el.textContent = currentLang === 'ar' ? opt.labelAr : opt.labelEn;
+    if (preserveSelection && opt.value === previousGrade){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    gradeSelect.appendChild(el);
+  });
+
+  gradeSelect.disabled = options.length === 0;
+}
+
+function populateGroupOptions(preserveSelection){
+  const stageValue = stageSelect.value;
+  const gradeValue = gradeSelect.value;
+  const previousGroup = preserveSelection ? groupSelect.value : "";
+  const grade = findGrade(stageValue, gradeValue);
+  const options = grade ? grade.groups : [];
+
+  groupSelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  groupSelect.appendChild(placeholder);
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    const dayText = currentLang === 'ar' ? opt.dayAr : opt.dayEn;
+    el.textContent = `${dayText} — ${opt.time}`;
+    if (preserveSelection && opt.value === previousGroup){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    groupSelect.appendChild(el);
+  });
+
+  groupSelect.disabled = options.length === 0;
+}
+
+stageSelect.addEventListener('change', () => {
+  populateGradeOptions(false);
+  populateGroupOptions(false);
+});
+gradeSelect.addEventListener('change', () => populateGroupOptions(false));
+
+function applyTranslations(){
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    if (el.tagName === 'OPTION' && (el.closest('#grade') || el.closest('#group'))) return; // handled by populate functions
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+    el.placeholder = t(el.dataset.i18nPh);
+  });
+  populateStageOptions(true);
+  populateGradeOptions(true);
+  populateGroupOptions(true);
+  populateGovernorateOptions(true);
+  populateCityOptions(true);
+}
+
+function setLanguage(lang){
+  currentLang = (lang === "ar") ? "ar" : "en";
+  localStorage.setItem("regLang", currentLang);
+  document.documentElement.lang = currentLang;
+  document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+  document.querySelectorAll("#langToggle button").forEach(b => {
+    b.classList.toggle("active", b.dataset.lang === currentLang);
+  });
+  applyTranslations();
+}
+
+document.querySelectorAll("#langToggle button").forEach(btn => {
+  btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
+});
+
+setLanguage(currentLang);
+populateStageOptions(false);
+populateGradeOptions(false);
+populateGroupOptions(false);
+populateGovernorateOptions(false);
+populateCityOptions(false);
+
+/* ============================================================
+   FORM VALIDATION + SUBMISSION (n8n integration)
+   ============================================================ */
+const WEBHOOK_URL = "https://students.milestones-tech.com/webhook/Student_Registration_للعرض";
+
+const phoneRegex = /^01[0-9]{9}$/; // 11 digits total, starts with 01
+
+const form = document.getElementById('regForm');
+const submitBtn = document.getElementById('submitBtn');
+const statusEl = document.getElementById('status');
+const successView = document.getElementById('successView');
+const titleWrap = document.querySelector('.title-wrap');
+const subtitle = document.querySelector('.subtitle');
+const qrWrap = document.getElementById('qrWrap');
+const qrImage = document.getElementById('qrImage');
+const qrDownload = document.getElementById('qrDownload');
+const qrPrint = document.getElementById('qrPrint');
+
+qrPrint.addEventListener('click', () => window.print());
+
+function setupPhoneField(inputId, fieldId){
+  const input = document.getElementById(inputId);
+  const field = document.getElementById(fieldId);
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^0-9]/g, '').slice(0, 11);
+  });
+  function validate(){
+    const valid = phoneRegex.test(input.value);
+    field.classList.toggle('has-error', !valid);
+    input.classList.toggle('invalid', !valid);
+    return valid;
+  }
+  input.addEventListener('blur', validate);
+  return validate;
+}
+
+const validateStudentPhone = setupPhoneField('studentPhone', 'studentPhoneField');
+const validateParentPhone = setupPhoneField('parentPhone', 'parentPhoneField');
+
+const nameRegex = /^[A-Za-z\u0600-\u06FF\s]+$/; // English or Arabic letters and spaces only
+const nameInput = document.getElementById('fullName');
+const nameField = document.getElementById('fullNameField');
+
+nameInput.addEventListener('input', () => {
+  nameInput.value = nameInput.value.replace(/[^A-Za-z\u0600-\u06FF\s]/g, '');
+});
+
+function validateFullName(){
+  const valid = nameRegex.test(nameInput.value.trim()) && nameInput.value.trim().length > 0;
+  nameField.classList.toggle('has-error', !valid);
+  nameInput.classList.toggle('invalid', !valid);
+  return valid;
+}
+nameInput.addEventListener('blur', validateFullName);
+
+async function extractErrorMessage(res){
+  let rawText = '';
+  try{
+    rawText = await res.text();
+  } catch(e){
+    return t('errGeneric');
+  }
+
+  if (rawText){
+    try{
+      const data = JSON.parse(rawText);
+      const msg = data.message || data.error || data.msg || data.detail;
+      if (msg) return msg;
+    } catch(e){
+      return rawText.trim().slice(0, 200);
+    }
+  }
+
+  return res.statusText
+    ? `Submission failed: ${res.statusText}`
+    : t('errGeneric');
+}
+
+function resolveQrSrc(qrValue){
+  if (!qrValue || typeof qrValue !== 'string') return null;
+  const val = qrValue.trim();
+  if (!val) return null;
+  if (val.startsWith('data:image')) return val;
+  if (val.startsWith('http://') || val.startsWith('https://')) return val;
+  return `data:image/png;base64,${val}`;
+}
+
+function showQr(qrValue){
+  const src = resolveQrSrc(qrValue);
+  if (!src){
+    qrWrap.style.display = 'none';
+    return;
+  }
+  qrImage.src = src;
+  qrDownload.href = src;
+  qrWrap.style.display = 'block';
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusEl.className = 'status';
+  statusEl.textContent = '';
+
+  const nameOk = validateFullName();
+  const studentOk = validateStudentPhone();
+  const parentOk = validateParentPhone();
+
+  if (!form.checkValidity() || !nameOk || !studentOk || !parentOk){
+    form.reportValidity();
+    return;
+  }
+
+  const payload = {
+    fullName: document.getElementById('fullName').value.trim(),
+    studentPhone: document.getElementById('studentPhone').value.trim(),
+    parentPhone: document.getElementById('parentPhone').value.trim(),
+    governorate: getGovernorateLabel(govSelect.value),
+    city: getCityLabel(govSelect.value, citySelect.value),
+    educationalStage: document.getElementById('stage').value,
+    grade: document.getElementById('grade').value,
+    group: getGroupLabel(document.getElementById('group').value)
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = t('submitting');
+
+  try{
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok){
+      statusEl.textContent = await extractErrorMessage(res);
+      statusEl.className = 'status failure';
+      submitBtn.disabled = false;
+      submitBtn.textContent = t('btnSubmit');
+      return;
+    }
+
+    let data;
+    try{
+      data = await res.json();
+    } catch(parseErr){
+      statusEl.textContent = t('errGeneric');
+      statusEl.className = 'status failure';
+      submitBtn.disabled = false;
+      submitBtn.textContent = t('btnSubmit');
+      return;
+    }
+
+    if (data.success === true){
+      showQr(data.qr);
+      form.style.display = 'none';
+      titleWrap.style.display = 'none';
+      subtitle.style.display = 'none';
+      successView.style.display = 'block';
+    } else {
+      statusEl.textContent = data.message || t('errRegistrationFailed');
+      statusEl.className = 'status failure';
+      submitBtn.disabled = false;
+      submitBtn.textContent = t('btnSubmit');
+    }
+  } catch(err){
+    statusEl.textContent = t('errGeneric');
+    statusEl.className = 'status failure';
+    submitBtn.disabled = false;
+    submitBtn.textContent = t('btnSubmit');
+  }
+});
+
+/* ============================================================
+   ADMIN PANEL — edit stages / grades / groups, behind #admin
+   ============================================================ */
+const cardEl = document.querySelector('.card');
+const adminOverlay = document.getElementById('adminOverlay');
+const adminGate = document.getElementById('adminGate');
+const adminPanel = document.getElementById('adminPanel');
+const adminPasswordInput = document.getElementById('adminPasswordInput');
+const adminGateError = document.getElementById('adminGateError');
+const stagesContainer = document.getElementById('stagesContainer');
+const govsContainer = document.getElementById('govsContainer');
+const adminGovSelect = document.getElementById('adminGovSelect');
+const govVisibilityList = document.getElementById('govVisibilityList');
+const adminStatus = document.getElementById('adminStatus');
+
+let adminDraft = null; // working copy edited in the panel, only persisted on Save
+let adminUnlocked = false;
+let selectedGovKey = null; // which governorate's cities are shown in the editor below the dropdown
+
+function showAdminStatus(msg, isError){
+  adminStatus.textContent = msg;
+  adminStatus.className = 'admin-status ' + (isError ? 'show-error' : 'show-success');
+  setTimeout(() => { adminStatus.className = 'admin-status'; }, 3000);
+}
+
+/* Checklist of every governorate with a checkbox that controls whether it
+   shows up on the public registration form (gov.active). A governorate
+   with no `active` field yet (older saved data) is treated as visible. */
+function renderGovVisibilityList(){
+  govVisibilityList.innerHTML = '';
+
+  adminDraft.governorates.forEach(gov => {
+    const isVisible = gov.active !== false;
+    const row = document.createElement('div');
+    row.className = 'gov-toggle-row' + (isVisible ? '' : ' is-hidden');
+
+    const checkboxId = 'govvis-' + gov.key;
+    row.innerHTML = `
+      <input type="checkbox" id="${checkboxId}" ${isVisible ? 'checked' : ''}>
+      <label for="${checkboxId}">${escapeAttr(gov.label || '(بدون اسم)')}</label>
+    `;
+    row.querySelector('input').addEventListener('change', e => {
+      gov.active = e.target.checked;
+      row.classList.toggle('is-hidden', !e.target.checked);
+    });
+
+    govVisibilityList.appendChild(row);
+  });
+}
+
+document.getElementById('govShowAllBtn').addEventListener('click', () => {
+  adminDraft.governorates.forEach(gov => { gov.active = true; });
+  renderGovVisibilityList();
+});
+document.getElementById('govHideAllBtn').addEventListener('click', () => {
+  adminDraft.governorates.forEach(gov => { gov.active = false; });
+  renderGovVisibilityList();
+});
+
+function renderAdminPanel(){
+  stagesContainer.innerHTML = '';
+
+  adminDraft.stages.forEach((stage, stageIdx) => {
+    const stageBlock = document.createElement('div');
+    stageBlock.className = 'stage-block';
+
+    const head = document.createElement('div');
+    head.className = 'stage-block-head';
+    head.innerHTML = `
+      <input type="text" class="stage-ar" value="${escapeAttr(stage.labelAr)}" placeholder="اسم المرحلة الدراسية">
+      <button type="button" class="btn-x" title="حذف المرحلة">✕</button>
+    `;
+    head.querySelector('.stage-ar').addEventListener('input', e => { stage.labelAr = e.target.value; stage.labelEn = e.target.value; });
+    head.querySelector('.btn-x').addEventListener('click', () => {
+      if (confirm('تحذف المرحلة دي وكل السنين والمجاميع اللي جواها؟')){
+        adminDraft.stages.splice(stageIdx, 1);
+        renderAdminPanel();
+      }
+    });
+    stageBlock.appendChild(head);
+
+    stage.grades.forEach((grade, gradeIdx) => {
+      const gradeBlock = document.createElement('div');
+      gradeBlock.className = 'grade-block';
+
+      const gHead = document.createElement('div');
+      gHead.className = 'grade-block-head';
+      gHead.innerHTML = `
+        <input type="text" class="grade-ar" value="${escapeAttr(grade.labelAr)}" placeholder="اسم السنة الدراسية">
+        <button type="button" class="btn-x" title="حذف السنة الدراسية">✕</button>
+      `;
+      gHead.querySelector('.grade-ar').addEventListener('input', e => { grade.labelAr = e.target.value; grade.labelEn = e.target.value; });
+      gHead.querySelector('.btn-x').addEventListener('click', () => {
+        if (confirm('تحذف السنة الدراسية دي وكل المجاميع اللي جواها؟')){
+          stage.grades.splice(gradeIdx, 1);
+          renderAdminPanel();
+        }
+      });
+      gradeBlock.appendChild(gHead);
+
+      grade.groups.forEach((group, groupIdx) => {
+        const row = document.createElement('div');
+        row.className = 'group-row';
+        row.innerHTML = `
+          <span class="field-tag">اليوم</span><input type="text" class="g-dayar" value="${escapeAttr(group.dayAr)}" placeholder="سبت وتلات">
+          <span class="field-tag">الوقت</span><input type="text" class="g-time" value="${escapeAttr(group.time)}" placeholder="5:00">
+          <button type="button" class="btn-x" title="حذف المجموعة">✕</button>
+        `;
+        row.querySelector('.g-dayar').addEventListener('input', e => { group.dayAr = e.target.value; group.dayEn = e.target.value; });
+        const timeInput = row.querySelector('.g-time');
+        timeInput.addEventListener('input', e => { group.time = e.target.value; });
+        timeInput.addEventListener('blur', e => {
+          const normalized = normalizeTimeValue(e.target.value);
+          e.target.value = normalized;
+          group.time = normalized;
+        });
+        row.querySelector('.btn-x').addEventListener('click', () => {
+          grade.groups.splice(groupIdx, 1);
+          renderAdminPanel();
+        });
+        gradeBlock.appendChild(row);
+      });
+
+      const addGroupBtn = document.createElement('button');
+      addGroupBtn.type = 'button';
+      addGroupBtn.className = 'btn-add-inline';
+      addGroupBtn.textContent = '+ إضافة مجموعة';
+      addGroupBtn.addEventListener('click', () => {
+        grade.groups.push({ value: makeSlug('grp'), dayEn: '', dayAr: '', time: '' });
+        renderAdminPanel();
+      });
+      gradeBlock.appendChild(addGroupBtn);
+
+      stageBlock.appendChild(gradeBlock);
+    });
+
+    const addGradeBtn = document.createElement('button');
+    addGradeBtn.type = 'button';
+    addGradeBtn.className = 'btn-add-inline';
+    addGradeBtn.textContent = '+ إضافة سنة دراسية';
+    addGradeBtn.addEventListener('click', () => {
+      stage.grades.push({ value: makeSlug('grd'), labelEn: '', labelAr: '', groups: [] });
+      renderAdminPanel();
+    });
+    stageBlock.appendChild(addGradeBtn);
+
+    stagesContainer.appendChild(stageBlock);
+  });
+
+  renderGovVisibilityList();
+  renderGovSection();
+}
+
+/* Governorate picker: choose a governorate from the dropdown, then edit
+   only its cities below — avoids dumping all 27 governorates on screen. */
+function renderGovSection(){
+  adminGovSelect.innerHTML = '';
+
+  if (adminDraft.governorates.length === 0){
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'لا توجد محافظات مضافة';
+    adminGovSelect.appendChild(opt);
+    govsContainer.innerHTML = '';
+    return;
+  }
+
+  if (!selectedGovKey || !adminDraft.governorates.some(g => g.key === selectedGovKey)){
+    selectedGovKey = adminDraft.governorates[0].key;
+  }
+
+  adminDraft.governorates.forEach(gov => {
+    const opt = document.createElement('option');
+    opt.value = gov.key;
+    opt.textContent = gov.label || '(بدون اسم)';
+    if (gov.key === selectedGovKey) opt.selected = true;
+    adminGovSelect.appendChild(opt);
+  });
+
+  govsContainer.innerHTML = '';
+
+  const govIdx = adminDraft.governorates.findIndex(g => g.key === selectedGovKey);
+  const gov = adminDraft.governorates[govIdx];
+  if (!gov) return;
+
+  const govBlock = document.createElement('div');
+  govBlock.className = 'stage-block';
+
+  const gHead = document.createElement('div');
+  gHead.className = 'stage-block-head';
+  gHead.innerHTML = `
+    <input type="text" class="gov-label" value="${escapeAttr(gov.label)}" placeholder="اسم المحافظة">
+    <button type="button" class="btn-x" title="حذف المحافظة">✕</button>
+  `;
+  gHead.querySelector('.gov-label').addEventListener('input', e => {
+    gov.label = e.target.value;
+    const opt = Array.from(adminGovSelect.options).find(o => o.value === gov.key);
+    if (opt) opt.textContent = gov.label || '(بدون اسم)';
+    renderGovVisibilityList();
+  });
+  gHead.querySelector('.btn-x').addEventListener('click', () => {
+    if (confirm('تحذف المحافظة دي وكل المدن اللي جواها؟')){
+      adminDraft.governorates.splice(govIdx, 1);
+      selectedGovKey = null;
+      renderGovVisibilityList();
+      renderGovSection();
+    }
+  });
+  govBlock.appendChild(gHead);
+
+  gov.cities.forEach((city, cityIdx) => {
+    const row = document.createElement('div');
+    row.className = 'city-row';
+    row.innerHTML = `
+      <input type="text" class="city-label" value="${escapeAttr(city.label)}" placeholder="اسم المدينة أو المركز أو القرية">
+      <button type="button" class="btn-x" title="حذف المدينة">✕</button>
+    `;
+    row.querySelector('.city-label').addEventListener('input', e => { city.label = e.target.value; });
+    row.querySelector('.btn-x').addEventListener('click', () => {
+      gov.cities.splice(cityIdx, 1);
+      renderGovSection();
+    });
+    govBlock.appendChild(row);
+  });
+
+  const addCityBtn = document.createElement('button');
+  addCityBtn.type = 'button';
+  addCityBtn.className = 'btn-add-inline';
+  addCityBtn.textContent = '+ إضافة مدينة أو قرية';
+  addCityBtn.addEventListener('click', () => {
+    gov.cities.push({ value: makeSlug('city'), label: 'مدينة جديدة' });
+    renderGovSection();
+  });
+  govBlock.appendChild(addCityBtn);
+
+  govsContainer.appendChild(govBlock);
+}
+
+adminGovSelect.addEventListener('change', () => {
+  selectedGovKey = adminGovSelect.value;
+  renderGovSection();
+});
+
+function escapeAttr(str){
+  return String(str == null ? '' : str).replace(/"/g, '&quot;');
+}
+
+function openAdminPanel(){
+  adminDraft = JSON.parse(JSON.stringify(regData));
+  renderAdminPanel();
+  adminGate.style.display = 'none';
+  adminPanel.style.display = 'block';
+}
+
+document.getElementById('adminGateBtn').addEventListener('click', () => {
+  if (adminPasswordInput.value === getAdminPassword()){
+    adminUnlocked = true;
+    adminGateError.style.display = 'none';
+    openAdminPanel();
+  } else {
+    adminGateError.style.display = 'block';
+  }
+});
+adminPasswordInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); document.getElementById('adminGateBtn').click(); }
+});
+
+document.getElementById('addStageBtn').addEventListener('click', () => {
+  adminDraft.stages.push({ key: makeSlug('stage'), labelEn: '', labelAr: '', grades: [] });
+  renderAdminPanel();
+});
+
+document.getElementById('addGovBtn').addEventListener('click', () => {
+  const newGov = { key: makeSlug('gov'), label: 'محافظة جديدة', cities: [], active: true };
+  adminDraft.governorates.push(newGov);
+  selectedGovKey = newGov.key;
+  renderAdminPanel();
+  govsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+document.getElementById('saveDataBtn').addEventListener('click', () => {
+  // Clean up any rows the admin added but left completely empty, instead of
+  // blocking the whole save over one stray blank row (that used to wipe out
+  // every other edit and made it look like data had been deleted).
+  let removedCount = 0;
+
+  adminDraft.stages.forEach(stage => {
+    stage.grades.forEach(grade => {
+      const before = grade.groups.length;
+      grade.groups = grade.groups.filter(g => g.dayAr.trim() || g.dayEn.trim() || g.time.trim());
+      removedCount += before - grade.groups.length;
+    });
+    const beforeGrades = stage.grades.length;
+    stage.grades = stage.grades.filter(g => g.labelEn.trim() || g.labelAr.trim());
+    removedCount += beforeGrades - stage.grades.length;
+  });
+  const beforeStages = adminDraft.stages.length;
+  adminDraft.stages = adminDraft.stages.filter(s => s.labelEn.trim() || s.labelAr.trim());
+  removedCount += beforeStages - adminDraft.stages.length;
+
+  adminDraft.governorates.forEach(gov => {
+    const before = gov.cities.length;
+    gov.cities = gov.cities.filter(c => c.label.trim());
+    removedCount += before - gov.cities.length;
+  });
+  const beforeGovs = adminDraft.governorates.length;
+  adminDraft.governorates = adminDraft.governorates.filter(g => g.label.trim());
+  removedCount += beforeGovs - adminDraft.governorates.length;
+
+  if (!adminDraft.governorates.some(g => g.key === selectedGovKey)){
+    selectedGovKey = adminDraft.governorates.length ? adminDraft.governorates[0].key : null;
+  }
+
+  regData = adminDraft;
+  saveRegData(regData);
+  renderAdminPanel();
+  showAdminStatus(removedCount > 0 ? 'اتحفظ بنجاح ✓ (اتمسحت عناصر فاضية ماكانتش متسماة)' : 'اتحفظ بنجاح ✓', false);
+});
+
+document.getElementById('resetDataBtn').addEventListener('click', () => {
+  if (confirm('هيرجع كل حاجة زي ما كانت الأول (المجاميع والسنين اللي اتضافت هتتمسح). تكمل؟')){
+    regData = JSON.parse(JSON.stringify(DEFAULT_REG_DATA));
+    saveRegData(regData);
+    adminDraft = JSON.parse(JSON.stringify(regData));
+    renderAdminPanel();
+    showAdminStatus('رجع للإعدادات الافتراضية', false);
+  }
+});
+
+document.getElementById('changePasswordBtn').addEventListener('click', () => {
+  const newPw = document.getElementById('newPasswordInput').value.trim();
+  if (!newPw){
+    showAdminStatus('اكتب باسورد جديد الأول', true);
+    return;
+  }
+  localStorage.setItem(ADMIN_PASSWORD_KEY, newPw);
+  document.getElementById('newPasswordInput').value = '';
+  showAdminStatus('اتغير الباسورد بنجاح ✓', false);
+});
+
+function goHome(){
+  window.location.hash = '';
+}
+document.getElementById('adminBackFromGate').addEventListener('click', e => { e.preventDefault(); goHome(); });
+document.getElementById('adminBackTop').addEventListener('click', e => { e.preventDefault(); goHome(); });
+
+function routeByHash(){
+  if (window.location.hash === '#admin'){
+    cardEl.style.display = 'none';
+    adminOverlay.style.display = 'block';
+    adminPasswordInput.value = '';
+    if (adminUnlocked){
+      openAdminPanel();
+    } else {
+      adminGate.style.display = 'block';
+      adminPanel.style.display = 'none';
+      adminGateError.style.display = 'none';
+      setTimeout(() => { adminPasswordInput.value = ''; adminPasswordInput.focus(); }, 50);
+    }
+  } else {
+    adminOverlay.style.display = 'none';
+    cardEl.style.display = 'block';
+    // reflect any admin edits saved in a previous visit
+    regData = loadRegData();
+    populateStageOptions(true);
+    populateGradeOptions(true);
+    populateGroupOptions(true);
+    populateGovernorateOptions(true);
+    populateCityOptions(true);
+  }
+}
+
+window.addEventListener('hashchange', routeByHash);
+routeByHash();
+
+</script>
+</body>
+</html>
