@@ -1,0 +1,3473 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Live Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cairo:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="prefetch" href="index.html">
+<link rel="prefetch" href="student_serch.html">
+<link rel="prefetch" href="manage_exams.html">
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://evbjulsahncllewwvlxp.supabase.co">
+<style>
+  :root{
+    /* ===== Light Premium Theme — Design Tokens ===== */
+    --bg-main:#F5F9FF;
+    --bg-secondary:#DCE8FB;
+    --bg-dark-beige:#CFE4FB;
+    --card-bg:#FFFFFF;
+    --text-main:#10151D;
+    --text-secondary:#4B5A70;
+    --petrol:#1565C0;
+    --petrol-dark:#0D47A1;
+    --wood:#2E8BF0;
+    --wood-light:#7FB2F5;
+    --border:#D6E7FA;
+
+    --ink:var(--text-main);
+    --ink-2:var(--petrol-dark);
+    --paper:var(--bg-main);
+    --card:var(--card-bg);
+    --line:var(--border);
+    --gold:var(--petrol);
+    --gold-2:var(--petrol-dark);
+    --gold-soft:rgba(40,86,90,0.08);
+    --success:#5B8C6E;
+    --success-soft:rgba(91,140,110,0.14);
+    --warning:#B98A4A;
+    --warning-soft:rgba(185,138,74,0.14);
+    --error:#B5555A;
+    --error-soft:rgba(181,85,90,0.14);
+    --muted:var(--text-secondary);
+    --cream-bg-1:var(--bg-main);
+    --cream-bg-2:var(--bg-secondary);
+    --shadow-sm:0 2px 8px rgba(48,47,44,0.06);
+    --shadow-md:0 4px 16px rgba(48,47,44,0.08);
+    --shadow-lg:0 8px 24px rgba(48,47,44,0.10);
+  }
+  [data-theme="dark"]{
+    --ink:#DCE8FB;
+    --ink-2:#7FB2F5;
+    --paper:#0B1220;
+    --card:#101B2E;
+    --line:#1E2D45;
+    --gold:#3B82F6;
+    --gold-2:#7FB2F5;
+    --gold-soft:rgba(63,138,143,0.16);
+    --success:#6FA98A;
+    --success-soft:rgba(111,169,138,0.16);
+    --warning:#C79A5C;
+    --warning-soft:rgba(199,154,92,0.16);
+    --error:#C77378;
+    --error-soft:rgba(199,115,120,0.16);
+    --muted:#7E93AC;
+    --cream-bg-1:#0B1220;
+    --cream-bg-2:#0F1B2E;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md:0 8px 24px rgba(0,0,0,0.35);
+    --shadow-lg:0 20px 50px rgba(0,0,0,0.45);
+  }
+  [data-theme="dark"] .scanner-btn,
+  [data-theme="dark"] .refresh-btn,
+  [data-theme="dark"] .save-snapshot-btn,
+  [data-theme="dark"] .pay-filter button.active{ color:#FFFFFF; }
+  [data-theme="dark"] .kpi-value,
+  [data-theme="dark"] tbody td{ color:var(--ink); }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Inter',sans-serif;
+    background:
+     radial-gradient(circle at 15% 10%, rgba(40,86,90,0.035), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(150,115,84,0.03), transparent 45%),
+      linear-gradient(160deg, var(--cream-bg-1), var(--cream-bg-2));
+    color:var(--ink);
+    min-height:100vh;
+    padding:32px 24px 64px;
+    transition:background .25s ease, color .25s ease;
+  }
+  [dir="rtl"] body{ font-family:'Cairo','Inter',sans-serif; }
+  [dir="rtl"] .brand h1,
+  [dir="rtl"] .section-title{ font-family:'Cairo','Cormorant Garamond',serif; }
+  [dir="rtl"] .search-box input{ padding:10px 38px 10px 14px; }
+  [dir="rtl"] .search-box::before{ left:auto; right:13px; }
+  [dir="rtl"] thead th{ text-align:right; }
+  [dir="rtl"] .bar-track{ margin-right:0; margin-left:7px; }
+  .num{ font-family:'Space Grotesk',sans-serif; }
+  .serif{ font-family:'Cormorant Garamond',serif; }
+  .topbar{
+    max-width:1200px; margin:0 auto 26px; margin-left:260px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    transition: margin 0.3s ease;
+  }
+  [dir="rtl"] .topbar { margin-left: auto; margin-right: 260px; }
+  .sidebar-toggle {
+    background: var(--gold-soft);
+    border: 1px solid var(--line);
+    color: var(--gold-2);
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  .sidebar-toggle:hover {
+    background: var(--gold);
+    color: #FFF;
+    border-color: var(--gold);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+  .sidebar-toggle svg { width: 20px; height: 20px; }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-text{ text-align:left; }
+  [dir="rtl"] .brand-text{ text-align:right; }
+  .brand-eyebrow{
+    font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--gold); font-weight:600; margin-bottom:2px; opacity:0.8;
+  }
+  .brand h1{ font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold-2); letter-spacing:-0.01em; }
+  .brand p{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .top-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .updated-note{ font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .updated-note::before{
+    content:""; width:6px; height:6px; border-radius:50%; background:var(--success);
+    box-shadow:0 0 0 3px var(--success-soft);
+  }
+  .scanner-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 18px; border-radius:10px;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:#FFFFFF; font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+    text-decoration:none; box-shadow:0 6px 16px rgba(29,65,69,0.22);
+    transition:transform .15s ease, box-shadow .15s ease;
+    white-space:nowrap;
+  }
+  .scanner-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(29,65,69,0.28); }
+  .scanner-btn svg{ width:16px; height:16px; flex-shrink:0; }
+  .refresh-btn{
+    display:flex; align-items:center; gap:8px;
+    padding:11px 20px; border-radius:10px; border:none;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:#FFFFFF; font-family:'Inter',sans-serif;
+    font-weight:600; font-size:13px; cursor:pointer; transition:all .18s ease;
+    box-shadow:0 6px 16px rgba(29,65,69,0.18);
+  }
+  .refresh-btn:hover{ filter:brightness(1.06); transform:translateY(-1px); box-shadow:0 8px 20px rgba(29,65,69,0.24); }
+  .refresh-btn:active{ transform:translateY(0); filter:brightness(0.96); }
+  .refresh-btn .spin{ display:inline-block; }
+  .refresh-btn.loading .spin{ animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .tab-row{
+    display:flex; flex-direction:column; gap:2px; margin-bottom:0; 
+    padding: 4px 14px 24px 32px;
+    width:240px; position:fixed; left:0; top:140px; bottom:0; z-index:10;
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold) transparent;
+    background: var(--paper);
+  }
+  .tab-row::-webkit-scrollbar { width: 5px; }
+  .tab-row::-webkit-scrollbar-track { background: transparent; }
+  .tab-row::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; opacity:.5; }
+  .sidebar-logo{
+    position:fixed; left:0; top:0; width:240px; height:140px; z-index:11;
+    display:flex; align-items:center; justify-content:center; padding:14px 22px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    background: var(--paper);
+  }
+  .sidebar-logo img{ max-width:100%; max-height:100%; object-fit:contain; }
+  .sidebar-logo .logo-dark{ display:none; }
+  [data-theme="dark"] .sidebar-logo .logo-dark{ display:block; }
+  [data-theme="dark"] .sidebar-logo .logo-light{ display:none; }
+  [dir="rtl"] .sidebar-logo{ left:auto; right:0; }
+  body.sidebar-collapsed .sidebar-logo{ transform:translateX(-260px); opacity:0; pointer-events:none; }
+  [dir="rtl"] body.sidebar-collapsed .sidebar-logo{ transform:translateX(260px); }
+  @media (max-height:760px){ .sidebar-logo{ height:118px; } }
+  [dir="rtl"] .tab-row {
+    left: auto; right: 0;
+    padding: 4px 32px 24px 14px;
+    border-right: none;
+    border-left: 1px solid var(--line);
+  }
+  .tab{
+    position:relative; cursor:pointer; user-select:none;
+    padding:8px 12px; margin:0;
+    background:var(--card); color:var(--muted); font-weight:500; font-size:12.5px;
+    border-radius:9px; border:1px solid var(--line);
+    transition:all .18s ease; z-index:1;
+    text-align:left; white-space:nowrap; 
+    min-height:38px; display:flex; align-items:center; justify-content:space-between;
+    width: 100%; gap: 8px;
+  }
+  [dir="rtl"] .tab { text-align: right; }
+  .tab:hover{ color:var(--ink); background:var(--paper); border-color:var(--gold); }
+  .tab.active{
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:#FFFFFF; z-index:5;
+    box-shadow:var(--shadow-md);
+    border-color:var(--gold);
+  }
+  .tab.active::after{
+    content:""; position:absolute; right: -15px; top:50%; transform:translateY(-50%);
+    width: 4px; height: 20px; background: var(--gold);
+    border-radius: 4px 0 0 4px;
+  }
+  [dir="rtl"] .tab.active::after {
+    right: auto; left: -15px;
+    border-radius: 0 4px 4px 0;
+  }
+  .tab-count{
+    flex-shrink:0; font-family:'Space Grotesk',sans-serif; font-size:10.5px; font-weight:700;
+    color:var(--gold); background:var(--gold-soft); border-radius:999px;
+    min-width:20px; height:18px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center;
+    line-height:1; transition:all .18s ease;
+  }
+  .tab.active .tab-count{ background:rgba(255,255,255,0.22); color:#FFF; }
+  .tab-count:empty{ display:none; }
+  .tab-group-label{
+    font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--gold); margin-top:14px; margin-bottom:3px; padding:0 12px;
+    opacity:0.6; min-height:22px; display:flex; align-items:center; cursor:pointer;
+    transition:all .18s ease; user-select:none;
+  }
+  .tab-group-label:first-child{ margin-top:0; }
+  .tab-group-label:hover{ opacity:1; }
+  .tab-group{
+    display:flex; flex-direction:column; gap:5px; margin-bottom:5px;
+    max-height:1000px; overflow:hidden; transition:max-height .3s ease, margin-bottom .3s ease;
+  }
+  .tab-group.collapsed{
+    max-height:0; margin-bottom:0; overflow:hidden;
+  }
+  @media (max-height:760px){
+    .tab-row{ top:118px; }
+    .tab{ min-height:34px; padding:6px 12px; font-size:12px; }
+  }
+  .wrap{
+    max-width:1200px; margin:0 auto; margin-left:260px;
+    transition: margin 0.3s ease;
+  }
+  [dir="rtl"] .wrap { margin-left: auto; margin-right: 260px; }
+
+  /* ---- Desktop-only sidebar-collapse behaviour ----
+     Scoped to min-width:861px so it can NEVER fight with the
+     mobile "open the drawer" rules further down (see MOBILE
+     RESPONSIVENESS section). Previously these were unscoped and
+     relied on source-order to be overridden on mobile, which is
+     fragile and was causing the hamburger button to not visibly
+     open the drawer on some mobile browsers. */
+  @media (min-width:861px){
+    body.sidebar-collapsed .sidebar-logo{ transform:translateX(-260px); opacity:0; pointer-events:none; }
+    [dir="rtl"] body.sidebar-collapsed .sidebar-logo{ transform:translateX(260px); }
+
+    body.sidebar-collapsed .tab-row {
+      transform: translateX(-260px);
+      opacity: 0;
+      pointer-events: none;
+    }
+    [dir="rtl"] body.sidebar-collapsed .tab-row {
+      transform: translateX(260px);
+    }
+  }
+
+  body.sidebar-collapsed .topbar,
+  body.sidebar-collapsed .wrap {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .tab-row { transition: transform 0.3s ease, opacity 0.3s ease; }
+  .tab-panel{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:30px; box-shadow:var(--shadow-lg); position:relative; z-index:4;
+  }
+  .state-msg{
+    display:none; align-items:center; justify-content:center; gap:10px;
+    padding:64px 10px; color:var(--muted); font-size:13.5px; text-align:center;
+  }
+  .state-msg.show{ display:flex; }
+  .state-msg.err{ color:var(--error); flex-direction:column; gap:9px; }
+  .state-msg .spinner{
+    width:18px; height:18px; border-radius:50%;     border:2px solid rgba(40,86,90,0.12);
+    border-top-color:var(--gold); animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  .content{ display:none; }
+  .content.show{ display:block; }
+  .kpi-grid{ display:grid; grid-template-columns:repeat(6,1fr); gap:16px; margin-bottom:28px; }
+  .kpi-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:16px;
+    padding:20px; position:relative; overflow:hidden; transition:box-shadow .18s ease, transform .18s ease;
+  }
+  .kpi-card:hover{ box-shadow:var(--shadow-md); transform:translateY(-2px); }
+  .kpi-card::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--gold), transparent);
+    opacity:0; transition:opacity .18s ease;
+  }
+  .kpi-card:hover::before{ opacity:1; }
+  .kpi-label{ font-size:10.5px; color:var(--muted); font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
+  .kpi-value{ font-size:26px; font-weight:700; color:var(--ink); line-height:1; }
+  .kpi-sub{ font-size:11px; color:var(--muted); margin-top:8px; line-height:1.4; }
+  .kpi-card.seal{
+    display:flex; align-items:center; gap:13px; justify-content:flex-start;
+  }
+  .seal-ring{ position:relative; width:58px; height:58px; flex-shrink:0; }
+  .seal-ring svg{ transform:rotate(-90deg); }
+  .seal-ring .bg{ stroke:rgba(40,86,90,0.10); }
+  .seal-ring .fg{ stroke:var(--gold); stroke-linecap:round; transition:stroke-dashoffset .6s ease; }
+  .seal-pct{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; color:var(--ink);
+  }
+  .section-title{
+    display:flex; align-items:center; gap:9px;
+    font-family:'Cormorant Garamond',serif; font-weight:700; font-size:18px; color:var(--gold-2); margin-bottom:15px;
+  }
+  .section-title .tag{
+    font-family:'Inter',sans-serif; font-size:10px; font-weight:700; color:var(--gold); background:var(--gold-soft);
+    padding:3px 9px; border-radius:999px; letter-spacing:.03em; text-transform:uppercase; opacity:0.85;
+  }
+  .more-analytics{ margin-bottom:28px; }
+  .more-analytics summary{
+    list-style:none; cursor:pointer; user-select:none;
+    display:flex; align-items:center; gap:10px;
+    padding:14px 18px; border-radius:12px;
+    background:var(--gold-soft); border:1px solid var(--line); color:var(--gold-2);
+    font-weight:600; font-size:14px; transition:all .18s ease;
+  }
+  .more-analytics summary::-webkit-details-marker{ display:none; }
+  .more-analytics summary:hover{ border-color:var(--gold); box-shadow:var(--shadow-sm); }
+  .more-analytics .ma-icon{ font-size:16px; }
+  .more-analytics .ma-chevron{ margin-left:auto; transition:transform .2s ease; color:var(--gold); }
+  [dir="rtl"] .more-analytics .ma-chevron{ margin-left:0; margin-right:auto; }
+  .more-analytics[open] summary{ border-radius:12px 12px 0 0; }
+  .more-analytics[open] .ma-chevron{ transform:rotate(180deg); }
+  .more-analytics-body{
+    padding-top:22px; border:1px solid var(--line); border-top:none;
+    border-radius:0 0 12px 12px; padding-bottom:4px;
+  }
+  .more-analytics .ma-text-ar{ display:none; }
+  [dir="rtl"] .more-analytics .ma-text-en{ display:none; }
+  [dir="rtl"] .more-analytics .ma-text-ar{ display:inline; }
+  .two-col{ display:grid; grid-template-columns:1.2fr 1fr; gap:16px; margin-bottom:28px; }
+  .chart-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:20px;
+    transition:box-shadow .18s ease;
+  }
+  .chart-card:hover{ box-shadow:var(--shadow-sm); }
+  .chart-box{ position:relative; height:220px; }
+  .chart-empty{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    color:var(--muted); font-size:12.5px; text-align:center; padding:0 20px;
+  }
+  .chart-empty.show{ display:flex; }
+  .list-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:28px; }
+  .list-card{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:20px; }
+  .list-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 4px; border-bottom:1px solid var(--line); font-size:13px;
+  }
+  .list-row:last-child{ border-bottom:none; }
+  .list-name{ display:flex; align-items:center; gap:9px; min-width:0; }
+  .list-name .name{ font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; }
+  .list-name .grade-chip{
+    font-size:9.5px; font-weight:600; color:var(--gold-2); background:rgba(40,86,90,0.08);
+    padding:2px 7px; border-radius:999px; flex-shrink:0;
+  }
+  .rank{
+    display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
+    border-radius:6px; font-size:10.5px; font-weight:700; background:var(--gold-soft); color:var(--gold);
+    flex-shrink:0; font-family:'Space Grotesk',sans-serif; opacity:0.75;
+  }
+  .val{ font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--ink); flex-shrink:0; }
+  .val.low{ color:var(--error); }
+  .val.high{ color:var(--success); }
+  .phone-link{
+    font-size:11px; color:var(--muted); text-decoration:none; display:inline-block;
+    padding:3px 8px; border-radius:6px; background:rgba(40,86,90,0.05); transition:all .15s ease;
+    cursor:pointer;
+  }
+  .phone-link:hover{ color:var(--gold-2); background:var(--gold-soft); }
+  .empty-note{ text-align:center; color:var(--muted); font-size:12.5px; padding:20px 0; }
+  .roster-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:15px; flex-wrap:wrap; }
+  .search-box{ flex:1; min-width:220px; position:relative; }
+  .search-box input{
+    width:100%; padding:10px 14px 10px 38px; border-radius:10px; border:1px solid var(--line);
+    background:var(--card); font-family:'Inter',sans-serif; font-size:13px; outline:none; color:var(--ink);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .search-box input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .search-box::before{
+    content:"⌕"; position:absolute; left:13px; top:50%; transform:translateY(-50%);
+    color:var(--muted); font-size:15px; pointer-events:none;
+  }
+  .pay-filter{ display:flex; gap:6px; }
+  .pay-filter button{
+    padding:9px 14px; border-radius:9px; border:1px solid var(--line); background:var(--card);
+    color:var(--muted); font-family:'Inter',sans-serif; font-size:12px; font-weight:600; cursor:pointer;
+    transition:all .15s ease;
+  }
+  .pay-filter button:hover{ border-color:var(--gold); color:var(--ink); }
+  .pay-filter button.active{ background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); color:#FFFFFF; border-color:var(--gold); }
+  .table-scroll-top{ overflow-x:auto; overflow-y:hidden; height:16px; margin-bottom:2px; }
+  .table-scroll-top-inner{ height:1px; }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:16px; -webkit-overflow-scrolling:touch; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:760px; }
+  thead th{
+    text-align:left; padding:12px 14px; background:var(--paper); color:var(--gold-2);
+    font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    border-bottom:1px solid var(--line); white-space:nowrap; position:sticky; top:0;
+  }
+  tbody td{ padding:11px 14px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr{ transition:background .12s ease; }
+  tbody tr:hover{ background:rgba(40,86,90,0.03); }
+  .chip{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .chip.paid{ background:var(--success-soft); color:var(--success); }
+  .chip.unpaid{ background:var(--error-soft); color:var(--error); }
+  .bar-track{ width:70px; height:6px; border-radius:4px; background:rgba(40,86,90,0.08); display:inline-block; vertical-align:middle; margin-right:7px; }
+  .bar-fill{ height:100%; border-radius:4px; background:var(--gold); }
+  .excel-btn{
+    padding:10px 16px; border-radius:9px; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); font-family:'Inter',sans-serif; font-weight:700; font-size:12.5px; cursor:pointer;
+    transition:all .15s ease; display:inline-flex; align-items:center; gap:6px; text-decoration:none;
+  }
+  .excel-btn:hover{ border-color:var(--success); color:var(--success); }
+  .footer-note{ text-align:center; font-size:11.5px; color:var(--muted); margin-top:30px; display:flex; align-items:center; justify-content:center; gap:7px; opacity:0.6; }
+  .footer-note::before{ content:"🔒"; font-size:11px; }
+  .tab.history-tab, .tab.exams-tab, .tab.settings-tab { margin-inline-start: 0; }
+  .tab.history-tab::before, .tab.exams-tab::before, .tab.settings-tab::before { content: none; }
+  #settingsView{
+    --sv-navy:#1565C0;
+    --sv-navy-2:#0D47A1;
+    --sv-purple:#2E8BF0;
+    --sv-purple-2:#1E6FD9;
+    --sv-bg:#DCE8FB;
+    --sv-card:#FFFFFF;
+    --sv-ink:#10151D;
+    --sv-muted:#4B5A70;
+    --sv-line:#D6E7FA;
+    --sv-shadow:0 10px 30px rgba(48,47,44,0.06);
+    background:var(--sv-bg);
+    margin:-30px;
+    padding:30px;
+    border-radius:0 16px 16px 16px;
+  }
+  [data-theme="dark"] #settingsView{
+    --sv-bg:#0B1220;
+    --sv-card:#101B2E;
+    --sv-line:#1E2D45;
+    --sv-ink:#DCE8FB;
+    --sv-muted:#7E93AC;
+    --sv-shadow:0 10px 30px rgba(0,0,0,0.35);
+  }
+  .sv-hero{
+    background:linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);
+    border-radius:20px; padding:26px 28px; color:#FFF;
+    display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    margin-bottom:22px; box-shadow:var(--sv-shadow);
+  }
+  [data-theme="dark"] .sv-hero{ background:linear-gradient(135deg, #0D47A1 0%, #0B1220 100%); }
+  .sv-hero-left{ display:flex; align-items:center; gap:16px; }
+  .sv-hero-avatar{
+    width:52px; height:52px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg, var(--sv-purple), var(--sv-purple-2));
+    display:flex; align-items:center; justify-content:center; font-size:22px;
+    box-shadow:0 6px 16px rgba(29,65,69,0.35);
+  }
+  .sv-hero-title{ font-family:'Cormorant Garamond',serif; font-weight:700; font-size:21px; }
+  [dir="rtl"] .sv-hero-title{ font-family:'Cairo','Cormorant Garamond',serif; }
+  .sv-hero-sub{ font-size:12.5px; color:rgba(255,255,255,0.65); margin-top:3px; }
+  .sv-hero-pill{
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.16);
+    padding:8px 16px; border-radius:999px; font-size:11.5px; font-weight:600;
+    display:flex; align-items:center; gap:7px; white-space:nowrap;
+  }
+  .sv-hero-pill::before{
+    content:""; width:7px; height:7px; border-radius:50%; background:#7BB89A;
+    box-shadow:0 0 0 3px rgba(123,184,154,0.25);
+  }
+  #settingsView .settings-grid{ gap:18px; }
+  #settingsView .settings-card{
+    background:var(--sv-card); border:1px solid var(--sv-line); border-radius:20px;
+    padding:24px; box-shadow:var(--sv-shadow); transition:transform .18s ease, box-shadow .18s ease;
+  }
+  #settingsView .settings-card:hover{ transform:translateY(-2px); }
+  #settingsView .settings-card-icon{
+    width:44px; height:44px; border-radius:14px;
+    background:linear-gradient(135deg, var(--sv-purple), var(--sv-purple-2));
+    color:#FFF; font-size:18px; box-shadow:0 6px 14px rgba(29,65,69,0.25);
+  }
+  #settingsView .settings-card-title{ color:var(--sv-ink); }
+  #settingsView .settings-card-sub{ color:var(--sv-muted); }
+  #settingsView .settings-row{
+    background:var(--sv-bg); border:1px solid var(--sv-line); border-radius:14px;
+  }
+  #settingsView .settings-row-label{ color:var(--sv-ink); }
+  #settingsView .settings-row-desc{ color:var(--sv-muted); }
+  #settingsView .switch .slider{ background:#CFE4FB; }
+  [data-theme="dark"] #settingsView .switch .slider{ background:rgba(184,155,122,0.18); }
+  #settingsView .switch input:checked + .slider{ background:linear-gradient(135deg, var(--sv-navy), var(--sv-purple)); }
+  #settingsView .switch .slider::before{ box-shadow:0 2px 6px rgba(29,65,69,0.20); }
+  #settingsView .lang-switch{ background:var(--sv-bg); border:1px solid var(--sv-line); border-radius:14px; }
+  #settingsView .lang-switch button{ color:var(--sv-muted); border-radius:10px; }
+  #settingsView .lang-switch button:hover{ color:var(--sv-ink); }
+  #settingsView .lang-switch button.active{
+    background:linear-gradient(135deg, var(--sv-navy), var(--sv-purple)); color:#FFF;
+    box-shadow:0 6px 14px rgba(29,65,69,0.30);
+  }
+  #settingsView .theme-preview button{ border-radius:16px; border:2px solid var(--sv-line); background:var(--sv-card); }
+  #settingsView .theme-preview button.active{ border-color:var(--sv-purple); box-shadow:0 0 0 3px rgba(40,86,90,0.12); }
+  #settingsView .theme-preview span{ color:var(--sv-ink); }
+  #settingsView .theme-preview .swatch.light{ background:linear-gradient(160deg,#F5F9FF,#FFFFFF); border:1px solid #D6E7FA; }
+  #settingsView .theme-preview .swatch.dark{ background:linear-gradient(160deg,#0B1220,#101B2E); border:1px solid #1E2D45; }
+  #settingsView .settings-note{
+    background:var(--sv-bg); border:1px solid var(--sv-line); color:var(--sv-muted); border-radius:12px;
+  }
+  .settings-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; max-width:820px; }
+  .settings-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    padding:20px; display:flex; flex-direction:column; gap:16px;
+  }
+  .settings-card-head{ display:flex; align-items:center; gap:10px; }
+  .settings-card-icon{
+    width:38px; height:38px; border-radius:10px; flex-shrink:0;
+    background:var(--gold-soft); color:var(--gold);
+    display:flex; align-items:center; justify-content:center; font-size:17px;
+  }
+  .settings-card-title{ font-family:'Cormorant Garamond',serif; font-weight:700; font-size:17px; color:var(--ink); }
+  .settings-card-sub{ font-size:11.5px; color:var(--muted); margin-top:2px; }
+  .settings-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:12px 14px; background:var(--card); border:1px solid var(--line); border-radius:11px;
+  }
+  .settings-row .settings-row-label{ font-size:13px; font-weight:600; color:var(--ink); }
+  .settings-row .settings-row-desc{ font-size:11px; color:var(--muted); margin-top:2px; }
+  .switch{ position:relative; display:inline-block; width:46px; height:26px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .switch .slider{
+    position:absolute; cursor:pointer; inset:0;     background:rgba(40,86,90,0.15);
+    border-radius:999px; transition:.2s ease;
+  }
+  .switch .slider::before{
+    content:""; position:absolute; height:20px; width:20px; left:3px; top:3px;
+    background:#FFF; border-radius:50%; transition:.2s ease; box-shadow:0 1px 3px rgba(0,0,0,0.25);
+  }
+  .switch input:checked + .slider{ background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); }
+  .switch input:checked + .slider::before{ transform:translateX(20px); }
+  [dir="rtl"] .switch input:checked + .slider::before{ transform:translateX(-20px); }
+  .lang-switch{ display:flex; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:11px; padding:5px; }
+  .lang-switch button{
+    flex:1; padding:9px 12px; border-radius:8px; border:none; background:transparent;
+    color:var(--muted); font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:7px; transition:all .15s ease;
+  }
+  .lang-switch button:hover{ color:var(--ink); }
+  .lang-switch button.active{
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); color:#FFFFFF;
+    box-shadow:0 4px 10px rgba(29,65,69,0.18);
+  }
+  .theme-preview{ display:flex; gap:10px; }
+  .theme-preview button{
+    flex:1; border-radius:11px; border:2px solid var(--line); cursor:pointer; padding:12px 10px 10px;
+    display:flex; flex-direction:column; align-items:center; gap:8px; background:var(--card);
+    transition:all .15s ease; font-family:inherit;
+  }
+  .theme-preview button.active{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .theme-preview .swatch{ width:100%; height:38px; border-radius:7px; }
+  .theme-preview .swatch.light{ background:linear-gradient(160deg,#F5F9FF,#FFFFFF); border:1px solid #D6E7FA; }
+  .theme-preview .swatch.dark{ background:linear-gradient(160deg,#0B1220,#101B2E); border:1px solid #1E2D45; }
+  .theme-preview span{ font-size:11.5px; font-weight:600; color:var(--ink); }
+  .settings-note{
+    font-size:11.5px; color:var(--muted); background:var(--gold-soft); border:1px solid var(--line);
+    border-radius:10px; padding:10px 13px; line-height:1.5; opacity:0.9;
+  }
+  @media (max-width:700px){ .settings-grid{ grid-template-columns:1fr; } }
+  .hist-banner{
+    display:none; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    background:var(--gold-soft); border:1px solid var(--line); border-radius:12px;
+    padding:14px 18px; margin-bottom:22px;
+  }
+  .hist-banner .msg{ font-size:12.5px; color:var(--ink-2); font-weight:600; }
+  .hist-banner .msg span{ display:block; font-size:11px; color:var(--muted); font-weight:400; margin-top:2px; }
+  .hist-toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .hist-toolbar .left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .hist-select{
+    padding:10px 14px; border-radius:9px; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; cursor:pointer; outline:none;
+  }
+  .save-snapshot-btn{
+    display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:9px; border:none;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); color:#FFFFFF;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:12.5px; cursor:pointer;
+    box-shadow:0 6px 16px rgba(29,65,69,0.16); transition:all .15s ease;
+  }
+  .save-snapshot-btn:hover{ filter:brightness(1.06); transform:translateY(-1px); }
+  .save-snapshot-btn:disabled{ opacity:.6; cursor:default; transform:none; }
+  .ghost-btn{
+    padding:10px 18px; border-radius:9px; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); font-family:'Inter',sans-serif; font-weight:700; font-size:12.5px; cursor:pointer;
+    transition:all .15s ease;
+  }
+  .ghost-btn:hover{ border-color:var(--gold); }
+  .delta-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:13px; margin-bottom:28px; }
+  .delta-badge{ font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:3px; margin-top:8px; }
+  .delta-badge.up{ color:var(--success); }
+  .delta-badge.down{ color:var(--error); }
+  .delta-badge.flat{ color:var(--muted); }
+  .hist-table-note{ font-size:11px; color:var(--muted); margin-bottom:12px; }
+  .unpaid-link{
+    border:none; background:rgba(181,85,90,0.12); color:var(--error); cursor:pointer;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:11.5px; padding:6px 11px; border-radius:8px;
+    transition:all .15s ease;
+  }
+  .unpaid-link:hover{ background:var(--error-soft); }
+  .score-input{
+    width:90px; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); font-family:'Space Grotesk',sans-serif; font-size:13px; color:var(--ink); outline:none;
+  }
+  .score-input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(48,47,44,0.50); z-index:80;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:var(--card); border-radius:16px; max-width:440px; width:100%; max-height:80vh;
+    overflow:auto; padding:22px; box-shadow:var(--shadow-lg); border:1px solid var(--line);
+  }
+  .modal-close{ border:none; background:none; font-size:22px; cursor:pointer; color:var(--muted); line-height:1; }
+  .modal-close:hover{ color:var(--ink); }
+  @media (max-width:900px){
+    .kpi-grid{ grid-template-columns:repeat(2,1fr); }
+    .two-col, .list-grid{ grid-template-columns:1fr; }
+    .delta-cards{ grid-template-columns:repeat(2,1fr); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .refresh-btn .spin, .state-msg .spinner, .kpi-card, .kpi-card::before{ animation:none !important; transition:none !important; }
+  }
+
+  /* ============================================================
+     MOBILE RESPONSIVENESS
+     ============================================================ */
+  .sidebar-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(30,29,26,0.45);
+    z-index:9; opacity:0; transition:opacity .25s ease;
+  }
+  @media (max-width:860px){
+    body{ padding:16px 12px 48px; }
+
+    /* Sidebar becomes an off-canvas drawer, closed by default */
+    .sidebar-logo{ transform:translateX(-260px); opacity:0; pointer-events:none; height:100px; padding:8px 20px; }
+    [dir="rtl"] .sidebar-logo{ transform:translateX(260px); }
+    .tab-row{
+      transform:translateX(-260px); opacity:0; pointer-events:none;
+      top:0; bottom:0; padding-top:116px; box-shadow:var(--shadow-lg);
+    }
+    [dir="rtl"] .tab-row{ transform:translateX(260px); }
+    @media (max-height:760px){
+      .sidebar-logo{ height:84px; }
+      .tab-row{ padding-top:100px; }
+    }
+
+    /* Tighter vertical rhythm so all grade/other/settings tabs fit on one
+       screen without scrolling on typical phones */
+    .tab-group-label{ margin-top:8px; min-height:20px; }
+    .tab-group{ gap:4px; margin-bottom:4px; }
+    .tab{ min-height:34px; padding:6px 12px; font-size:12px; }
+
+    body.sidebar-collapsed .sidebar-logo,
+    body.sidebar-collapsed .tab-row{
+      transform:translateX(0) !important; opacity:1 !important; pointer-events:auto !important;
+    }
+    body.sidebar-collapsed .sidebar-backdrop{
+      display:block; opacity:1;
+    }
+
+    /* On mobile "collapsed" class means "drawer open" — content never shifts */
+    .topbar, .wrap,
+    body.sidebar-collapsed .topbar,
+    body.sidebar-collapsed .wrap{
+      margin-left:auto !important; margin-right:auto !important;
+    }
+    [dir="rtl"] .topbar, [dir="rtl"] .wrap{ margin-left:auto; margin-right:auto; }
+
+    .topbar{ gap:10px; margin-bottom:16px; }
+    .brand{ gap:10px; }
+    .brand h1{ font-size:20px; }
+    .brand p{ font-size:11px; }
+    .brand-eyebrow{ font-size:9.5px; }
+    .top-actions{ gap:8px; width:100%; justify-content:space-between; }
+    .updated-note{ display:none; }
+    .scanner-btn span, .refresh-btn span{ display:none; }
+    .scanner-btn, .refresh-btn{ padding:10px; }
+
+    .tab-panel{ padding:16px; border-radius:14px; }
+
+    .kpi-grid{ grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:18px; }
+    .kpi-card{ padding:14px; border-radius:12px; }
+    .kpi-value{ font-size:20px; }
+    .kpi-card.seal{ grid-column:1 / -1; }
+
+    .two-col, .list-grid{ grid-template-columns:1fr; gap:12px; margin-bottom:18px; }
+    .delta-cards{ grid-template-columns:repeat(2,1fr); gap:10px; }
+    .chart-card, .list-card{ padding:14px; border-radius:12px; }
+    .chart-box{ height:200px; }
+
+    .section-title{ font-size:15.5px; }
+
+    .roster-head{ flex-direction:column; align-items:stretch; }
+    .search-box{ min-width:0; }
+    .pay-filter{ justify-content:stretch; }
+    .pay-filter button{ flex:1; }
+    .excel-btn{ justify-content:center; }
+
+    .hist-toolbar{ flex-direction:column; align-items:stretch; }
+    .hist-toolbar .left{ flex-direction:column; align-items:stretch; }
+    .hist-select{ width:100%; }
+
+    #settingsView{ margin:-16px; padding:16px; border-radius:0 14px 14px 14px; }
+    .sv-hero{ padding:18px; }
+    .settings-grid{ grid-template-columns:1fr; }
+
+    .modal-box{ padding:16px; max-width:100%; }
+
+    /* ---- List rows (Top Attendance / Unpaid / Top Exam / etc.) ----
+       On narrow screens these were cramming rank + name + several chips + value
+       into one line, causing overlap and squeezed text. Let the row wrap onto
+       two clean lines instead: name+chips on top, value/action on its own line. */
+    .list-row{
+      flex-wrap:wrap;
+      row-gap:8px;
+      padding:12px 2px;
+    }
+    .list-name{
+      flex-wrap:wrap;
+      row-gap:6px;
+      width:100%;
+      min-width:0;
+    }
+    .list-name .name{
+      max-width:none;
+      white-space:normal;
+      overflow:visible;
+      text-overflow:unset;
+      flex:1 1 auto;
+    }
+    .list-row > .val,
+    .list-row > .phone-link,
+    .list-row > .unpaid-link{
+      margin-inline-start:auto;
+    }
+  }
+  @media (max-width:480px){
+    .kpi-grid{ grid-template-columns:1fr; }
+    .delta-cards{ grid-template-columns:1fr; }
+    .brand h1{ font-size:18px; }
+
+    .list-name{ gap:6px; }
+    .list-name .grade-chip{ font-size:9px; padding:2px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+<div class="sidebar-logo">
+<img src="logo.png" alt="Logo"></div>
+
+<div class="topbar">
+  <div class="brand">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="brand-text">
+      <div class="brand-eyebrow" data-i18n="brandEyebrow">Live insights</div>
+      <h1 data-i18n="brandTitle">Live Dashboard</h1>
+      <p data-i18n="brandSub">Attendance & payment insights</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span class="updated-note" id="updatedNote"></span>
+   <button class="scanner-btn" onclick="goBack()" style="border:none;">
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 12H5M5 12l7-7M5 12l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <span data-i18n="backBtn">Back</span>
+</button>
+    <button class="refresh-btn" id="refreshBtn" onclick="refreshCurrentView()">
+      <span class="spin">↻</span> <span data-i18n="refreshBtn">Refresh data</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="tab-row" id="gradeTabs">
+    <div class="tab-group-label" data-group="grades" onclick="toggleGroup(this)">▼ Grades</div>
+    <div class="tab-group" data-group="grades">
+      <div class="tab active" data-grade="all"><span data-i18n="tabAll">🎓 All Grades</span><span class="tab-count" id="count-all"></span></div>
+      <div class="tab" data-grade="first_prep"><span data-i18n="tabFirstPrep">📘 First Preparatory</span><span class="tab-count" id="count-first_prep"></span></div>
+      <div class="tab" data-grade="second_prep"><span data-i18n="tabSecondPrep">📗 Second Preparatory</span><span class="tab-count" id="count-second_prep"></span></div>
+      <div class="tab" data-grade="third_prep"><span data-i18n="tabThirdPrep">📙 Third Preparatory</span><span class="tab-count" id="count-third_prep"></span></div>
+      <div class="tab" data-grade="first_secondary"><span data-i18n="tabFirstSecondary">📕 First Secondary</span><span class="tab-count" id="count-first_secondary"></span></div>
+      <div class="tab" data-grade="second_secondary"><span data-i18n="tabSecondSecondary">📔 Second Secondary</span><span class="tab-count" id="count-second_secondary"></span></div>
+      <div class="tab" data-grade="third_secondary"><span data-i18n="tabThirdSecondary">📓 Third Secondary</span><span class="tab-count" id="count-third_secondary"></span></div>
+    </div>
+    <div class="tab-group-label" data-group="other" onclick="toggleGroup(this)">▼ Other</div>
+    <div class="tab-group" data-group="other">
+      <div class="tab exams-tab" id="examsTab" data-i18n="tabExams">📝 Exam Grades</div>
+      <div class="tab history-tab" id="historyTab" data-i18n="tabHistory">📂 Monthly History</div>
+    </div>
+    <div class="tab-group-label" data-group="settings" onclick="toggleGroup(this)">▼ Settings</div>
+    <div class="tab-group" data-group="settings">
+      <div class="tab settings-tab" id="settingsTab" data-i18n="tabSettings">⚙️ Settings</div>
+    </div>
+  </div>
+
+  <div class="tab-panel">
+    <div id="dashboardView">
+    <div class="state-msg show" id="loadingMsg">
+      <span class="spinner"></span> Loading data from Supabase…
+    </div>
+    <div class="state-msg err" id="errorMsg"></div>
+
+    <div class="content" id="dashContent">
+
+      <div class="hist-toolbar" id="groupFilterToolbar" style="margin-bottom:20px;">
+        <div class="left">
+          <span style="font-size:12.5px; font-weight:700; color:var(--gold-2); display:flex; align-items:center; gap:6px;">
+            🧩 <span data-i18n="colGroup">Group</span>:
+          </span>
+          <select class="hist-select" id="groupFilterSelect" onchange="onGroupFilterChange()">
+            <option value="all">All Groups</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiTotalStudents">Total Students</div>
+          <div class="kpi-value num" id="kpiStudents">–</div>
+          <div class="kpi-sub" id="kpiStudentsSub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiAttendanceRate">Attendance Rate</div>
+          <div class="kpi-value num" id="kpiAttendance">–</div>
+          <div class="kpi-sub" id="kpiAttendanceSub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiTotalCollected">Total Collected</div>
+          <div class="kpi-value num" id="kpiRevenue">–</div>
+          <div class="kpi-sub" id="kpiRevenueSub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiCollectedToday">Collected Today</div>
+          <div class="kpi-value num" id="kpiToday">–</div>
+          <div class="kpi-sub" id="kpiTodaySub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiUnpaid">Unpaid</div>
+          <div class="kpi-value num" id="kpiUnpaid">–</div>
+          <div class="kpi-sub" id="kpiUnpaidSub"></div>
+        </div>
+        <div class="kpi-card seal">
+          <div class="seal-ring">
+            <svg width="58" height="58" viewBox="0 0 58 58">
+              <circle class="bg" cx="29" cy="29" r="24" fill="none" stroke-width="6"></circle>
+              <circle class="fg" id="collectionRing" cx="29" cy="29" r="24" fill="none" stroke-width="6"
+                stroke-dasharray="150.8" stroke-dashoffset="150.8"></circle>
+            </svg>
+            <div class="seal-pct" id="collectionPctText">–</div>
+          </div>
+          <div>
+            <div class="kpi-label" data-i18n="kpiCollectionRate">Collection Rate</div>
+            <div class="kpi-sub" id="kpiCollectionSub" style="margin-top:4px;" data-i18n="kpiOfAmountsDue">of amounts due</div>
+          </div>
+        </div>
+      </div>
+
+      <details class="more-analytics" id="moreAnalyticsDetails">
+        <summary>
+          <span class="ma-icon">📊</span>
+          <span class="ma-text-en">More analytics &amp; breakdowns</span>
+          <span class="ma-text-ar">تحليلات وتفاصيل إضافية</span>
+          <span class="ma-chevron">▾</span>
+        </summary>
+        <div class="more-analytics-body">
+
+      <div class="kpi-grid" id="cityGroupKpiGrid">
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiTotalCities">Total Cities</div>
+          <div class="kpi-value num" id="kpiCities">–</div>
+          <div class="kpi-sub" id="kpiCitiesSub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiTotalGroups">Total Groups</div>
+          <div class="kpi-value num" id="kpiGroups">–</div>
+          <div class="kpi-sub" id="kpiGroupsSub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiTopCity">Top City</div>
+          <div class="kpi-value num" id="kpiTopCity" style="font-size:20px;">–</div>
+          <div class="kpi-sub" id="kpiTopCitySub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiTopGroup">Top Group</div>
+          <div class="kpi-value num" id="kpiTopGroup" style="font-size:20px;">–</div>
+          <div class="kpi-sub" id="kpiTopGroupSub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiHighestAtt">Highest Attendance</div>
+          <div class="kpi-value num" id="kpiHighestAtt">–</div>
+          <div class="kpi-sub" id="kpiHighestAttSub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label" data-i18n="kpiHighestColl">Highest Collection</div>
+          <div class="kpi-value num" id="kpiHighestColl" style="font-size:20px;">–</div>
+          <div class="kpi-sub" id="kpiHighestCollSub"></div>
+        </div>
+      </div>
+
+      <div class="section-title" data-i18n="secCityAnalytics">City & Group Analytics <span class="tag" data-i18n="tagCityGroup">Analytics</span></div>
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="section-title"><span data-i18n="secAttByCity">Attendance Rate by City</span> <span class="tag" data-i18n="tagLive">Live</span></div>
+          <div class="chart-box">
+            <canvas id="attByCityChart"></canvas>
+            <div class="chart-empty" id="attByCityEmpty" data-i18n="emptyCityData">No city data available</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="section-title" data-i18n="secStudentsByGroup">Students by Group</div>
+          <div class="chart-box">
+            <canvas id="studentsByGroupChart"></canvas>
+            <div class="chart-empty" id="studentsByGroupEmpty" data-i18n="emptyGroupData">No group data available</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="section-title"><span data-i18n="secRevenueByCity">Revenue by City</span></div>
+          <div class="chart-box">
+            <canvas id="revenueByCityChart"></canvas>
+            <div class="chart-empty" id="revenueByCityEmpty" data-i18n="emptyCityData">No city data available</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="section-title"><span data-i18n="secCollectionByGroup">Collection by Group</span></div>
+          <div class="chart-box">
+            <canvas id="collectionByGroupChart"></canvas>
+            <div class="chart-empty" id="collectionByGroupEmpty" data-i18n="emptyGroupData">No group data available</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="list-grid">
+        <div class="list-card">
+          <div class="section-title" data-i18n="secTopCitiesAtt">Top Cities by Attendance</div>
+          <div id="topCitiesAttList"></div>
+        </div>
+        <div class="list-card">
+          <div class="section-title" data-i18n="secTopGroupsAtt">Top Groups by Attendance</div>
+          <div id="topGroupsAttList"></div>
+        </div>
+      </div>
+
+      <div class="list-grid">
+        <div class="list-card">
+          <div class="section-title" data-i18n="secTopCitiesColl">Top Cities by Collection</div>
+          <div id="topCitiesCollList"></div>
+        </div>
+        <div class="list-card">
+          <div class="section-title" data-i18n="secTopGroupsColl">Top Groups by Collection</div>
+          <div id="topGroupsCollList"></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="section-title"><span data-i18n="secAttByGrade">Attendance Rate by Grade</span> <span class="tag" data-i18n="tagLive">Live</span></div>
+          <div class="chart-box">
+            <canvas id="attendanceByGradeChart"></canvas>
+            <div class="chart-empty" id="attChartEmpty" data-i18n="emptyAttendance">No attendance data yet</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="section-title" data-i18n="secPaymentStatus">Payment Status</div>
+          <div class="chart-box">
+            <canvas id="paymentStatusChart"></canvas>
+            <div class="chart-empty" id="payChartEmpty" data-i18n="emptyPayment">No payment data yet</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="section-title"><span data-i18n="secAvgExam">Average Exam Scores</span> <span class="tag" id="examAvgSourceTag">exams</span></div>
+          <div class="chart-box" style="height:190px;">
+            <canvas id="examAvgChart"></canvas>
+            <div class="chart-empty" id="examAvgChartEmpty" data-i18n="emptyExamScores">No exam scores recorded yet</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="section-title"><span data-i18n="secScoreDist">Score Distribution</span> <span class="tag" data-i18n="tagByStudent">by student</span></div>
+          <div class="chart-box" style="height:190px;">
+            <canvas id="examDistChart"></canvas>
+            <div class="chart-empty" id="examDistChartEmpty" data-i18n="emptyExamScores">No exam scores recorded yet</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="section-title">
+            <span data-i18n="secAttVsPerf">Attendance vs. Performance</span>
+            <span class="tag">Correlation</span>
+          </div>
+          <div class="chart-box" style="height: 220px;">
+            <canvas id="attVsPerfChart"></canvas>
+            <div class="chart-empty" id="attVsPerfEmpty">Not enough data</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="section-title">
+            <span data-i18n="secGradePerformance">Grade Performance Breakdown</span>
+            <span class="tag">Overview</span>
+          </div>
+          <div class="chart-box" style="height: 220px;">
+            <canvas id="gradeRadarChart"></canvas>
+            <div class="chart-empty" id="gradeRadarEmpty">No data</div>
+          </div>
+        </div>
+      </div>
+        
+      <div class="list-grid">
+        <div class="list-card">
+          <div class="section-title" data-i18n="secTopAttendance">Top Attendance</div>
+          <div id="topAttendersList"></div>
+        </div>
+        <div class="list-card">
+          <div class="section-title" data-i18n="secUnpaidStudents">Unpaid Students</div>
+          <div id="unpaidList"></div>
+        </div>
+      </div>
+
+      <div class="list-grid">
+        <div class="list-card">
+          <div class="section-title" data-i18n="secTopExam">Top Exam Performers</div>
+          <div id="topExamList"></div>
+        </div>
+        <div class="list-card">
+          <div class="section-title" data-i18n="secNeedsImprovement">Needs Improvement</div>
+          <div id="lowExamList"></div>
+        </div>
+      </div>
+
+        </div>
+      </details>
+
+      <div class="chart-card">
+        <div class="roster-head">
+          <div class="search-box">
+            <input type="text" id="rosterSearch" data-i18n-ph="searchNamePhone" placeholder="Search by name or phone…" oninput="renderRoster()">
+          </div>
+          <div class="pay-filter" id="payFilter">
+            <button class="active" data-f="all" onclick="setPayFilter('all')" data-i18n="filterAll">All</button>
+            <button data-f="paid" onclick="setPayFilter('paid')" data-i18n="filterPaid">Paid</button>
+            <button data-f="unpaid" onclick="setPayFilter('unpaid')" data-i18n="filterUnpaid">Unpaid</button>
+          </div>
+          <button class="excel-btn" id="gradeExcelBtn" onclick="exportRosterExcel()">📊 <span data-i18n="exportExcel">Export Excel</span></button>
+        </div>
+        <div class="table-scroll-top" id="rosterScrollTop"><div class="table-scroll-top-inner" id="rosterScrollTopInner"></div></div>
+        <div class="table-wrap" id="rosterTableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="colName">Name</th>
+                <th data-i18n="colCity">City</th>
+                <th data-i18n="colGroup">Group</th>
+                <th data-i18n="colGrade">Grade</th>
+                <th data-i18n="colPresent">Present</th>
+                <th data-i18n="colAbsent">Absent</th>
+                <th data-i18n="colAttendanceRate">Attendance Rate</th>
+                <th data-i18n="colStudentPhone">Student Phone</th>
+                <th data-i18n="colParentPhone">Parent Phone</th>
+                <th data-i18n="colPayment">Payment</th>
+                <th data-i18n="colMonthsPaid">Months Paid</th>
+                <th data-i18n="colLastAttendance">Last Attendance</th>
+              </tr>
+            </thead>
+            <tbody id="rosterBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    </div>
+
+    <div id="historyView" style="display:none;">
+      <div class="state-msg show" id="histLoadingMsg">
+        <span class="spinner"></span> Loading monthly history…
+      </div>
+      <div class="state-msg err" id="histErrorMsg"></div>
+
+      <div class="content" id="histContent">
+
+        <div class="hist-toolbar">
+          <div class="left">
+            <select class="hist-select" id="histGradeSelect" onchange="onHistGradeChange()">
+              <option value="all" data-i18n="tabAll">All Grades</option>
+              <option value="first_prep" data-i18n="tabFirstPrep">First Preparatory</option>
+              <option value="second_prep" data-i18n="tabSecondPrep">Second Preparatory</option>
+              <option value="third_prep" data-i18n="tabThirdPrep">Third Preparatory</option>
+              <option value="first_secondary" data-i18n="tabFirstSecondary">First Secondary</option>
+              <option value="second_secondary" data-i18n="tabSecondSecondary">Second Secondary</option>
+              <option value="third_secondary" data-i18n="tabThirdSecondary">Third Secondary</option>
+            </select>
+          </div>
+          <button class="save-snapshot-btn" id="saveSnapshotBtn" onclick="saveCurrentMonthSnapshot()">💾 <span data-i18n="saveCurrentMonth">Save Current Month</span></button>
+          <button class="excel-btn" onclick="exportHistoryExcel()">📊 <span data-i18n="exportExcel">Export Excel</span></button>
+        </div>
+
+        <div class="delta-cards" id="deltaCards"></div>
+
+        <div class="two-col">
+          <div class="chart-card">
+            <div class="section-title"><span data-i18n="secAttCollTrend">Attendance & Collection Rate</span> <span class="tag" data-i18n="tagTrend">Trend</span></div>
+            <div class="chart-box">
+              <canvas id="histRateChart"></canvas>
+              <div class="chart-empty" id="histRateEmpty" data-i18n="emptyHistory">No history saved yet</div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="section-title" data-i18n="secRevenueByMonth">Revenue by Month</div>
+            <div class="chart-box">
+              <canvas id="histRevenueChart"></canvas>
+              <div class="chart-empty" id="histRevenueEmpty" data-i18n="emptyHistory">No history saved yet</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom:28px;">
+          <div class="section-title"><span data-i18n="secStudentGrowth">Student Growth</span> <span class="tag" data-i18n="tagGrowth">Growth</span></div>
+          <div class="chart-box" style="height:200px;">
+            <canvas id="histStudentTrendChart"></canvas>
+            <div class="chart-empty" id="histStudentTrendEmpty" data-i18n="emptyHistory">No history saved yet</div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="section-title" data-i18n="secMonthComparison">Month-by-Month Comparison</div>
+          <div class="hist-table-note" data-i18n="histTableNote">Each row is a saved snapshot. Change vs. shows the difference from the previous saved month. Use "Who Hasn't Paid" to see who was unpaid that month.</div>
+          <div class="table-scroll-top" id="histScrollTop"><div class="table-scroll-top-inner" id="histScrollTopInner"></div></div>
+          <div class="table-wrap" id="histTableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="colMonth">Month</th>
+                  <th data-i18n="colStudents">Students</th>
+                  <th data-i18n="colAttendanceRate">Attendance Rate</th>
+                  <th data-i18n="colCollectionRate">Collection Rate</th>
+                  <th data-i18n="colRevenue">Revenue</th>
+                  <th data-i18n="colPaid">Paid</th>
+                  <th data-i18n="colUnpaid">Unpaid</th>
+                  <th data-i18n="colWhoUnpaid">Who Hasn't Paid</th>
+                </tr>
+              </thead>
+              <tbody id="histTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="examsView" style="display:none;">
+      <div class="state-msg show" id="examLoadingMsg">
+        <span class="spinner"></span> Loading grades…
+      </div>
+      <div class="state-msg err" id="examErrorMsg"></div>
+
+      <div class="content" id="examContent">
+
+        <div class="hist-toolbar">
+          <div class="left">
+            <select class="hist-select" id="examGradeSelect" onchange="onExamGradeChange()">
+              <option value="first_prep" data-i18n="tabFirstPrep">First Preparatory</option>
+              <option value="second_prep" data-i18n="tabSecondPrep">Second Preparatory</option>
+              <option value="third_prep" data-i18n="tabThirdPrep">Third Preparatory</option>
+              <option value="first_secondary" data-i18n="tabFirstSecondary">First Secondary</option>
+              <option value="second_secondary" data-i18n="tabSecondSecondary">Second Secondary</option>
+              <option value="third_secondary" data-i18n="tabThirdSecondary">Third Secondary</option>
+            </select>
+            <div class="search-box" style="min-width:200px;">
+              <input type="text" id="examSearch" data-i18n-ph="searchStudentName" placeholder="Search by student name…" oninput="renderExamTable()">
+            </div>
+          </div>
+
+          <button class="excel-btn" onclick="exportExamExcel()">📊 <span data-i18n="exportExcel">Export Excel</span></button>
+        </div>
+
+        <div class="chart-card">
+          <div class="section-title"><span data-i18n="secGradesTable">Grades Table</span> <span class="tag" data-i18n="tagPermanent">Permanent — not cleared monthly</span></div>
+          <div class="hist-table-note" data-i18n="gradesTableNote">Each exam is shown in its own column. To add a new exam or enter/edit scores, use the "Manage Exams" page.</div>
+          <div class="table-scroll-top" id="examScrollTop"><div class="table-scroll-top-inner" id="examScrollTopInner"></div></div>
+          <div class="table-wrap" id="examTableWrap">
+            <table>
+              <thead id="examTableHead"></thead>
+              <tbody id="examTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="settingsView" style="display:none;">
+
+      <div class="sv-hero">
+        <div class="sv-hero-left">
+          <div class="sv-hero-avatar">⚙️</div>
+          <div>
+            <div class="sv-hero-title" data-i18n="settingsHeroTitle">Dashboard Settings</div>
+            <div class="sv-hero-sub" data-i18n="settingsHeroSub">Customize how your dashboard looks and speaks</div>
+          </div>
+        </div>
+        <div class="sv-hero-pill" data-i18n="settingsHeroPill">Changes save instantly</div>
+      </div>
+
+      <div class="settings-grid">
+
+        <div class="settings-card">
+          <div class="settings-card-head">
+            <div class="settings-card-icon">🌓</div>
+            <div>
+              <div class="settings-card-title" data-i18n="settingsAppearance">Appearance</div>
+              <div class="settings-card-sub" data-i18n="settingsAppearanceSub">Choose how the dashboard looks</div>
+            </div>
+          </div>
+          <div class="theme-preview" id="themePreview">
+            <button type="button" data-theme-choice="light" onclick="setTheme('light')">
+              <span class="swatch light"></span>
+              <span data-i18n="settingsLight">Light</span>
+            </button>
+            <button type="button" data-theme-choice="dark" onclick="setTheme('dark')">
+              <span class="swatch dark"></span>
+              <span data-i18n="settingsDark">Dark</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-card-head">
+            <div class="settings-card-icon">🌐</div>
+            <div>
+              <div class="settings-card-title" data-i18n="settingsLanguage">Language</div>
+              <div class="settings-card-sub" data-i18n="settingsLanguageSub">Switch the interface language</div>
+            </div>
+          </div>
+          <div class="lang-switch" id="langSwitch">
+            <button type="button" data-lang-choice="en" onclick="setLanguage('en')">English</button>
+            <button type="button" data-lang-choice="ar" onclick="setLanguage('ar')">العربية</button>
+          </div>
+          <div class="settings-note" data-i18n="settingsLangNote">
+            Labels, buttons, and headers switch language instantly. Names and phone numbers stay exactly as stored in Supabase.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-note" data-i18n="footerNote">Data is read live from Supabase using a read-only anon key</div>
+</div>
+
+<div class="modal-overlay" id="unpaidModalOverlay" onclick="if(event.target===this) closeUnpaidModal()">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" id="unpaidModalTitle" style="margin-bottom:0;"></div>
+      <button class="modal-close" onclick="closeUnpaidModal()">×</button>
+    </div>
+    <div id="unpaidModalBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="studentTrendModalOverlay" onclick="if(event.target===this) closeStudentTrendModal()">
+  <div class="modal-box" style="max-width:560px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" id="studentTrendTitle" style="margin-bottom:0;"></div>
+      <button class="modal-close" onclick="closeStudentTrendModal()">×</button>
+    </div>
+    <div class="chart-box" style="height:260px;">
+      <canvas id="studentTrendChart"></canvas>
+      <div class="chart-empty" id="studentTrendEmpty">No exam scores recorded yet for this student</div>
+    </div>
+    <div id="studentTrendSummary" style="margin-top:14px; font-size:12.5px; color:var(--muted); text-align:center;"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="paymentHistoryModalOverlay" onclick="if(event.target===this) closePaymentHistoryModal()">
+  <div class="modal-box" style="max-width:480px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" id="paymentHistoryTitle" style="margin-bottom:0;"></div>
+      <button class="modal-close" onclick="closePaymentHistoryModal()">×</button>
+    </div>
+    <div id="paymentHistoryBody"></div>
+    <div id="paymentHistorySummary" style="margin-top:14px; font-size:12.5px; color:var(--muted); text-align:center;"></div>
+  </div>
+</div>
+
+<script>
+  /* ============================================================
+     SUPABASE CONNECTION
+     ============================================================ */
+  const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  global: {
+    fetch: (url, options = {}) => fetch(url, { ...options, cache: "no-store" })
+  }
+});
+
+  const SCHEMA = {
+    attendanceTable: (g) => GRADE_CONFIG[g].attendanceTable,
+    paymentsTable: (g) => GRADE_CONFIG[g].paymentsTable,
+    col: {
+      fullName: "full_name",
+      qrCode: "qr_code",
+      studentPhone: "student_phone",
+      parentPhone: "parent_phone",
+      attendanceCount: "attendance_count",
+      absenceCount: "absence_count",
+      lastAttendance: "last_attendance_date",
+      amountPaid: "amount_paid",
+      paymentStatus: "payment_status",
+      lastPaymentDate: "last_payment_date",
+      city: "city",
+      groupName: "group_name"
+    }
+  };
+
+  /* ============================================================
+     PAYMENT HISTORY (per-month payments per student, independent of
+     the monthly attendance/payment tables above). Used to show which
+     months a given student has paid.
+     ============================================================ */
+  const PAYMENT_HISTORY_SCHEMA = {
+    table: "payment_history",
+    col: {
+      qrCode: "qr_code",
+      month: "month",
+      year: "year",
+      amountPaid: "amount_paid",
+      createdAt: "created_at"
+    }
+  };
+
+  const GRADE_CONFIG = {
+    first_prep: {
+      labelEn: "First Preparatory", labelAr: "أولى إعدادي",
+      attendanceTable: "حضور_أولى_إعدادي", paymentsTable: "دفع_أولى_إعدادي"
+    },
+    second_prep: {
+      labelEn: "Second Preparatory", labelAr: "تانية إعدادي",
+      attendanceTable: "حضور_تانية_إعدادي", paymentsTable: "دفع_تانية_إعدادي"
+    },
+    third_prep: {
+      labelEn: "Third Preparatory", labelAr: "تالتة إعدادي",
+      attendanceTable: "حضور_تالتة_إعدادي", paymentsTable: "دفع_تالتة_إعدادي"
+    },
+    first_secondary: {
+      labelEn: "First Secondary", labelAr: "أولى ثانوي",
+      attendanceTable: "حضور_أولى_ثانوي", paymentsTable: "دفع_أولى_ثانوي"
+    },
+    second_secondary: {
+      labelEn: "Second Secondary", labelAr: "تانية ثانوي",
+      attendanceTable: "حضور_تانية_ثانوي", paymentsTable: "دفع_تانية_ثانوي"
+    },
+    third_secondary: {
+      labelEn: "Third Secondary", labelAr: "تالتة ثانوي",
+      attendanceTable: "حضور_تالتة_ثانوي", paymentsTable: "دفع_تالتة_ثانوي"
+    }
+  };
+
+  const GRADE_LABELS = Object.fromEntries(Object.entries(GRADE_CONFIG).map(([k,v]) => [k, v.labelEn]));
+  const GRADES = Object.keys(GRADE_CONFIG);
+  const GRADE_COLORS = {
+  first_prep: "#1565C0",
+  second_prep: "#2E8BF0",
+  third_prep: "#2E8BF0",
+  first_secondary: "#7FB2F5",
+  second_secondary: "#5C7396",
+  third_secondary: "#A9CDF7"
+};
+
+  let currentGrade = "all";
+  let payFilterState = "all";
+  let currentGroupFilter = "all";
+  let combined = { students: [], statsRows: [], examAverages: {}, examStudentAverages: [] };
+  let charts = { attVsPerf: null, gradeRadar: null, attByCity: null, studentsByGroup: null, revenueByCity: null, collectionByGroup: null };
+  let histCharts = { rate: null, rev: null, students: null };
+
+  const I18N = {
+    en: {
+      tabAll: "🎓 All Grades",
+      tabFirstPrep: "📘 First Preparatory", tabSecondPrep: "📗 Second Preparatory", tabThirdPrep: "📙 Third Preparatory",
+      tabFirstSecondary: "📕 First Secondary", tabSecondSecondary: "📔 Second Secondary", tabThirdSecondary: "📓 Third Secondary",
+      tabExams: "📝 Exam Grades", tabHistory: "📂 Monthly History", tabSettings: "⚙️ Settings",
+      brandEyebrow: "Live insights", brandTitle: "Live Dashboard", brandSub: "Attendance & payment insights",
+      backBtn: "Back", refreshBtn: "Refresh data",
+      kpiTotalStudents: "Total Students", kpiAttendanceRate: "Attendance Rate", kpiTotalCollected: "Total Collected",
+      kpiCollectedToday: "Collected Today",
+      kpiUnpaid: "Unpaid", kpiCollectionRate: "Collection Rate", kpiOfAmountsDue: "of amounts due",
+      secAttByGrade: "Attendance Rate by Grade", secAttVsPerf: "Attendance vs. Performance", secGradePerformance: "Grade Performance Breakdown", tagLive: "Live",
+      secPaymentStatus: "Payment Status",
+      secAvgExam: "Average Exam Scores",
+      secScoreDist: "Score Distribution", tagByStudent: "by student",
+      secTopAttendance: "Top Attendance", secUnpaidStudents: "Unpaid Students",
+      secTopExam: "Top Exam Performers", secNeedsImprovement: "Needs Improvement",
+      searchNamePhone: "Search by name or phone…",
+      filterAll: "All", filterPaid: "Paid", filterUnpaid: "Unpaid", filterAllGroups: "All Groups", exportExcel: "Export Excel",
+      colName: "Name", colCity: "City", colGroup: "Group", colGrade: "Grade", colPresent: "Present", colAbsent: "Absent",
+      colAttendanceRate: "Attendance Rate", colStudentPhone: "Student Phone", colParentPhone: "Parent Phone",
+      colPayment: "Payment", colMonthsPaid: "Months Paid", colLastAttendance: "Last Attendance",
+      colMonth: "Month", colStudents: "Students", colCollectionRate: "Collection Rate", colRevenue: "Revenue",
+      colPaid: "Paid", colUnpaid: "Unpaid", colWhoUnpaid: "Who Hasn't Paid",
+      saveCurrentMonth: "Save Current Month",
+      secAttCollTrend: "Attendance & Collection Rate", tagTrend: "Trend",
+      secRevenueByMonth: "Revenue by Month",
+      secStudentGrowth: "Student Growth", tagGrowth: "Growth",
+      secMonthComparison: "Month-by-Month Comparison",
+      histTableNote: "Each row is a saved snapshot. Change vs. shows the difference from the previous saved month. Use \"Who Hasn't Paid\" to see who was unpaid that month.",
+      manageExams: "Manage Exams",
+      secGradesTable: "Grades Table", tagPermanent: "Permanent — not cleared monthly",
+      gradesTableNote: "Each exam is shown in its own column.",
+      searchStudentName: "Search by student name…",
+      footerNote: "Data is read live from Supabase using a read-only anon key",
+      settingsAppearance: "Appearance", settingsAppearanceSub: "Choose how the dashboard looks",
+      settingsLight: "Light", settingsDark: "Dark",
+      settingsDarkMode: "Dark Mode", settingsDarkModeDesc: "Easier on the eyes at night",
+      settingsLanguage: "Language", settingsLanguageSub: "Switch the interface language",
+      settingsLangNote: "Labels, buttons, and headers switch language instantly. Names and phone numbers stay exactly as stored in Supabase.",
+      settingsHeroTitle: "Dashboard Settings", settingsHeroSub: "Customize how your dashboard looks and speaks",
+      settingsHeroPill: "Changes save instantly",
+      emptyAttendance: "No attendance data yet", emptyPayment: "No payment data yet",
+      emptyExamScores: "No exam scores recorded yet", emptyHistory: "No history saved yet",
+      chartLibFail: "Chart library failed to load — try refreshing",
+      noDataYet: "No data yet", everyonePaid: "🎉 Everyone has paid",
+      moreSeeTable: "more — see the table below",
+      noExamScoresYet: "No exam scores yet", notEnoughExamData: "Not enough students with exam scores yet to show a separate list",
+      noMatchingResults: "No matching results",
+      noSavedMonths: "No saved months yet",
+      noSavedMonthsGrade: "No saved months yet for this grade — save the current month to start tracking.",
+      noStudentsGrade: "No students in this grade",
+      noStudentsMatch: "No students match",
+      acrossAllGrades: "across all grades",
+      avgOfStudents: "avg of", students_: "students", noAttendanceData: "no attendance data",
+      studentsPaid: "students paid",
+      outOf: "out of", noPaymentRecords: "no payment records",
+      noPaymentsToday: "no payments recorded today",
+      lastUpdated: "Last updated:",
+      exams_: "exams", exam_: "exam",
+      secCityAnalytics: "City & Group Analytics", tagCityGroup: "Analytics",
+      colCity: "City", colGroup: "Group",
+      kpiTotalCities: "Total Cities", kpiTotalGroups: "Total Groups",
+      secTopCitiesAtt: "Top Cities by Attendance", secTopGroupsAtt: "Top Groups by Attendance",
+      secTopCitiesColl: "Top Cities by Collection", secTopGroupsColl: "Top Groups by Collection",
+      secAttByCity: "Attendance Rate by City", secStudentsByGroup: "Students by Group",
+      secRevenueByCity: "Revenue by City", secCollectionByGroup: "Collection by Group",
+      emptyCityData: "No city data available", emptyGroupData: "No group data available",
+      kpiTopCity: "Top City", kpiTopGroup: "Top Group",
+      kpiHighestAtt: "Highest Attendance", kpiHighestColl: "Highest Collection",
+      studentsCount: "students", revenueCollected: "collected",
+      attendanceRate: "attendance rate", collectionRate: "collection rate",
+      colAmountPaid: "Amount Paid", colAverage: "Average",
+      paymentHistoryTitleWord: "Payment History",
+      monthsPaidCount: "months paid",
+      viewBtn: "View",
+      noPaymentHistoryYet: "No payment history recorded yet for this student",
+      totalPaidWord: "total",},
+    ar: {
+      tabAll: "🎓 كل الصفوف",
+      tabFirstPrep: "📘 أولى إعدادي", tabSecondPrep: "📗 تانية إعدادي", tabThirdPrep: "📙 تالتة إعدادي",
+      tabFirstSecondary: "📕 أولى ثانوي", tabSecondSecondary: "📔 تانية ثانوي", tabThirdSecondary: "📓 تالتة ثانوي",
+      tabExams: "📝 درجات الامتحانات", tabHistory: "📂 السجل الشهري", tabSettings: "⚙️ الإعدادات",
+      brandEyebrow: "بيانات لحظية", brandTitle: "لوحة المتابعة", brandSub: "بيانات الحضور والمدفوعات",
+      backBtn: "رجوع", refreshBtn: "تحديث البيانات",
+      kpiTotalStudents: "إجمالي الطلاب", kpiAttendanceRate: "نسبة الحضور", kpiTotalCollected: "إجمالي التحصيل",
+      kpiCollectedToday: "المحصل اليوم",
+      kpiUnpaid: "غير مدفوع", kpiCollectionRate: "نسبة التحصيل", kpiOfAmountsDue: "من المبالغ المستحقة",
+      secAttByGrade: "نسبة الحضور حسب الصف", secAttVsPerf: "الحضور مقابل الأداء", secGradePerformance: "تحليل أداء الصفوف", tagLive: "لحظي",
+      secPaymentStatus: "حالة الدفع",
+      secAvgExam: "متوسط درجات الامتحانات",
+      secScoreDist: "توزيع الدرجات", tagByStudent: "لكل طالب",
+      secTopAttendance: "الأعلى حضورًا", secUnpaidStudents: "طلاب لم يدفعوا بعد",
+      secTopExam: "الأعلى تحصيلًا للدرجات", secNeedsImprovement: "بحاجة إلى تحسين المستوى",
+      searchNamePhone: "ابحث بالاسم أو رقم الهاتف…",
+      filterAll: "الكل", filterPaid: "مدفوع", filterUnpaid: "غير مدفوع", filterAllGroups: "كل المجموعات", exportExcel: "تصدير إكسل",
+      colName: "الاسم", colCity: "المدينة", colGroup: "المجموعة", colGrade: "الصف", colPresent: "حضور", colAbsent: "غياب",
+      colAttendanceRate: "نسبة الحضور", colStudentPhone: "هاتف الطالب", colParentPhone: "هاتف ولي الأمر",
+      colPayment: "الدفع", colMonthsPaid: "الشهور المدفوعة", colLastAttendance: "آخر حضور",
+      colMonth: "الشهر", colStudents: "الطلاب", colCollectionRate: "نسبة التحصيل", colRevenue: "الإيراد",
+      colPaid: "مدفوع", colUنpaid: "غير مدفوع", colWhoUnpaid: "من لم يدفع",
+      saveCurrentMonth: "حفظ الشهر الحالي",
+      secAttCollTrend: "نسبة الحضور والتحصيل", tagTrend: "اتجاه",
+      secRevenueByMonth: "الإيراد حسب الشهر",
+      secStudentGrowth: "نمو عدد الطلاب", tagGrowth: "نمو",
+      secMonthComparison: "مقارنة شهرًا بشهر",
+      histTableNote: "كل صف هو نسخة محفوظة. يوضح عمود التغيير الفرق عن آخر شهر محفوظ. استخدم \"من لم يدفع\" لرؤية من لم يدفع في ذلك الشهر.",
+      manageExams: "إدارة الامتحانات",
+      secGradesTable: "جدول الدرجات", tagPermanent: "دائم — لا يُمسح شهريًا",
+      gradesTableNote: "يظهر كل امتحان في عمود مستقل.",
+      searchStudentName: "ابحث باسم الطالب…",
+      footerNote: "تُقرأ البيانات مباشرة من Supabase باستخدام مفتاح قراءة فقط",
+      settingsAppearance: "المظهر", settingsAppearanceSub: "اختر شكل لوحة المتابعة",
+      settingsLight: "فاتح", settingsDark: "داكن",
+      settingsDarkMode: "الوضع الداكن", settingsDarkModeDesc: "أريح للعين ليلًا",
+      settingsLanguage: "اللغة", settingsLanguageSub: "بدّل لغة الواجهة",
+      settingsLangNote: "تتغير التسميات والأزرار والعناوين فورًا. الأسماء وأرقام الهواتف تبقى كما هي في Supabase.",
+      settingsHeroTitle: "إعدادات لوحة التحكم", settingsHeroSub: "خصص شكل ولغة لوحة التحكم الخاصة بك",
+      settingsHeroPill: "التغييرات تُحفظ فورًا",
+      emptyAttendance: "لا توجد بيانات حضور بعد", emptyPayment: "لا توجد بيانات دفع بعد",
+      emptyExamScores: "لا توجد درجات امتحانات مسجلة بعد", emptyHistory: "لا يوجد سجل محفوظ بعد",
+      chartLibFail: "فشل تحميل مكتبة الرسوم البيانية — حاول التحديث",
+      noDataYet: "لا توجد بيانات بعد", everyonePaid: "🎉 الجميع دفع",
+      moreSeeTable: "أكثر — انظر الجدول أدناه",
+      noExamScoresYet: "لا توجد درجات امتحانات بعد", notEnoughExamData: "لا يوجد عدد كافٍ من الطلاب بدرجات امتحانات لعرض قائمة منفصلة",
+      noMatchingResults: "لا توجد نتائج مطابقة",
+      noSavedMonths: "لا يوجد شهر محفوظ بعد",
+      noSavedMonthsGrade: "لا يوجد شهر محفوظ بعد لهذا الصف — احفظ الشهر الحالي لبدء المتابعة.",
+      noStudentsGrade: "لا يوجد طلاب في هذا الصف",
+      noStudentsMatch: "لا يوجد طلاب مطابقون لـ",
+      acrossAllGrades: "في كل الصفوف",
+      avgOfStudents: "متوسط", students_: "طالب", noAttendanceData: "لا توجد بيانات حضور",
+      studentsPaid: "طالب دفعوا",
+      outOf: "من أصل", noPaymentRecords: "لا توجد سجلات دفع",
+      noPaymentsToday: "لا توجد مدفوعات اليوم",
+      lastUpdated: "آخر تحديث:",
+      exams_: "امتحانات", exam_: "امتحان",
+      secCityAnalytics: "تحليل المدن والمجموعات", tagCityGroup: "تحليلات",
+      colCity: "المدينة", colGroup: "المجموعة",
+      kpiTotalCities: "إجمالي المدن", kpiTotalGroups: "إجمالي المجموعات",
+      secTopCitiesAtt: "أعلى المدن حضورًا", secTopGroupsAtt: "أعلى المجموعات حضورًا",
+      secTopCitiesColl: "أعلى المدن تحصيلًا", secTopGroupsColl: "أعلى المجموعات تحصيلًا",
+      secAttByCity: "نسبة الحضور حسب المدينة", secStudentsByGroup: "الطلاب حسب المجموعة",
+      secRevenueByCity: "الإيراد حسب المدينة", secCollectionByGroup: "التحصيل حسب المجموعة",
+      emptyCityData: "لا توجد بيانات مدينة", emptyGroupData: "لا توجد بيانات مجموعة",
+      kpiTopCity: "أعلى مدينة", kpiTopGroup: "أعلى مجموعة",
+      kpiHighestAtt: "أعلى حضور", kpiHighestColl: "أعلى تحصيل",
+      studentsCount: "طالب", revenueCollected: "مُحصّل",
+      attendanceRate: "نسبة الحضور", collectionRate: "نسبة التحصيل",
+      colAmountPaid: "المبلغ المدفوع", colAverage: "المتوسط",
+      paymentHistoryTitleWord: "سجل المدفوعات",
+      monthsPaidCount: "شهر مدفوع",
+      viewBtn: "عرض",
+      noPaymentHistoryYet: "لا يوجد سجل مدفوعات لهذا الطالب بعد",
+      totalPaidWord: "الإجمالي",}
+  };
+
+  let currentLang = localStorage.getItem("dashLang") || "en";
+  let currentTheme = localStorage.getItem("dashTheme") || "light";
+
+  function t(key){
+    return (I18N[currentLang] && I18N[currentLang][key] != null) ? I18N[currentLang][key] : (I18N.en[key] != null ? I18N.en[key] : key);
+  }
+
+  function tGradeLabel(grade){
+    const map = {
+      first_prep: currentLang === "ar" ? I18N.ar.tabFirstPrep : I18N.en.tabFirstPrep,
+      second_prep: currentLang === "ar" ? I18N.ar.tabSecondPrep : I18N.en.tabSecondPrep,
+      third_prep: currentLang === "ar" ? I18N.ar.tabThirdPrep : I18N.en.tabThirdPrep,
+      first_secondary: currentLang === "ar" ? I18N.ar.tabFirstSecondary : I18N.en.tabFirstSecondary,
+      second_secondary: currentLang === "ar" ? I18N.ar.tabSecondSecondary : I18N.en.tabSecondSecondary,
+      third_secondary: currentLang === "ar" ? I18N.ar.tabThirdSecondary : I18N.en.tabThirdSecondary
+    };
+    return map[grade] || GRADE_LABELS[grade] || "—";
+  }
+
+  function applyTranslations(){
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      const key = el.dataset.i18n;
+      el.textContent = t(key);
+    });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+      el.placeholder = t(el.dataset.i18nPh);
+    });
+  }
+
+  function setTheme(theme){
+    currentTheme = theme === "dark" ? "dark" : "light";
+    localStorage.setItem("dashTheme", currentTheme);
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    document.querySelectorAll("#themePreview button").forEach(b => {
+      b.classList.toggle("active", b.dataset.themeChoice === currentTheme);
+    });
+  }
+function goBack(){
+  if(document.referrer && document.referrer !== location.href){
+    history.back();
+  } else {
+    window.location.href = "index.html";
+  }
+}
+  function syncMobileDrawerOffset(){
+    const tabRow = document.getElementById('gradeTabs');
+    const logo = document.querySelector('.sidebar-logo');
+    if(!tabRow || !logo) return;
+    if(window.innerWidth <= 860){
+      // Measure the logo's real rendered height (instead of guessing a
+      // fixed pixel value) so the tab list always starts right below it,
+      // no matter the screen size or how the logo itself is styled.
+      const h = logo.getBoundingClientRect().height;
+      tabRow.style.paddingTop = (h + 12) + "px";
+    } else {
+      tabRow.style.paddingTop = "";
+    }
+  }
+  window.addEventListener("resize", syncMobileDrawerOffset);
+  window.addEventListener("orientationchange", syncMobileDrawerOffset);
+
+  function toggleSidebar() {
+    const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem("dashSidebarCollapsed", isCollapsed);
+    syncMobileDrawerOffset();
+
+    // On mobile the sidebar is an off-canvas drawer that keeps its old
+    // scroll position between opens. Without this, opening the drawer
+    // again could leave it scrolled down from last time, hiding the
+    // first tabs ("All Grades" / "First Preparatory") above the visible
+    // area — which looked like those options had disappeared. Always
+    // reset it to the top whenever the drawer is opened on mobile.
+    if (window.innerWidth <= 860 && isCollapsed) {
+      const tabRow = document.getElementById('gradeTabs');
+      if (tabRow) tabRow.scrollTop = 0;
+    }
+  }
+
+  function applySidebarState() {
+    if(window.innerWidth <= 860) return; // start closed on mobile regardless of saved state
+    const isCollapsed = localStorage.getItem("dashSidebarCollapsed") === "true";
+    if (isCollapsed) {
+      document.body.classList.add('sidebar-collapsed');
+    }
+  }
+
+  function closeSidebarOnMobileNav(){
+    if(window.innerWidth <= 860 && document.body.classList.contains('sidebar-collapsed')){
+      document.body.classList.remove('sidebar-collapsed');
+    }
+  }
+
+  function setLanguage(lang){
+    currentLang = (lang === "ar") ? "ar" : "en";
+    localStorage.setItem("dashLang", currentLang);
+    document.documentElement.lang = currentLang;
+    document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("#langSwitch button").forEach(b => {
+      b.classList.toggle("active", b.dataset.langChoice === currentLang);
+    });
+    applyTranslations();
+    if(document.getElementById("settingsView").style.display !== "none"){
+      // nothing dynamic to re-render on the settings view itself
+    } else if(document.getElementById("historyView").style.display !== "none"){
+      renderHistory();
+    } else if(document.getElementById("examsView").style.display !== "none"){
+      renderExamTable();
+    } else if(combined.students.length || document.getElementById("dashContent").classList.contains("show")){
+      renderAll();
+    }
+  }
+
+  document.getElementById("settingsTab").addEventListener("click", () => {
+    document.querySelectorAll("#gradeTabs .tab").forEach(t => t.classList.remove("active"));
+    document.getElementById("settingsTab").classList.add("active");
+    document.getElementById("dashboardView").style.display = "none";
+    document.getElementById("historyView").style.display = "none";
+    document.getElementById("examsView").style.display = "none";
+    document.getElementById("settingsView").style.display = "";
+    closeSidebarOnMobileNav();
+  });
+
+  document.querySelectorAll("#gradeTabs .tab[data-grade]").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#gradeTabs .tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentGrade = tab.dataset.grade;
+      currentGroupFilter = "all";
+      document.getElementById("dashboardView").style.display = "";
+      document.getElementById("historyView").style.display = "none";
+      document.getElementById("examsView").style.display = "none";
+      document.getElementById("settingsView").style.display = "none";
+      loadDashboard();
+      closeSidebarOnMobileNav();
+    });
+  });
+
+  document.getElementById("historyTab").addEventListener("click", () => {
+    document.querySelectorAll("#gradeTabs .tab").forEach(t => t.classList.remove("active"));
+    document.getElementById("historyTab").classList.add("active");
+    document.getElementById("dashboardView").style.display = "none";
+    document.getElementById("historyView").style.display = "";
+    document.getElementById("examsView").style.display = "none";
+    document.getElementById("settingsView").style.display = "none";
+    document.getElementById("histGradeSelect").value = historyGradeFilter;
+    loadHistory();
+    closeSidebarOnMobileNav();
+  });
+
+  document.getElementById("examsTab").addEventListener("click", () => {
+    document.querySelectorAll("#gradeTabs .tab").forEach(t => t.classList.remove("active"));
+    document.getElementById("examsTab").classList.add("active");
+    document.getElementById("dashboardView").style.display = "none";
+    document.getElementById("historyView").style.display = "none";
+    document.getElementById("examsView").style.display = "";
+    document.getElementById("settingsView").style.display = "none";
+    document.getElementById("examGradeSelect").value = examGrade;
+    loadExamGrades();
+    closeSidebarOnMobileNav();
+  });
+
+  function refreshCurrentView(){
+    if(document.getElementById("historyView").style.display !== "none"){
+      loadHistory();
+    } else if(document.getElementById("examsView").style.display !== "none"){
+      loadExamGrades();
+    } else if(document.getElementById("settingsView").style.display !== "none"){
+      // nothing to refresh on the settings view
+    } else {
+      loadDashboard();
+      loadSidebarCounts();
+    }
+  }
+
+  function setPayFilter(f){
+    payFilterState = f;
+    document.querySelectorAll("#payFilter button").forEach(b => b.classList.toggle("active", b.dataset.f === f));
+    renderRoster();
+  }
+
+  function getGroupFilteredStudents(list){
+    return currentGroupFilter === "all" ? list : list.filter(s => (s.groupName || "").trim() === currentGroupFilter);
+  }
+
+  function populateGroupFilterOptions(students){
+    const select = document.getElementById("groupFilterSelect");
+    if(!select) return;
+    const groups = Array.from(new Set(students.map(s => (s.groupName || "").trim()).filter(Boolean)))
+      .sort((a,b) => a.localeCompare(b, currentLang === "ar" ? "ar" : "en"));
+
+    const previousValue = currentGroupFilter;
+    select.innerHTML = `<option value="all">${t('filterAllGroups')}</option>` +
+      groups.map(g => `<option value="${g.replace(/"/g, '&quot;')}">${g}</option>`).join("");
+
+    if(previousValue !== "all" && groups.includes(previousValue)){
+      select.value = previousValue;
+      currentGroupFilter = previousValue;
+    } else {
+      select.value = "all";
+      currentGroupFilter = "all";
+    }
+  }
+
+  function onGroupFilterChange(){
+    currentGroupFilter = document.getElementById("groupFilterSelect").value;
+    renderAll();
+  }
+
+  function wireTopScrollbar(topId, innerId, wrapId){
+    const top = document.getElementById(topId);
+    const inner = document.getElementById(innerId);
+    const wrap = document.getElementById(wrapId);
+    if(!top || !inner || !wrap) return;
+    const table = wrap.querySelector("table");
+    const sync = () => { inner.style.width = (table ? table.scrollWidth : wrap.scrollWidth) + "px"; };
+    sync();
+    new ResizeObserver(sync).observe(wrap);
+    let syncing = false;
+    top.addEventListener("scroll", () => { if(syncing) return; syncing = true; wrap.scrollLeft = top.scrollLeft; syncing = false; });
+    wrap.addEventListener("scroll", () => { if(syncing) return; syncing = true; top.scrollLeft = wrap.scrollLeft; syncing = false; });
+  }
+
+  function isPaid(status){
+    const s = String(status ?? "").trim().toLowerCase();
+    return s === "paid" || s === "true" || s === "yes" || s === "1";
+  }
+  function pct(att, abs){
+    const a = Number(att) || 0, b = Number(abs) || 0;
+    const total = a + b;
+    return total > 0 ? Math.round((a / total) * 100) : null;
+  }
+  function fmtEGP(n){ return `EGP ${Number(n || 0).toLocaleString('en-US')}`; }
+
+  function toDateOnly(value){
+    if(!value) return null;
+    const str = String(value);
+    if(/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+    const parsed = new Date(str);
+    if(isNaN(parsed.getTime())) return null;
+    return parsed.toISOString().slice(0, 10);
+  }
+  
+  function getScoreColor(score, opacity = 1) {
+  const alpha = opacity;
+  if (score >= 90) return `rgba(29,65,69,${alpha})`;
+  if (score >= 75) return `rgba(40,86,90,${alpha})`;
+  if (score >= 60) return `rgba(184,155,122,${alpha})`;
+  return `rgba(150,115,84,${alpha})`;
+}
+  
+  function toggleGroup(labelEl) {
+    const groupName = labelEl.getAttribute('data-group');
+    const groupEl = document.querySelector(`.tab-group[data-group="${groupName}"]`);
+    const currentText = labelEl.textContent.trim();
+    const isCollapsed = groupEl.classList.contains('collapsed');
+    
+    groupEl.classList.toggle('collapsed');
+    
+    if (isCollapsed) {
+      labelEl.textContent = '▼ ' + currentText.substring(2);
+    } else {
+      labelEl.textContent = '▶ ' + currentText.substring(2);
+    }
+  }
+
+  function exportRowsToExcel(rows, sheetName, filename){
+    if(typeof XLSX === "undefined"){ alert("The Excel library failed to load — check your connection and try again."); return; }
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
+    XLSX.writeFile(wb, filename);
+  }
+
+  function exportRosterExcel(){
+    const filtered = getGroupFilteredStudents(combined.students);
+    if(!filtered.length){ alert("No student data loaded yet — try refreshing the dashboard first."); return; }
+    const header = [t("colName"), t("colCity"), t("colGroup"), t("colGrade"), t("colPresent"), t("colAbsent"), t("colAttendanceRate"), t("colStudentPhone"), t("colParentPhone"), t("colPayment"), t("colAmountPaid"), t("colLastAttendance")];
+    const rows = filtered.map(s => {
+      const p = pct(s.attendanceCount, s.absenceCount);
+      const paymentLabel = s.paymentStatus !== "" ? (isPaid(s.paymentStatus) ? t("colPaid") : t("colUnpaid")) : "—";
+      return [
+        s.name || "—", s.city || "—", s.groupName || "—", tGradeLabel(s.grade) || "—",
+        s.attendanceCount, s.absenceCount,
+        p != null ? `${p}%` : "—", s.studentPhone || "—", s.parentPhone || "—",
+        paymentLabel, s.amountPaid || 0, s.lastAttendance || "—"
+      ];
+    });
+    exportRowsToExcel([header, ...rows], currentLang === "ar" ? "قائمة الطلاب" : "Roster", `roster_${currentGrade}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }
+
+  function exportHistoryExcel(){
+    const col = HIST_SCHEMA.col;
+    const rows = historyRows
+      .filter(r => r[col.grade] === historyGradeFilter)
+      .sort((a,b) => (a[col.year]-b[col.year]) || (a[col.month]-b[col.month]));
+    if(!rows.length){ alert("No saved monthly snapshots yet for this grade."); return; }
+    const header = [t("colMonth"), t("colStudents"), t("colAttendanceRate"), t("colCollectionRate"), t("colRevenue"), t("colPaid"), t("colUnpaid")];
+    const body = rows.map(r => [
+      monthLabel(r[col.year], r[col.month]), r[col.students], `${r[col.attendanceRate]}%`,
+      `${r[col.collectionRate]}%`, r[col.revenue], r[col.paidCount], r[col.unpaidCount]
+    ]);
+    exportRowsToExcel([header, ...body], currentLang === "ar" ? "السجل الشهري" : "Monthly History", `monthly_history_${historyGradeFilter}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }
+
+  function exportExamExcel(){
+    if(!examStudents.length){ alert("No student data loaded yet for this grade."); return; }
+    const ecol = EXAMS_SCHEMA.col, scol = SCORES_SCHEMA.col;
+    const header = [t("colName"), ...examList.map(e => e[ecol.name]), t("colAverage")];
+    const rows = examStudents.map(s => {
+      let sumPct = 0, cnt = 0;
+      const cells = examList.map(e => {
+        const row = examScores.find(sc => sc[scol.examId] === e[ecol.id] && sc[scol.studentCode] === s.qrCode);
+        if(!row) return "—";
+        const sc = Number(row[scol.score]);
+        const mx = Number(e[ecol.maxScore]) || 100;
+        if(!isNaN(sc)){ sumPct += (sc / mx) * 100; cnt++; }
+        return `${row[scol.score]} / ${e[ecol.maxScore]}`;
+      });
+      const avg = cnt ? Math.round(sumPct / cnt) : null;
+      return [s.name || "—", ...cells, avg != null ? `${avg}%` : "—"];
+    });
+    exportRowsToExcel([header, ...rows], currentLang === "ar" ? "درجات الامتحانات" : "Exam Grades", `exam_grades_${examGrade}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }
+
+  async function fetchGrade(grade){
+    const [{ data: att, error: attErr }, { data: pay, error: payErr }] = await Promise.all([
+      supa.from(SCHEMA.attendanceTable(grade)).select("*"),
+      supa.from(SCHEMA.paymentsTable(grade)).select("*")
+    ]);
+    if(attErr) throw new Error(`(${SCHEMA.attendanceTable(grade)}) ${attErr.message}`);
+    if(payErr) throw new Error(`(${SCHEMA.paymentsTable(grade)}) ${payErr.message}`);
+
+    const col = SCHEMA.col;
+    const payByCode = {};
+    (pay || []).forEach(p => { payByCode[p[col.qrCode]] = p; });
+
+    return (att || []).map(a => {
+      const p = payByCode[a[col.qrCode]] || {};
+      return {
+        grade,
+        name: a[col.fullName] ?? "",
+        qrCode: a[col.qrCode] ?? "",
+        studentPhone: a[col.studentPhone] ?? "",
+        parentPhone: a[col.parentPhone] ?? "",
+        attendanceCount: Number(a[col.attendanceCount] || 0),
+        absenceCount: Number(a[col.absenceCount] || 0),
+        lastAttendance: a[col.lastAttendance] ?? "",
+        paymentStatus: p[col.paymentStatus] ?? "",
+        amountPaid: Number(p[col.amountPaid] || 0),
+        lastPaymentDate: p[col.lastPaymentDate] ?? "",
+        city: a[col.city] ?? "",
+        groupName: a[col.groupName] ?? ""
+      };
+    });
+  }
+
+  async function loadSidebarCounts(){
+    const results = await Promise.all(GRADES.map(async (g) => {
+      try{
+        const { count, error } = await supa.from(SCHEMA.attendanceTable(g)).select("*", { count: "exact", head: true });
+        return error ? null : count;
+      }catch(e){ return null; }
+    }));
+    let total = 0, anyKnown = false;
+    GRADES.forEach((g, i) => {
+      const el = document.getElementById(`count-${g}`);
+      if(el) el.textContent = results[i] != null ? results[i] : "";
+      if(results[i] != null){ total += results[i]; anyKnown = true; }
+    });
+    const allEl = document.getElementById("count-all");
+    if(allEl) allEl.textContent = anyKnown ? total : "";
+  }
+
+  async function fetchStats(){
+    try{
+      const { data, error } = await supa.from(HIST_SCHEMA.table).select("*");
+      if(error) throw error;
+      return data || [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  async function fetchExamData(grades){
+    const ecol = EXAMS_SCHEMA.col, scol = SCORES_SCHEMA.col;
+    const perExam = {};
+    const studentAgg = {};
+
+    await Promise.all(grades.map(async (g) => {
+      try{
+        const { data: exams, error: examsErr } = await supa
+          .from(EXAMS_SCHEMA.table).select("*")
+          .eq(ecol.grade, g).order(ecol.createdAt, { ascending: true });
+        if(examsErr) throw examsErr;
+        const examRows = exams || [];
+        if(!examRows.length){ perExam[g] = []; return; }
+
+        const ids = examRows.map(e => e[ecol.id]);
+        const { data: scores, error: scoresErr } = await supa
+          .from(SCORES_SCHEMA.table).select("*").in(scol.examId, ids);
+        const scoreRows = scoresErr ? [] : (scores || []);
+
+        perExam[g] = examRows.map(e => {
+          const rel = scoreRows.filter(s => s[scol.examId] === e[ecol.id]);
+          const pcts = rel
+            .map(s => (Number(s[scol.score]) / (Number(e[ecol.maxScore]) || 100)) * 100)
+            .filter(v => !isNaN(v));
+          const avg = pcts.length ? Math.round(pcts.reduce((a,b) => a+b, 0) / pcts.length) : null;
+          return { name: e[ecol.name], avg };
+        });
+
+        const examById = {};
+        examRows.forEach(e => { examById[e[ecol.id]] = e; });
+        scoreRows.forEach(s => {
+          const exam = examById[s[scol.examId]];
+          if(!exam) return;
+          const p = (Number(s[scol.score]) / (Number(exam[ecol.maxScore]) || 100)) * 100;
+          if(isNaN(p)) return;
+          const code = s[scol.studentCode];
+          if(!studentAgg[code]) studentAgg[code] = { grade: g, sum: 0, count: 0 };
+          studentAgg[code].sum += p;
+          studentAgg[code].count += 1;
+        });
+      }catch(err){
+        perExam[g] = [];
+      }
+    }));
+
+    const perStudent = Object.keys(studentAgg).map(code => ({
+      code,
+      grade: studentAgg[code].grade,
+      avg: Math.round(studentAgg[code].sum / studentAgg[code].count),
+      count: studentAgg[code].count
+    }));
+
+    return { perExam, perStudent };
+  }
+
+  async function loadDashboard(){
+    const loadingEl = document.getElementById("loadingMsg");
+    const errorEl = document.getElementById("errorMsg");
+    const contentEl = document.getElementById("dashContent");
+    const btn = document.getElementById("refreshBtn");
+
+    btn.classList.add("loading");
+    loadingEl.classList.add("show");
+    errorEl.classList.remove("show");
+    contentEl.classList.remove("show");
+
+    try{
+      const gradesToFetch = currentGrade === "all" ? GRADES : [currentGrade];
+      
+      const results = [];
+      const errors = [];
+      for (const g of gradesToFetch) {
+        try {
+          const data = await fetchGrade(g);
+          results.push(data);
+        } catch (e) {
+          console.error(`Error fetching grade ${g}:`, e);
+          errors.push(`${g}: ${e.message}`);
+        }
+      }
+      
+      if (results.length === 0 && errors.length > 0) {
+        throw new Error("Could not load any data. Check if tables exist in Supabase.\n" + errors.join("\n"));
+      }
+
+      combined.students = results.flat();
+      const examData = await fetchExamData(gradesToFetch);
+      combined.examAverages = examData.perExam;
+      combined.examStudentAverages = examData.perStudent;
+
+      renderAll();
+      
+      if (errors.length > 0 && currentGrade === "all") {
+        console.warn("Some grades failed to load:", errors);
+        document.getElementById("updatedNote").textContent = "⚠️ Partial data loaded";
+      } else {
+        document.getElementById("updatedNote").textContent =
+          "Last updated: " + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+      }
+      
+      contentEl.classList.add("show");
+      wireTopScrollbar("rosterScrollTop", "rosterScrollTopInner", "rosterTableWrap");
+    }catch(err){
+      console.error(err);
+      errorEl.innerHTML = `
+        <div style="font-weight:700;">Couldn't load data from Supabase</div>
+        <div style="font-size:12px; max-width:520px;">
+          ${err.message || err}<br><br>
+          Common causes: the table/column names in SCHEMA don't match your database,
+          or Row Level Security is enabled on these tables without a SELECT policy for the anon role —
+          this is the most common reason for everything showing 0 despite data being visible in Table Editor
+          (Table Editor uses elevated privileges, not the anon key).
+        </div>`;
+      errorEl.classList.add("show");
+    }finally{
+      loadingEl.classList.remove("show");
+      btn.classList.remove("loading");
+    }
+  }
+
+  function renderAll(){
+    populateGroupFilterOptions(combined.students);
+    const students = getGroupFilteredStudents(combined.students);
+
+    const studentsCount = students.length;
+    const pcts = students.map(s => pct(s.attendanceCount, s.absenceCount)).filter(v => v != null);
+    const attendanceRate = pcts.length ? Math.round(pcts.reduce((a,b)=>a+b,0) / pcts.length) : null;
+
+    const paidStudents = students.filter(s => isPaid(s.paymentStatus));
+    const unpaidStudents = students.filter(s => !isPaid(s.paymentStatus) && s.paymentStatus !== "");
+    const withPaymentRecord = students.filter(s => s.paymentStatus !== "");
+    const collectionRate = withPaymentRecord.length ? Math.round((paidStudents.length / withPaymentRecord.length) * 100) : null;
+    const totalRevenue = paidStudents.reduce((sum, s) => sum + (s.amountPaid || 0), 0);
+
+    const todayStr = toDateOnly(new Date().toISOString());
+    const paidToday = paidStudents.filter(s => toDateOnly(s.lastPaymentDate) === todayStr);
+    const todayRevenue = paidToday.reduce((sum, s) => sum + (s.amountPaid || 0), 0);
+
+    document.getElementById("kpiStudents").textContent = studentsCount;
+    document.getElementById("kpiStudentsSub").textContent =
+      currentGrade === "all" ? "across all grades" : tGradeLabel(currentGrade);
+
+    document.getElementById("kpiAttendance").textContent = attendanceRate != null ? `${attendanceRate}%` : "–";
+    document.getElementById("kpiAttendanceSub").textContent = pcts.length ? `avg of ${pcts.length} students` : "no attendance data";
+
+    document.getElementById("kpiRevenue").textContent = fmtEGP(totalRevenue);
+    document.getElementById("kpiRevenueSub").textContent =
+      (totalRevenue === 0 && paidStudents.length > 0)
+        ? "⚠️ paid students exist but amount_paid = 0 — check payment workflow"
+        : `${paidStudents.length} students paid`;
+
+    document.getElementById("kpiToday").textContent = fmtEGP(todayRevenue);
+    document.getElementById("kpiTodaySub").textContent =
+      paidToday.length ? `${paidToday.length} ${t('students_')}` : t('noPaymentsToday');
+
+    document.getElementById("kpiUnpaid").textContent = unpaidStudents.length;
+    document.getElementById("kpiUnpaidSub").textContent = withPaymentRecord.length ? `out of ${withPaymentRecord.length}` : "no payment records";
+
+    const ringEl = document.getElementById("collectionRing");
+    const circumference = 150.8;
+    if(collectionRate != null){
+      ringEl.style.strokeDashoffset = String(circumference - (circumference * collectionRate / 100));
+      document.getElementById("collectionPctText").textContent = `${collectionRate}%`;
+    } else {
+      ringEl.style.strokeDashoffset = String(circumference);
+      document.getElementById("collectionPctText").textContent = "–";
+    }
+
+    renderAttendanceByGradeChart(students);
+    renderPaymentStatusChart(paidStudents.length, unpaidStudents.length);
+    renderExamAvgChart();
+    renderExamDistChart();
+    renderAttVsPerfChart();
+    renderGradeRadarChart();
+    renderTopAttenders(students);
+    renderUnpaidList(unpaidStudents);
+    renderExamPerformerLists();
+    renderCityGroupKpis(students);
+    renderAttByCityChart(students);
+    renderStudentsByGroupChart(students);
+    renderRevenueByCityChart(students);
+    renderCollectionByGroupChart(students);
+    renderTopCitiesByAttendance(students);
+    renderTopGroupsByAttendance(students);
+    renderTopCitiesByCollection(students);
+    renderTopGroupsByCollection(students);
+    payFilterState = "all";
+    document.querySelectorAll("#payFilter button").forEach(b => b.classList.toggle("active", b.dataset.f === "all"));
+    document.getElementById("rosterSearch").value = "";
+    renderRoster();
+  }
+
+  function destroyChart(key){ if(charts[key]){ charts[key].destroy(); charts[key] = null; } }
+  function destroyChartSafe(key){ if(typeof charts !== 'undefined' && charts[key]){ charts[key].destroy(); charts[key] = null; } }
+  const chartLibReady = () => typeof Chart !== "undefined";
+
+  function renderAttendanceByGradeChart(students){
+    const canvas = document.getElementById("attendanceByGradeChart");
+    const emptyEl = document.getElementById("attChartEmpty");
+    destroyChart("att");
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="Chart library failed to load — try refreshing"; emptyEl.classList.add("show"); return; }
+
+    const gradesShown = currentGrade === "all" ? GRADES : [currentGrade];
+    const rows = gradesShown.map(g => {
+      const gs = students.filter(s => s.grade === g);
+      const pcts = gs.map(s => pct(s.attendanceCount, s.absenceCount)).filter(v => v != null);
+      return { grade: g, rate: pcts.length ? Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) : null };
+    });
+    const hasData = rows.some(r => r.rate != null);
+    if(!hasData){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
+    canvas.style.display = "block"; emptyEl.classList.remove("show");
+
+    charts.att = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: rows.map(r => tGradeLabel(r.grade)),
+        datasets: [{
+          data: rows.map(r => r.rate ?? 0),
+          backgroundColor: "rgba(40,86,90,0.60)",
+          borderRadius: 6, maxBarThickness: 46
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw}%` } } },
+        scales: {
+          y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+          x: { ticks: { font: { size: 11, family: "Inter" } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function renderPaymentStatusChart(paidCount, unpaidCount){
+    const canvas = document.getElementById("paymentStatusChart");
+    const emptyEl = document.getElementById("payChartEmpty");
+    destroyChart("pay");
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="Chart library failed to load — try refreshing"; emptyEl.classList.add("show"); return; }
+
+    if(paidCount + unpaidCount === 0){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
+    canvas.style.display = "block"; emptyEl.classList.remove("show");
+
+    charts.pay = new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: ["Paid", "Unpaid"],
+        datasets: [{
+          data: [paidCount, unpaidCount],
+           backgroundColor: ["rgba(40,86,90,0.75)", "rgba(150,115,84,0.70)"],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        maintainAspectRatio: false, cutout: "68%",
+        plugins: { legend: { position: "bottom", labels: { font: { family: "Inter", size: 12 }, padding: 14 } } }
+      }
+    });
+  }
+
+  function renderExamAvgChart(){
+    const canvas = document.getElementById("examAvgChart");
+    const emptyEl = document.getElementById("examAvgChartEmpty");
+    destroyChart("examAvg");
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="Chart library failed to load — try refreshing"; emptyEl.classList.add("show"); return; }
+
+    const data = combined.examAverages || {};
+    const gradesShown = currentGrade === "all" ? GRADES : [currentGrade];
+    const anyData = gradesShown.some(g => (data[g] || []).some(e => e.avg != null));
+    if(!anyData){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
+    canvas.style.display = "block"; emptyEl.classList.remove("show");
+
+    if(currentGrade === "all"){
+      const maxLen = Math.max(0, ...gradesShown.map(g => (data[g] || []).length));
+      const labels = Array.from({ length: maxLen }, (_, i) => {
+        for(const g of gradesShown){
+          const ex = (data[g] || [])[i];
+          if(ex && ex.name) return ex.name;
+        }
+        return `Exam ${i + 1}`;
+      });
+
+      charts.examAvg = new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: gradesShown.map(g => ({
+            label: tGradeLabel(g),
+            data: (data[g] || []).map(e => e.avg),
+            backgroundColor: GRADE_COLORS[g],
+            borderColor: GRADE_COLORS[g],
+            borderRadius: 4, maxBarThickness: 28, categoryPercentage: 0.7, barPercentage: 0.9
+          }))
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: "bottom", labels: { font: { family: "Inter", size: 11 }, padding: 12, boxWidth: 12, boxHeight: 12 } },
+            tooltip: { callbacks: { label: c => {
+              const g = gradesShown[c.datasetIndex];
+              const ex = (data[g] || [])[c.dataIndex];
+              return `${tGradeLabel(g)} – ${ex ? ex.name : ""}: ${c.raw}%`;
+            } } }
+          },
+          scales: {
+            y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+            x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+    } else {
+      const rows = data[currentGrade] || [];
+      charts.examAvg = new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels: rows.map(e => e.name),
+          datasets: [{
+            label: tGradeLabel(currentGrade),
+            data: rows.map(e => e.avg ?? 0),
+            backgroundColor: GRADE_COLORS[currentGrade],
+            borderRadius: 5, maxBarThickness: 40
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw}%` } } },
+          scales: {
+            y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+            x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
+  }
+
+  
+  function renderAttVsPerfChart() {
+    const canvas = document.getElementById("attVsPerfChart");
+    const emptyEl = document.getElementById("attVsPerfEmpty");
+    destroyChart("attVsPerf");
+    if(!chartLibReady()){ return; }
+
+    const gradesShown = currentGrade === "all" ? GRADES : [currentGrade];
+    const examData = (combined.examStudentAverages || []).filter(r => gradesShown.includes(r.grade));
+    const students = combined.students.filter(s => gradesShown.includes(s.grade));
+
+    const pointsByGrade = {};
+    gradesShown.forEach(g => pointsByGrade[g] = []);
+    examData.forEach(ed => {
+      const s = students.find(st => st.qrCode === ed.code);
+      if (s) {
+        const attRate = pct(s.attendanceCount, s.absenceCount);
+        if (attRate != null && ed.avg != null) {
+          pointsByGrade[s.grade].push({ x: Math.round(attRate), y: Math.round(ed.avg), name: s.name });
+        }
+      }
+    });
+
+    const totalPoints = Object.values(pointsByGrade).reduce((a, arr) => a + arr.length, 0);
+    if(totalPoints < 3){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
+    canvas.style.display = "block"; emptyEl.classList.remove("show");
+
+    const datasets = gradesShown.map(g => {
+      const buckets = {};
+      pointsByGrade[g].forEach(p => {
+        const key = p.x + "|" + p.y;
+        if(!buckets[key]) buckets[key] = { x: p.x, y: p.y, count: 0, names: [] };
+        buckets[key].count++;
+        buckets[key].names.push(p.name);
+      });
+      const data = Object.values(buckets).map(b => ({
+        x: b.x, y: b.y, count: b.count, names: b.names,
+        r: 4 + Math.min(b.count, 8) * 2.2
+      }));
+      return {
+        label: tGradeLabel(g),
+        data,
+        backgroundColor: GRADE_COLORS[g] + "B3",
+        borderColor: GRADE_COLORS[g],
+        borderWidth: 1
+      };
+    }).filter(ds => ds.data.length);
+
+    charts.attVsPerf = new Chart(canvas, {
+      type: 'bubble',
+      data: { datasets },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          x: { title: { display: true, text: 'Attendance %', font: { size: 10 } }, min: 0, max: 100 },
+          y: { title: { display: true, text: 'Exam Score %', font: { size: 10 } }, min: 0, max: 100 }
+        },
+        plugins: {
+          legend: { display: gradesShown.length > 1, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+          tooltip: { callbacks: { label: c => {
+            const d = c.raw;
+            const who = d.count > 1 ? `${d.count} students` : d.names[0];
+            return `${who} — Att ${d.x}%, Score ${d.y}%`;
+          } } }
+        }
+      }
+    });
+  }
+
+  function renderGradeRadarChart() {
+    const canvas = document.getElementById("gradeRadarChart");
+    const emptyEl = document.getElementById("gradeRadarEmpty");
+    destroyChart("gradeRadar");
+    if(!chartLibReady()){ return; }
+
+    const grades = GRADES;
+    const attData = grades.map(g => {
+      const gs = combined.students.filter(s => s.grade === g);
+      const pcts = gs.map(s => pct(s.attendanceCount, s.absenceCount)).filter(v => v != null);
+      return pcts.length ? Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) : 0;
+    });
+    
+    const scoreData = grades.map(g => {
+      const data = (combined.examAverages || {})[g] || [];
+      return data.length ? Math.round(data.reduce((a,b)=>a+(b.avg||0),0)/data.length) : 0;
+    });
+
+    if(attData.every(v => v === 0) && scoreData.every(v => v === 0)){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
+    canvas.style.display = "block"; emptyEl.classList.remove("show");
+
+    charts.gradeRadar = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: grades.map(g => tGradeLabel(g)),
+        datasets: [
+          { label: 'Attendance', data: attData, backgroundColor: '#1565C0', borderRadius: 4, maxBarThickness: 22 },
+          { label: 'Exam Score', data: scoreData, backgroundColor: '#2E8BF0', borderRadius: 4, maxBarThickness: 22 }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        maintainAspectRatio: false,
+        scales: {
+          x: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.08)" } },
+          y: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        },
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.raw}%` } }
+        }
+      }
+    });
+  }
+        
+  function renderExamDistChart(){
+    const canvas = document.getElementById("examDistChart");
+    const emptyEl = document.getElementById("examDistChartEmpty");
+    destroyChart("examDist");
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="Chart library failed to load — try refreshing"; emptyEl.classList.add("show"); return; }
+
+    const gradesShown = currentGrade === "all" ? GRADES : [currentGrade];
+    const rows = (combined.examStudentAverages || []).filter(r => gradesShown.includes(r.grade));
+    if(!rows.length){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
+    canvas.style.display = "block"; emptyEl.classList.remove("show");
+
+    const bands = [
+  { label: "Excellent (90-100%)", min: 90, max: 101, color: "rgba(29,65,69,0.85)" },
+  { label: "Good (75-89%)",       min: 75, max: 90,  color: "rgba(40,86,90,0.70)" },
+  { label: "Average (60-74%)",    min: 60, max: 75,  color: "rgba(184,155,122,0.75)" },
+  { label: "Needs Work (<60%)",   min: -1, max: 60,  color: "rgba(150,115,84,0.80)" }
+];
+    const counts = bands.map(b => rows.filter(r => r.avg >= b.min && r.avg < b.max).length);
+
+    charts.examDist = new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: bands.map(b => b.label),
+        datasets: [{ data: counts, backgroundColor: bands.map(b => b.color), borderWidth: 0 }]
+      },
+      options: {
+        maintainAspectRatio: false, cutout: "62%",
+        plugins: {
+          legend: { position: "bottom", labels: { font: { family: "Inter", size: 10.5 }, padding: 10, boxWidth: 11 } },
+          tooltip: { callbacks: { label: c => `${c.label.split(" (")[0]}: ${c.raw} student${c.raw === 1 ? "" : "s"}` } }
+        }
+      }
+    });
+  }
+
+  function aggregateByField(students, field){
+    const map = {};
+    students.forEach(s => {
+      const key = (s[field] || "").trim() || "—";
+      if(!map[key]) map[key] = { students: 0, attCount: 0, absCount: 0, paidCount: 0, unpaidCount: 0, revenue: 0, withPaymentRecord: 0 };
+      map[key].students++;
+      map[key].attCount += s.attendanceCount || 0;
+      map[key].absCount += s.absenceCount || 0;
+      if(isPaid(s.paymentStatus)) map[key].paidCount++;
+      else if(s.paymentStatus !== "") map[key].unpaidCount++;
+      if(s.paymentStatus !== "") map[key].withPaymentRecord++;
+      map[key].revenue += s.amountPaid || 0;
+    });
+    return map;
+  }
+
+  function computeFieldRate(agg){
+    const total = agg.attCount + agg.absCount;
+    return total > 0 ? Math.round((agg.attCount / total) * 100) : 0;
+  }
+
+  function renderCityGroupKpis(students){
+    const cityMap = aggregateByField(students, "city");
+    const groupMap = aggregateByField(students, "groupName");
+    const cities = Object.keys(cityMap).filter(k => k !== "—");
+    const groups = Object.keys(groupMap).filter(k => k !== "—");
+
+    document.getElementById("kpiCities").textContent = cities.length;
+    document.getElementById("kpiCitiesSub").textContent = "";
+
+    document.getElementById("kpiGroups").textContent = groups.length;
+    document.getElementById("kpiGroupsSub").textContent = "";
+
+    const topCity = cities.length ? cities.reduce((a,b) => cityMap[a].students > cityMap[b].students ? a : b) : "—";
+    document.getElementById("kpiTopCity").textContent = topCity;
+    document.getElementById("kpiTopCitySub").textContent = cities.length ? `${cityMap[topCity].students} ${t('studentsCount')}` : "—";
+
+    const topGroup = groups.length ? groups.reduce((a,b) => groupMap[a].students > groupMap[b].students ? a : b) : "—";
+    document.getElementById("kpiTopGroup").textContent = topGroup;
+    document.getElementById("kpiTopGroupSub").textContent = groups.length ? `${groupMap[topGroup].students} ${t('studentsCount')}` : "—";
+
+    let bestAttLabel = "—", bestAttRate = 0;
+    [...cities, ...groups].forEach(key => {
+      const agg = cityMap[key] || groupMap[key];
+      const rate = computeFieldRate(agg);
+      if(rate > bestAttRate){ bestAttRate = rate; bestAttLabel = key; }
+    });
+    document.getElementById("kpiHighestAtt").textContent = `${bestAttRate}%`;
+    document.getElementById("kpiHighestAttSub").textContent = bestAttLabel !== "—" ? `${bestAttLabel}` : "—";
+
+    let bestCollLabel = "—", bestCollRev = 0;
+    [...cities, ...groups].forEach(key => {
+      const agg = cityMap[key] || groupMap[key];
+      if(agg.revenue > bestCollRev){ bestCollRev = agg.revenue; bestCollLabel = key; }
+    });
+    document.getElementById("kpiHighestColl").textContent = fmtEGP(bestCollRev);
+    document.getElementById("kpiHighestCollSub").textContent = bestCollLabel !== "—" ? `${bestCollLabel}` : "—";
+  }
+
+  function renderAttByCityChart(students){
+    const canvas = document.getElementById("attByCityChart");
+    const emptyEl = document.getElementById("attByCityEmpty");
+    if(charts.attByCity){ charts.attByCity.destroy(); charts.attByCity = null; }
+    if(!chartLibReady()){ if(canvas) canvas.style.display="none"; if(emptyEl) emptyEl.classList.add("show"); return; }
+
+    const cityMap = aggregateByField(students, "city");
+    const cities = Object.keys(cityMap).filter(k => k !== "—");
+    if(!cities.length){ if(canvas) canvas.style.display = "none"; if(emptyEl) emptyEl.classList.add("show"); return; }
+    if(canvas) canvas.style.display = "block"; if(emptyEl) emptyEl.classList.remove("show");
+
+    const rows = cities.map(c => ({ city: c, rate: computeFieldRate(cityMap[c]) }));
+    const colors = cities.map((_, i) => `rgba(40,86,90,${0.3 + (i / Math.max(1, cities.length)) * 0.5})`);
+
+    charts.attByCity = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: rows.map(r => r.city),
+        datasets: [{
+          data: rows.map(r => r.rate),
+          backgroundColor: colors,
+          borderRadius: 6, maxBarThickness: 46
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw}%` } } },
+        scales: {
+          y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+          x: { ticks: { font: { size: 10, family: "Inter" } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function renderStudentsByGroupChart(students){
+    const canvas = document.getElementById("studentsByGroupChart");
+    const emptyEl = document.getElementById("studentsByGroupEmpty");
+    if(charts.studentsByGroup){ charts.studentsByGroup.destroy(); charts.studentsByGroup = null; }
+    if(!chartLibReady()){ if(canvas) canvas.style.display="none"; if(emptyEl) emptyEl.classList.add("show"); return; }
+
+    const groupMap = aggregateByField(students, "groupName");
+    const groups = Object.keys(groupMap).filter(k => k !== "—");
+    if(!groups.length){ if(canvas) canvas.style.display = "none"; if(emptyEl) emptyEl.classList.add("show"); return; }
+    if(canvas) canvas.style.display = "block"; if(emptyEl) emptyEl.classList.remove("show");
+
+   const palette = [
+  "rgba(40,86,90,0.75)", "rgba(150,115,84,0.70)", "rgba(29,65,69,0.75)",
+  "rgba(184,155,122,0.75)", "rgba(138,134,124,0.65)", "rgba(216,203,184,0.85)",
+  "rgba(91,140,143,0.60)", "rgba(122,92,66,0.65)"
+];
+
+    charts.studentsByGroup = new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: groups,
+        datasets: [{
+          data: groups.map(g => groupMap[g].students),
+          backgroundColor: groups.map((_, i) => palette[i % palette.length]),
+          borderWidth: 0
+        }]
+      },
+      options: {
+        maintainAspectRatio: false, cutout: "60%",
+        plugins: {
+          legend: { position: "bottom", labels: { font: { family: "Inter", size: 11 }, padding: 12 } }
+        }
+      }
+    });
+  }
+
+  function renderRevenueByCityChart(students){
+    const canvas = document.getElementById("revenueByCityChart");
+    const emptyEl = document.getElementById("revenueByCityEmpty");
+    if(charts.revenueByCity){ charts.revenueByCity.destroy(); charts.revenueByCity = null; }
+    if(!chartLibReady()){ if(canvas) canvas.style.display="none"; if(emptyEl) emptyEl.classList.add("show"); return; }
+
+    const cityMap = aggregateByField(students, "city");
+    const cities = Object.keys(cityMap).filter(k => k !== "—");
+    if(!cities.length){ if(canvas) canvas.style.display = "none"; if(emptyEl) emptyEl.classList.add("show"); return; }
+    if(canvas) canvas.style.display = "block"; if(emptyEl) emptyEl.classList.remove("show");
+
+    charts.revenueByCity = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: cities,
+        datasets: [{
+          data: cities.map(c => cityMap[c].revenue),
+          backgroundColor: "rgba(150,115,84,0.65)",
+          borderRadius: 6, maxBarThickness: 46
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtEGP(c.raw) } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+          x: { ticks: { font: { size: 10, family: "Inter" } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function renderCollectionByGroupChart(students){
+    const canvas = document.getElementById("collectionByGroupChart");
+    const emptyEl = document.getElementById("collectionByGroupEmpty");
+    if(charts.collectionByGroup){ charts.collectionByGroup.destroy(); charts.collectionByGroup = null; }
+    if(!chartLibReady()){ if(canvas) canvas.style.display="none"; if(emptyEl) emptyEl.classList.add("show"); return; }
+
+    const groupMap = aggregateByField(students, "groupName");
+    const groups = Object.keys(groupMap).filter(k => k !== "—");
+    if(!groups.length){ if(canvas) canvas.style.display = "none"; if(emptyEl) emptyEl.classList.add("show"); return; }
+    if(canvas) canvas.style.display = "block"; if(emptyEl) emptyEl.classList.remove("show");
+
+    const rows = groups.map(g => {
+      const agg = groupMap[g];
+      const rate = agg.withPaymentRecord ? Math.round((agg.paidCount / agg.withPaymentRecord) * 100) : 0;
+      return { group: g, rate, revenue: agg.revenue };
+    });
+
+    charts.collectionByGroup = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: rows.map(r => r.group),
+        datasets: [{
+          label: "Collection Rate",
+          data: rows.map(r => r.rate),
+          backgroundColor: "rgba(40,86,90,0.60)",
+          borderRadius: 6, maxBarThickness: 46
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw}%` } } },
+        scales: {
+          y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+          x: { ticks: { font: { size: 10, family: "Inter" } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function renderTopCitiesByAttendance(students){
+    const el = document.getElementById("topCitiesAttList");
+    const cityMap = aggregateByField(students, "city");
+    const cities = Object.keys(cityMap).filter(k => k !== "—");
+    const sorted = cities.map(c => ({ name: c, rate: computeFieldRate(cityMap[c]), students: cityMap[c].students }))
+      .sort((a, b) => b.rate - a.rate || b.students - a.students)
+      .slice(0, 6);
+
+    if(!sorted.length){ el.innerHTML = `<div class="empty-note">${t('emptyCityData')}</div>`; return; }
+    el.innerHTML = sorted.map((c, i) => `
+      <div class="list-row">
+        <div class="list-name">
+          <span class="rank">${i+1}</span>
+          <span class="name">${c.name}</span>
+        </div>
+        <div class="val high">${c.rate}%</div>
+      </div>
+    `).join("");
+  }
+
+  function renderTopGroupsByAttendance(students){
+    const el = document.getElementById("topGroupsAttList");
+    const groupMap = aggregateByField(students, "groupName");
+    const groups = Object.keys(groupMap).filter(k => k !== "—");
+    const sorted = groups.map(g => ({ name: g, rate: computeFieldRate(groupMap[g]), students: groupMap[g].students }))
+      .sort((a, b) => b.rate - a.rate || b.students - a.students)
+      .slice(0, 6);
+
+    if(!sorted.length){ el.innerHTML = `<div class="empty-note">${t('emptyGroupData')}</div>`; return; }
+    el.innerHTML = sorted.map((g, i) => `
+      <div class="list-row">
+        <div class="list-name">
+          <span class="rank">${i+1}</span>
+          <span class="name">${g.name}</span>
+        </div>
+        <div class="val high">${g.rate}%</div>
+      </div>
+    `).join("");
+  }
+
+  function renderTopCitiesByCollection(students){
+    const el = document.getElementById("topCitiesCollList");
+    const cityMap = aggregateByField(students, "city");
+    const cities = Object.keys(cityMap).filter(k => k !== "—");
+    const sorted = cities.map(c => ({
+      name: c, revenue: cityMap[c].revenue,
+      rate: cityMap[c].withPaymentRecord ? Math.round((cityMap[c].paidCount / cityMap[c].withPaymentRecord) * 100) : 0
+    }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 6);
+
+    if(!sorted.length){ el.innerHTML = `<div class="empty-note">${t('emptyCityData')}</div>`; return; }
+    el.innerHTML = sorted.map((c, i) => `
+      <div class="list-row">
+        <div class="list-name">
+          <span class="rank">${i+1}</span>
+          <span class="name">${c.name}</span>
+        </div>
+        <div class="val high">${fmtEGP(c.revenue)}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderTopGroupsByCollection(students){
+    const el = document.getElementById("topGroupsCollList");
+    const groupMap = aggregateByField(students, "groupName");
+    const groups = Object.keys(groupMap).filter(k => k !== "—");
+    const sorted = groups.map(g => ({
+      name: g, revenue: groupMap[g].revenue,
+      rate: groupMap[g].withPaymentRecord ? Math.round((groupMap[g].paidCount / groupMap[g].withPaymentRecord) * 100) : 0
+    }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 6);
+
+    if(!sorted.length){ el.innerHTML = `<div class="empty-note">${t('emptyGroupData')}</div>`; return; }
+    el.innerHTML = sorted.map((g, i) => `
+      <div class="list-row">
+        <div class="list-name">
+          <span class="rank">${i+1}</span>
+          <span class="name">${g.name}</span>
+        </div>
+        <div class="val high">${fmtEGP(g.revenue)}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderTopAttenders(students){
+    const el = document.getElementById("topAttendersList");
+    const top = [...students]
+      .map(s => ({ ...s, p: pct(s.attendanceCount, s.absenceCount) }))
+      .filter(s => s.p != null)
+      .sort((a,b) => b.p - a.p || b.attendanceCount - a.attendanceCount)
+      .slice(0, 6);
+    if(!top.length){ el.innerHTML = `<div class="empty-note">No data yet</div>`; return; }
+    el.innerHTML = top.map((s,i) => `
+      <div class="list-row">
+        <div class="list-name">
+          <span class="rank">${i+1}</span>
+          <span class="name">${s.name}</span>
+          ${currentGrade === "all" ? `<span class="grade-chip">${tGradeLabel(s.grade)}</span>` : ""}
+          ${s.city ? `<span class="grade-chip" style="background:rgba(40,86,90,0.12); color:var(--muted);">${s.city}</span>` : ""}
+          ${s.groupName ? `<span class="grade-chip" style="background:rgba(91,140,110,0.14); color:var(--success);">${s.groupName}</span>` : ""}
+        </div>
+        <div class="val" style="color: ${getScoreColor(s.p, 1)}">${s.p}%</div>
+      </div>
+    `).join("");
+  }
+
+  function renderUnpaidList(unpaidStudents){
+    const el = document.getElementById("unpaidList");
+    if(!unpaidStudents.length){ el.innerHTML = `<div class="empty-note">🎉 Everyone has paid</div>`; return; }
+    el.innerHTML = unpaidStudents.slice(0, 8).map(s => `
+      <div class="list-row">
+        <div class="list-name">
+          <span class="name">${s.name}</span>
+          ${currentGrade === "all" ? `<span class="grade-chip">${tGradeLabel(s.grade)}</span>` : ""}
+          ${s.city ? `<span class="grade-chip" style="background:rgba(40,86,90,0.12); color:var(--muted);">${s.city}</span>` : ""}
+          ${s.groupName ? `<span class="grade-chip" style="background:rgba(91,140,110,0.14); color:var(--success);">${s.groupName}</span>` : ""}
+        </div>
+        ${s.studentPhone ? `<a class="phone-link" href="tel:${s.studentPhone}">${s.studentPhone}</a>` : `<span class="empty-note" style="padding:0;">—</span>`}
+      </div>
+    `).join("") + (unpaidStudents.length > 8 ? `<div class="empty-note">+${unpaidStudents.length - 8} more — see the table below</div>` : "");
+  }
+
+  function renderExamPerformerLists(){
+    const gradesShown = currentGrade === "all" ? GRADES : [currentGrade];
+    const rows = (combined.examStudentAverages || []).filter(r => gradesShown.includes(r.grade));
+
+    const codeToStudent = {};
+    combined.students.forEach(s => { codeToStudent[s.qrCode] = s; });
+
+    const enriched = rows.map(r => {
+      const s = codeToStudent[r.code] || {};
+      return { avg: r.avg, count: r.count, grade: r.grade, name: s.name || r.code || "—" };
+    });
+
+    const topEl = document.getElementById("topExamList");
+    const lowEl = document.getElementById("lowExamList");
+
+    if(!enriched.length){
+      topEl.innerHTML = `<div class="empty-note">No exam scores yet</div>`;
+      lowEl.innerHTML = `<div class="empty-note">No exam scores yet</div>`;
+      return;
+    }
+
+    const examCountChip = (c) => `<span class="grade-chip" style="background:rgba(138,122,99,0.12); color:var(--muted);">${c} exam${c === 1 ? "" : "s"}</span>`;
+    const rowHtml = (s, i, valClass) => `
+      <div class="list-row">
+        <div class="list-name">
+          <span class="rank">${i+1}</span>
+          <span class="name">${s.name}</span>
+          ${currentGrade === "all" ? `<span class="grade-chip">${tGradeLabel(s.grade)}</span>` : ""}
+          ${s.city ? `<span class="grade-chip" style="background:rgba(40,86,90,0.12); color:var(--muted);">${s.city}</span>` : ""}
+          ${s.groupName ? `<span class="grade-chip" style="background:rgba(91,140,110,0.14); color:var(--success);">${s.groupName}</span>` : ""}
+          ${examCountChip(s.count)}
+        </div>
+        <div class="val ${valClass}" style="color: ${getScoreColor(s.avg, 1)}">${s.avg}%</div>
+      </div>
+    `;
+
+    const sortedDesc = [...enriched].sort((a,b) => b.avg - a.avg || b.count - a.count);
+    const n = sortedDesc.length;
+    const topCount = Math.min(6, Math.ceil(n / 2));
+    const lowCount = Math.min(6, Math.floor(n / 2));
+
+    const top = sortedDesc.slice(0, topCount);
+    const low = sortedDesc.slice(n - lowCount, n).reverse();
+
+    topEl.innerHTML = top.map((s,i) => rowHtml(s, i, "high")).join("");
+    lowEl.innerHTML = lowCount
+      ? low.map((s,i) => rowHtml(s, i, "low")).join("")
+      : `<div class="empty-note">Not enough students with exam scores yet to show a separate list</div>`;
+  }
+
+  /* ---------- Roster table ---------- */
+  function renderRoster(){
+    const q = document.getElementById("rosterSearch").value.trim().toLowerCase();
+    let rows = getGroupFilteredStudents(combined.students);
+
+    if(payFilterState === "paid") rows = rows.filter(s => isPaid(s.paymentStatus));
+    if(payFilterState === "unpaid") rows = rows.filter(s => !isPaid(s.paymentStatus));
+
+    if(q){
+      rows = rows.filter(s =>
+        (s.name || "").toLowerCase().includes(q) ||
+        (s.city || "").toLowerCase().includes(q) ||
+        (s.groupName || "").toLowerCase().includes(q) ||
+        (s.studentPhone || "").includes(q) ||
+        (s.parentPhone || "").includes(q) ||
+        (s.qrCode || "").toLowerCase().includes(q)
+      );
+    }
+
+    const body = document.getElementById("rosterBody");
+    if(!rows.length){
+      body.innerHTML = `<tr><td colspan="13" style="text-align:center; color:var(--muted); padding:24px;">No matching results</td></tr>`;
+      return;
+    }
+
+    body.innerHTML = rows.map(s => {
+      const p = pct(s.attendanceCount, s.absenceCount);
+      const paid = isPaid(s.paymentStatus);
+      const hasPaymentRecord = s.paymentStatus !== "";
+      const safeName = (s.name || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+      const safeCode = (s.qrCode || "").replace(/'/g, "\\'");
+      return `
+        <tr>
+          <td style="font-weight:600;">${s.name || "—"}</td>
+          <td>${s.city || "—"}</td>
+          <td>${s.groupName || "—"}</td>
+          <td>${tGradeLabel(s.grade) || "—"}</td>
+          <td>${s.attendanceCount}</td>
+          <td>${s.absenceCount}</td>
+          <td>
+            ${p != null ? `<span class="bar-track"><span class="bar-fill" style="width:${p}%; background: ${getScoreColor(p, 0.7)};"></span></span><span style="color: ${getScoreColor(p, 1)}; font-weight: bold;">${p}%</span>` : "—"}
+          </td>
+          <td>${s.studentPhone ? `<a class="phone-link" href="tel:${s.studentPhone}">${s.studentPhone}</a>` : "—"}</td>
+          <td>${s.parentPhone ? `<a class="phone-link" href="tel:${s.parentPhone}">${s.parentPhone}</a>` : "—"}</td>
+          <td>${hasPaymentRecord ? `<span class="chip ${paid ? 'paid' : 'unpaid'}">${paid ? t('filterPaid') : t('filterUnpaid')}</span>` : "—"}</td>
+          <td><button class="unpaid-link" onclick="showPaymentHistory('${safeCode}','${safeName}')" title="${t('paymentHistoryTitleWord')}">📅 ${t('viewBtn')}</button></td>
+          <td>${s.lastAttendance || "—"}</td>
+        </tr>`;
+    }).join("");
+    wireTopScrollbar("rosterScrollTop", "rosterScrollTopInner", "rosterTableWrap");
+  }
+
+  /* ============================================================
+     MONTHLY HISTORY / ARCHIVE
+     ============================================================ */
+  const HIST_SCHEMA = {
+    table: "التقارير_الشهرية",
+    col: {
+      year: "year",
+      month: "month",
+      grade: "grade",
+      students: "students_count",
+      attendanceRate: "attendance_rate",
+      revenue: "total_revenue",
+      paidCount: "paid_count",
+      unpaidCount: "unpaid_count",
+      collectionRate: "collection_rate",
+      unpaidStudents: "unpaid_students"
+    }
+  };
+
+  let historyRows = [];
+  let historyGradeFilter = "all";
+
+  let currentHistRows = [];
+
+  function onHistGradeChange(){
+    historyGradeFilter = document.getElementById("histGradeSelect").value;
+    renderHistory();
+  }
+
+  function monthLabel(y, m){
+    return new Date(y, m - 1, 1).toLocaleString("en-US", { month: "short", year: "numeric" });
+  }
+
+  function computeKpis(students){
+    const studentsCount = students.length;
+    const pcts = students.map(s => pct(s.attendanceCount, s.absenceCount)).filter(v => v != null);
+    const attendanceRate = pcts.length ? Math.round(pcts.reduce((a,b)=>a+b,0) / pcts.length) : 0;
+    const paid = students.filter(s => isPaid(s.paymentStatus));
+    const withRecord = students.filter(s => s.paymentStatus !== "");
+    const unpaidStudents = students.filter(s => !isPaid(s.paymentStatus) && s.paymentStatus !== "");
+    const collectionRate = withRecord.length ? Math.round((paid.length / withRecord.length) * 100) : 0;
+    const revenue = paid.reduce((sum, s) => sum + (s.amountPaid || 0), 0);
+    return {
+      studentsCount, attendanceRate, revenue, paidCount: paid.length,
+      unpaidCount: unpaidStudents.length, collectionRate,
+      unpaidList: unpaidStudents.map(s => ({ name: s.name, studentPhone: s.studentPhone, parentPhone: s.parentPhone }))
+    };
+  }
+
+  async function computeAllGradeSnapshots(){
+    const results = await Promise.all(GRADES.map(fetchGrade));
+    const perGrade = {};
+    GRADES.forEach((g, i) => { perGrade[g] = computeKpis(results[i]); });
+    perGrade.all = computeKpis(results.flat());
+    return perGrade;
+  }
+
+  async function saveSnapshotForMonth(year, month, perGrade){
+    const col = HIST_SCHEMA.col;
+    const rows = Object.keys(perGrade).map(g => ({
+      [col.year]: year,
+      [col.month]: month,
+      [col.grade]: g,
+      [col.students]: perGrade[g].studentsCount,
+      [col.attendanceRate]: perGrade[g].attendanceRate,
+      [col.revenue]: perGrade[g].revenue,
+      [col.paidCount]: perGrade[g].paidCount,
+      [col.unpaidCount]: perGrade[g].unpaidCount,
+      [col.collectionRate]: perGrade[g].collectionRate,
+      [col.unpaidStudents]: perGrade[g].unpaidList
+    }));
+    await supa.from(HIST_SCHEMA.table).delete().eq(col.year, year).eq(col.month, month);
+    const { error } = await supa.from(HIST_SCHEMA.table).insert(rows);
+    if(error) throw error;
+  }
+
+  async function saveCurrentMonthSnapshot(){
+    const btns = document.querySelectorAll(".save-snapshot-btn");
+    btns.forEach(b => { b.disabled = true; b.dataset.origText = b.textContent; b.textContent = "Saving…"; });
+    try{
+      const now = new Date();
+      const year = now.getFullYear(), month = now.getMonth() + 1;
+      const perGrade = await computeAllGradeSnapshots();
+      await saveSnapshotForMonth(year, month, perGrade);
+      await loadHistory();
+    }catch(err){
+      console.error(err);
+      alert("Couldn't save this month's snapshot: " + (err.message || err) +
+        "\n\nMake sure a \"التقارير_الشهرية\" table exists with INSERT/DELETE/SELECT policies for the anon role, and has an \"unpaid_students\" jsonb column.");
+    }finally{
+      btns.forEach(b => { b.disabled = false; b.textContent = b.dataset.origText || "💾 Save Current Month"; });
+    }
+  }
+
+  
+  async function loadHistory(){
+    const loadingEl = document.getElementById("histLoadingMsg");
+    const errorEl = document.getElementById("histErrorMsg");
+    const contentEl = document.getElementById("histContent");
+    loadingEl.classList.add("show");
+    errorEl.classList.remove("show");
+    contentEl.classList.remove("show");
+
+    try{
+      const { data, error } = await supa.from(HIST_SCHEMA.table).select("*");
+      if(error) throw error;
+      historyRows = data || [];
+      renderHistory();
+      contentEl.classList.add("show");
+    }catch(err){
+      console.error(err);
+      errorEl.innerHTML = `
+        <div style="font-weight:700;">Couldn't load monthly history</div>
+        <div style="font-size:12px; max-width:520px;">
+          ${err.message || err}<br><br>
+          This most likely means the "التقارير_الشهرية" table doesn't exist yet, or the anon role
+          doesn't have a SELECT policy for it. Create the table with the columns listed in the code
+          comments above, and add read/write policies for the anon role.
+        </div>`;
+      errorEl.classList.add("show");
+    }finally{
+      loadingEl.classList.remove("show");
+    }
+  }
+
+  function renderHistory(){
+    const col = HIST_SCHEMA.col;
+    const rows = historyRows
+      .filter(r => r[col.grade] === historyGradeFilter)
+      .sort((a,b) => (a[col.year]-b[col.year]) || (a[col.month]-b[col.month]));
+
+    renderDeltaCards(rows);
+    renderHistCharts(rows);
+    renderHistTable(rows);
+  }
+
+function deltaBadge(curr, prev, suffix = ""){
+  if (prev == null) return "";
+
+  const diff = Number(curr) - Number(prev);
+
+  if (Math.abs(diff) < 0.000001) {
+    return `<span class="delta-badge flat">— no change</span>`;
+  }
+
+  const dir = diff > 0 ? "up" : "down";
+  const arrow = diff > 0 ? "▲" : "▼";
+
+  let value = Math.abs(diff);
+
+  if (suffix === "%" || suffix === "") {
+    value = parseFloat(value.toFixed(2));
+  }
+
+  if (suffix.includes("EGP")) {
+    value = value.toLocaleString("en-US", {
+      maximumFractionDigits: 0
+    });
+  }
+
+  return `<span class="delta-badge ${dir}">${arrow} ${value}${suffix} vs last month</span>`;
+}
+
+  function renderDeltaCards(rows){
+    const col = HIST_SCHEMA.col;
+    const el = document.getElementById("deltaCards");
+    const last = rows[rows.length - 1];
+    const prev = rows[rows.length - 2];
+    if(!last){ el.innerHTML = `<div class="empty-note" style="grid-column:1/-1;">No saved months yet for this grade — save the current month to start tracking.</div>`; return; }
+
+    const cards = [
+      { label: "Students", val: last[col.students], sub: monthLabel(last[col.year], last[col.month]), badge: deltaBadge(last[col.students], prev ? prev[col.students] : null, "") },
+      { label: "Attendance Rate", val: `${last[col.attendanceRate]}%`, sub: "average", badge: deltaBadge(last[col.attendanceRate], prev ? prev[col.attendanceRate] : null, "%") },
+      { label: "Revenue", val: fmtEGP(last[col.revenue]), sub: `${last[col.paidCount]} paid`, badge: deltaBadge(last[col.revenue], prev ? prev[col.revenue] : null, " EGP") },
+      { label: "Collection Rate", val: `${last[col.collectionRate]}%`, sub: `${last[col.unpaidCount]} unpaid`, badge: deltaBadge(last[col.collectionRate], prev ? prev[col.collectionRate] : null, "%") }
+    ];
+    el.innerHTML = cards.map(c => `
+      <div class="kpi-card">
+        <div class="kpi-label">${c.label}</div>
+        <div class="kpi-value num">${c.val}</div>
+        <div class="kpi-sub">${c.sub}</div>
+        ${c.badge}
+      </div>
+    `).join("");
+  }
+
+  function destroyHistChart(key){ if(histCharts[key]){ histCharts[key].destroy(); histCharts[key] = null; } }
+
+  function renderHistCharts(rows){
+    const col = HIST_SCHEMA.col;
+    const rateCanvas = document.getElementById("histRateChart");
+    const rateEmpty = document.getElementById("histRateEmpty");
+    const revCanvas = document.getElementById("histRevenueChart");
+    const revEmpty = document.getElementById("histRevenueEmpty");
+    const stuCanvas = document.getElementById("histStudentTrendChart");
+    const stuEmpty = document.getElementById("histStudentTrendEmpty");
+    destroyHistChart("rate");
+    destroyHistChart("rev");
+    destroyHistChart("students");
+
+    if(!chartLibReady() || !rows.length){
+      rateCanvas.style.display = "none"; rateEmpty.classList.add("show");
+      revCanvas.style.display = "none"; revEmpty.classList.add("show");
+      stuCanvas.style.display = "none"; stuEmpty.classList.add("show");
+      return;
+    }
+    rateCanvas.style.display = "block"; rateEmpty.classList.remove("show");
+    revCanvas.style.display = "block"; revEmpty.classList.remove("show");
+    stuCanvas.style.display = "block"; stuEmpty.classList.remove("show");
+
+    const labels = rows.map(r => monthLabel(r[col.year], r[col.month]));
+
+    histCharts.rate = new Chart(rateCanvas, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "Attendance Rate", data: rows.map(r => r[col.attendanceRate]), borderColor: "rgba(40,86,90,0.85)", backgroundColor: "rgba(40,86,90,0.10)", fill: true, tension: 0.3 },
+          { label: "Collection Rate", data: rows.map(r => r[col.collectionRate]), borderColor: "rgba(110,100,90,0.75)", backgroundColor: "rgba(110,100,90,0.08)", fill: true, tension: 0.3 }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom", labels: { font: { family: "Inter", size: 11 }, padding: 12 } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.raw}%` } } },
+        scales: {
+          y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+        }
+      }
+    });
+
+    histCharts.rev = new Chart(revCanvas, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{ label: "Revenue", data: rows.map(r => r[col.revenue]), backgroundColor: "rgba(40,86,90,0.60)", borderRadius: 6, maxBarThickness: 40 }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtEGP(c.raw) } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+        }
+      }
+    });
+
+    histCharts.students = new Chart(stuCanvas, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{ label: "Total Students", data: rows.map(r => r[col.students]), borderColor: "rgba(150,115,84,0.85)", backgroundColor: "rgba(150,115,84,0.12)", fill: true, tension: 0.3, pointBackgroundColor: "rgba(150,115,84,1)" }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `Students: ${c.raw}` } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function renderHistTable(rows){
+    const col = HIST_SCHEMA.col;
+    const body = document.getElementById("histTableBody");
+    currentHistRows = rows;
+    if(!rows.length){
+      body.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">No saved months yet</td></tr>`;
+      return;
+    }
+    const reversed = rows.slice().reverse();
+    body.innerHTML = reversed.map((r, idx) => {
+      const olderRows = rows.slice(0, rows.length - 1 - idx);
+      const prev = olderRows.length ? olderRows[olderRows.length - 1] : null;
+      const origIdx = rows.length - 1 - idx;
+     return `
+        <tr>
+          <td style="font-weight:600;">${monthLabel(r[col.year], r[col.month])}</td>
+          <td>${r[col.students]}</td>
+          <td>${r[col.attendanceRate]}% ${deltaBadge(r[col.attendanceRate], prev ? prev[col.attendanceRate] : null, "%")}</td>
+          <td>${r[col.collectionRate]}% ${deltaBadge(r[col.collectionRate], prev ? prev[col.collectionRate] : null, "%")}</td>
+          <td>${fmtEGP(r[col.revenue])} ${deltaBadge(r[col.revenue], prev ? prev[col.revenue] : null, " EGP")}</td>
+          <td>${r[col.paidCount]}</td>
+          <td>${r[col.unpaidCount]}</td>
+          <td><button class="unpaid-link" onclick="showUnpaidModal(${origIdx})">👀 ${t('viewBtn')}</button></td>
+        </tr>`;
+    }).join("");
+    wireTopScrollbar("histScrollTop", "histScrollTopInner", "histTableWrap");
+  }
+
+  function showUnpaidModal(origIdx){
+    const col = HIST_SCHEMA.col;
+    const row = currentHistRows[origIdx];
+    console.log('showUnpaidModal clicked, origIdx=', origIdx, 'row=', row, 'currentHistRows=', currentHistRows);
+    if(!row){
+      console.error('showUnpaidModal: no row found for origIdx', origIdx, '— currentHistRows length is', currentHistRows.length);
+      alert('حصل خطأ في فتح البيانات — افتح الـ Console (F12) وابعتلي اللي ظاهر');
+      return;
+    }
+    const list = row[col.unpaidStudents] || [];
+    document.getElementById("unpaidModalTitle").textContent =
+      `Who Hasn't Paid – ${monthLabel(row[col.year], row[col.month])}`;
+    const body = document.getElementById("unpaidModalBody");
+    if(!list.length){
+      body.innerHTML = `<div class="empty-note">🎉 No one was unpaid this month (or this month was saved before the "Who Hasn't Paid" feature was added)</div>`;
+    } else {
+      body.innerHTML = list.map(s => `
+        <div class="list-row">
+          <div class="list-name"><span class="name">${s.name || "—"}</span></div>
+          ${s.studentPhone ? `<a class="phone-link" href="tel:${s.studentPhone}">${s.studentPhone}</a>` : `<span class="empty-note" style="padding:0;">—</span>`}
+        </div>
+      `).join("");
+    }
+    document.getElementById("unpaidModalOverlay").classList.add("show");
+  }
+  function closeUnpaidModal(){
+    document.getElementById("unpaidModalOverlay").classList.remove("show");
+  }
+
+  /* ============================================================
+     EXAM GRADES (dynamic columns, driven by an "الامتحانات" table)
+     ============================================================ */
+  const EXAMS_SCHEMA = {
+    table: "الامتحانات",
+    col: { id: "id", name: "exam_name", maxScore: "max_score", grade: "grade", createdAt: "created_at" }
+  };
+  const SCORES_SCHEMA = {
+    table: "نتائج_الامتحانات",
+    col: { id: "id", examId: "exam_id", studentCode: "student_code", score: "score" }
+  };
+
+  let examGrade = "first_prep";
+  let examStudents = [];
+  let examList = [];
+  let examScores = [];
+
+  function onExamGradeChange(){
+    examGrade = document.getElementById("examGradeSelect").value;
+    loadExamGrades();
+  }
+
+  async function loadExamGrades(){
+    const loadingEl = document.getElementById("examLoadingMsg");
+    const errorEl = document.getElementById("examErrorMsg");
+    const contentEl = document.getElementById("examContent");
+    loadingEl.classList.add("show");
+    errorEl.classList.remove("show");
+    contentEl.classList.remove("show");
+    try{
+      const ecol = EXAMS_SCHEMA.col;
+      const [students, { data: exams, error: examsErr }] = await Promise.all([
+        fetchGrade(examGrade),
+        supa.from(EXAMS_SCHEMA.table).select("*").eq(ecol.grade, examGrade).order(ecol.createdAt, { ascending: true })
+      ]);
+      if(examsErr) throw examsErr;
+
+      examStudents = students;
+      examList = exams || [];
+
+      let scores = [];
+      if(examList.length){
+        const scol = SCORES_SCHEMA.col;
+        const ids = examList.map(e => e[ecol.id]);
+        const { data: scoreRows, error: scoresErr } = await supa.from(SCORES_SCHEMA.table).select("*").in(scol.examId, ids);
+        if(scoresErr) throw scoresErr;
+        scores = scoreRows || [];
+      }
+      examScores = scores;
+
+      renderExamTable();
+      contentEl.classList.add("show");
+    }catch(err){
+      console.error(err);
+      errorEl.innerHTML = `
+        <div style="font-weight:700;">Couldn't load grades</div>
+        <div style="font-size:12px; max-width:520px;">
+          ${err.message || err}<br><br>
+          This most likely means the "الامتحانات" or "نتائج_الامتحانات" tables don't exist yet, or the anon role
+          doesn't have SELECT permission for them. See the schema in the code comments above.
+        </div>`;
+      errorEl.classList.add("show");
+    }finally{
+      loadingEl.classList.remove("show");
+    }
+  }
+
+  /* ---------- Read-only grades table (Exam Grades tab) ---------- */
+  function renderExamTable(){
+    const head = document.getElementById("examTableHead");
+    const body = document.getElementById("examTableBody");
+    const ecol = EXAMS_SCHEMA.col;
+    const scol = SCORES_SCHEMA.col;
+
+    head.innerHTML = `<tr>
+      <th>Name</th>
+      ${examList.map(e => `<th>${e[ecol.name]}</th>`).join("")}
+      <th>Average</th>
+      <th>Trend</th>
+    </tr>`;
+
+    if(!examStudents.length){
+      body.innerHTML = `<tr><td colspan="${examList.length + 3}" style="text-align:center; color:var(--muted); padding:24px;">No students in this grade</td></tr>`;
+      wireTopScrollbar("examScrollTop", "examScrollTopInner", "examTableWrap");
+      return;
+    }
+
+    const q = (document.getElementById("examSearch")?.value || "").trim().toLowerCase();
+    const rowsToShow = q ? examStudents.filter(s => (s.name || "").toLowerCase().includes(q)) : examStudents;
+
+    if(!rowsToShow.length){
+      body.innerHTML = `<tr><td colspan="${examList.length + 3}" style="text-align:center; color:var(--muted); padding:24px;">No students match "${q}"</td></tr>`;
+      wireTopScrollbar("examScrollTop", "examScrollTopInner", "examTableWrap");
+      return;
+    }
+
+    body.innerHTML = rowsToShow.map(s => {
+      let sumPct = 0, cnt = 0;
+      const cells = examList.map(e => {
+        const row = examScores.find(sc => sc[scol.examId] === e[ecol.id] && sc[scol.studentCode] === s.qrCode);
+        if(!row){ return `<td style="color:var(--muted); text-align:center;">☐</td>`; }
+        const sc = Number(row[scol.score]);
+        const mx = Number(e[ecol.maxScore]) || 100;
+        if(!isNaN(sc)){ sumPct += (sc / mx) * 100; cnt++; }
+        return `<td>${row[scol.score]} / ${e[ecol.maxScore]}</td>`;
+      }).join("");
+      const avg = cnt ? Math.round(sumPct / cnt) : null;
+      return `<tr>
+        <td style="font-weight:600;">${s.name || "—"}</td>
+        ${cells}
+        <td>${avg != null ? avg + "%" : "—"}</td>
+        <td><button class="unpaid-link" onclick="showStudentTrend('${s.qrCode}')" title="Show score trend">📈</button></td>
+      </tr>`;
+    }).join("");
+    wireTopScrollbar("examScrollTop", "examScrollTopInner", "examTableWrap");
+  }
+
+  /* ---------- Student trend chart ---------- */
+  let studentTrendChartInstance = null;
+
+  function showStudentTrend(qrCode){
+    const ecol = EXAMS_SCHEMA.col;
+    const scol = SCORES_SCHEMA.col;
+    const student = examStudents.find(s => s.qrCode === qrCode);
+    if(!student) return;
+
+    const points = examList.map(e => {
+      const row = examScores.find(sc => sc[scol.examId] === e[ecol.id] && sc[scol.studentCode] === qrCode);
+      if(!row) return null;
+      const sc = Number(row[scol.score]);
+      const mx = Number(e[ecol.maxScore]) || 100;
+      if(isNaN(sc)) return null;
+      return { examName: e[ecol.name], pct: Math.round((sc / mx) * 100), raw: row[scol.score], max: e[ecol.maxScore] };
+    }).filter(p => p != null);
+
+    document.getElementById("studentTrendTitle").textContent = `${student.name || "Student"} — Score Trend`;
+
+    const canvas = document.getElementById("studentTrendChart");
+    const emptyEl = document.getElementById("studentTrendEmpty");
+    const summaryEl = document.getElementById("studentTrendSummary");
+
+    if(studentTrendChartInstance){ studentTrendChartInstance.destroy(); studentTrendChartInstance = null; }
+
+    if(points.length < 2){
+      canvas.style.display = "none";
+      emptyEl.textContent = points.length === 1
+        ? "Only one exam recorded so far — add another exam score to see a trend"
+        : "No exam scores recorded yet for this student";
+      emptyEl.classList.add("show");
+      summaryEl.textContent = "";
+    } else if(!chartLibReady()){
+      canvas.style.display = "none";
+      emptyEl.textContent = "Chart library failed to load — try refreshing";
+      emptyEl.classList.add("show");
+      summaryEl.textContent = "";
+    } else {
+      canvas.style.display = "block";
+      emptyEl.classList.remove("show");
+
+      studentTrendChartInstance = new Chart(canvas, {
+        type: "line",
+        data: {
+          labels: points.map(p => p.examName),
+          datasets: [{
+            label: "Score",
+            data: points.map(p => p.pct),
+            borderColor: "rgba(40,86,90,0.85)",
+            backgroundColor: "rgba(40,86,90,0.10)",
+            fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "rgba(40,86,90,1)"
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => {
+              const p = points[c.dataIndex];
+              return `${p.raw} / ${p.max} (${p.pct}%)`;
+            } } }
+          },
+          scales: {
+            y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(40,86,90,0.05)" } },
+            x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+
+      const first = points[0].pct, last = points[points.length - 1].pct;
+      const diff = last - first;
+      if(diff > 0) summaryEl.innerHTML = `<span class="delta-badge up">▲ Improved by ${diff}%</span> from "${points[0].examName}" to "${points[points.length-1].examName}"`;
+      else if(diff < 0) summaryEl.innerHTML = `<span class="delta-badge down">▼ Dropped by ${Math.abs(diff)}%</span> from "${points[0].examName}" to "${points[points.length-1].examName}"`;
+      else summaryEl.innerHTML = `<span class="delta-badge flat">— No change</span> from "${points[0].examName}" to "${points[points.length-1].examName}"`;
+    }
+
+    document.getElementById("studentTrendModalOverlay").classList.add("show");
+  }
+
+  function closeStudentTrendModal(){
+    document.getElementById("studentTrendModalOverlay").classList.remove("show");
+  }
+
+  /* ============================================================
+     PAYMENT HISTORY MODAL — shows which months a student paid,
+     reading directly from the standalone "payment_history" table
+     (columns: id, qr_code, month, year, amount_paid, created_at).
+     ============================================================ */
+  function monthNameShort(y, m){
+    return new Date(y, m - 1, 1).toLocaleString(currentLang === "ar" ? "ar" : "en-US", { month: "long", year: "numeric" });
+  }
+
+  async function showPaymentHistory(qrCode, studentName){
+    const overlay = document.getElementById("paymentHistoryModalOverlay");
+    const titleEl = document.getElementById("paymentHistoryTitle");
+    const bodyEl = document.getElementById("paymentHistoryBody");
+    const summaryEl = document.getElementById("paymentHistorySummary");
+
+    titleEl.textContent = `${studentName || "Student"} — ${t('paymentHistoryTitleWord')}`;
+    bodyEl.innerHTML = `<div class="empty-note"><span class="spinner" style="display:inline-block;width:14px;height:14px;"></span> …</div>`;
+    summaryEl.textContent = "";
+    overlay.classList.add("show");
+
+    try{
+      const col = PAYMENT_HISTORY_SCHEMA.col;
+      const { data, error } = await supa
+        .from(PAYMENT_HISTORY_SCHEMA.table)
+        .select("*")
+        .eq(col.qrCode, qrCode)
+        .order(col.year, { ascending: false })
+        .order(col.month, { ascending: false });
+
+      if(error) throw error;
+      const rows = data || [];
+
+      if(!rows.length){
+        bodyEl.innerHTML = `<div class="empty-note">${t('noPaymentHistoryYet')}</div>`;
+        return;
+      }
+
+      bodyEl.innerHTML = rows.map(r => `
+        <div class="list-row">
+          <div class="list-name">
+            <span class="name">${monthNameShort(r[col.year], r[col.month])}</span>
+          </div>
+          <div class="val high">${fmtEGP(r[col.amountPaid])}</div>
+        </div>
+      `).join("");
+
+      const total = rows.reduce((sum, r) => sum + (Number(r[col.amountPaid]) || 0), 0);
+      summaryEl.innerHTML = `<strong>${rows.length}</strong> ${t('monthsPaidCount')} — ${t('totalPaidWord')} <strong>${fmtEGP(total)}</strong>`;
+    }catch(err){
+      console.error(err);
+      bodyEl.innerHTML = `<div class="empty-note" style="color:var(--error);">${err.message || err}</div>`;
+    }
+  }
+
+  function closePaymentHistoryModal(){
+    document.getElementById("paymentHistoryModalOverlay").classList.remove("show");
+  }
+
+  /* ---------- Startup: Restore saved theme and language ---------- */
+  setTheme(currentTheme);
+  setLanguage(currentLang);
+  applySidebarState();
+  syncMobileDrawerOffset();
+
+  loadDashboard();
+  loadSidebarCounts();
+
+</script>
+</body>
+</html>
