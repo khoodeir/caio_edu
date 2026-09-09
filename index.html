@@ -1,1 +1,985 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="pageTitle">بوابة الدخول | MilEX </title>
+<script>
+  // Apply saved theme before first paint to avoid a flash of the wrong look.
+  (function(){
+    try{
+      var theme = localStorage.getItem('mgTheme') || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+    }catch(e){}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="prefetch" href="dashboard.html">
+<link rel="prefetch" href="parent_portal.html">
+<link rel="prefetch" href="scanner.html">
+<link rel="prefetch" href="student_serch.html">
+<link rel="prefetch" href="manage_exams.html">
+<link rel="prefetch" href="student_registration.html">
+<link rel="prefetch" href="student_delete.html">
+<style>
+  /*
+    Design: CAIO — Creative AI Orbit. The role cards read as satellites
+    around the brand mark; choosing one launches a short orbit-ring pulse
+    before the door opens. Palette and motion are drawn from the CAIO mark:
+    deep signal-blue, a lighter orbit-cyan, and a clean near-black ink.
+  */
+  :root{
+    --logo-mask: url("logo.png");
+    --bg-main:#F3F7FD;
+    --bg-secondary:#E7EFFC;
+    --bg-dark-beige:#D7E4F8;
+    --card-bg:#FFFFFF;
+    --text-main:#101827;
+    --text-secondary:#66707F;
+    --petrol:#1660E8;
+    --petrol-dark:#0B3FAE;
+    --wood:#2FB6E0;
+    --wood-light:#7ED4EF;
+    --border:#DCE6F7;
 
+    --ink:var(--text-main);
+    --ink-2:var(--petrol-dark);
+    --muted:var(--text-secondary);
+    --paper:var(--bg-main);
+    --card:var(--card-bg);
+    --line:var(--border);
+    --gold:var(--petrol);
+    --gold-2:var(--petrol-dark);
+    --gold-soft:rgba(22,96,232,0.08);
+    --gold-soft-2:rgba(22,96,232,0.16);
+    --success:#1FA971;
+    --success-soft:rgba(31,169,113,0.14);
+    --error:#E14B4B;
+    --error-soft:rgba(225,75,75,0.13);
+    --on-accent:#ffffff;
+    --shadow-sm:0 2px 8px rgba(16,24,39,0.07);
+    --shadow-md:0 10px 28px rgba(16,24,39,0.09);
+    --shadow-lg:0 24px 60px rgba(16,24,39,0.14);
+  }
+  [data-theme="dark"]{
+    --ink:#EAF1FF;
+    --ink-2:#8AC7FF;
+    --muted:#93A0B8;
+    --paper:#0A1220;
+    --card:#111B2E;
+    --line:#22304A;
+    --gold:#4C8DFF;
+    --gold-2:#8AC7FF;
+    --gold-soft:rgba(76,141,255,0.16);
+    --gold-soft-2:rgba(76,141,255,0.26);
+    --success:#3FC98A;
+    --success-soft:rgba(63,201,138,0.16);
+    --error:#FF7A7A;
+    --error-soft:rgba(255,122,122,0.16);
+    --on-accent:#071021;
+    --shadow-sm:0 2px 8px rgba(0,0,0,0.30);
+    --shadow-md:0 10px 28px rgba(0,0,0,0.40);
+    --shadow-lg:0 24px 60px rgba(0,0,0,0.5);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0; min-height:100vh; color:var(--ink);
+    font-family:'Inter',sans-serif;
+    background-color:var(--paper);
+    background-image:
+      radial-gradient(circle at 12% 8%, var(--gold-soft-2), transparent 42%),
+      radial-gradient(circle at 88% 92%, var(--gold-soft-2), transparent 42%),
+      repeating-radial-gradient(circle at 50% 0%, rgba(22,96,232,0.05) 0px, rgba(22,96,232,0.05) 1px, transparent 1px, transparent 90px),
+      linear-gradient(165deg, var(--paper) 0%, var(--card) 100%);
+    background-size:auto, auto, auto, auto;
+    background-attachment:fixed, fixed, fixed, fixed;
+    display:flex; flex-direction:column; align-items:center;
+    padding:28px 18px 40px;
+    transition:background .2s ease, color .2s ease;
+  }
+  [dir="rtl"] body{ font-family:'Cairo',sans-serif; }
+
+  .topbar{
+    width:100%; max-width:920px; display:flex; justify-content:space-between; align-items:center;
+    gap:10px; margin-bottom:6px;
+  }
+  .topbar-left{ display:flex; align-items:center; gap:8px; }
+  .icon-toggle-btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    height:38px; padding:0 14px; border-radius:10px;
+    background:var(--card); border:1px solid var(--line); color:var(--ink);
+    font-family:'Inter',sans-serif; font-size:12.5px; font-weight:700;
+    cursor:pointer; box-shadow:var(--shadow-sm);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .icon-toggle-btn:hover{ transform:translateY(-1px); box-shadow:var(--shadow-md); }
+
+  .hero{ text-align:center; margin-top:18px; margin-bottom:34px; }
+ .brand-mark{
+    width:128px;
+    height:128px;
+    margin:0 auto 16px;
+    background-image:url("logo.png");
+    background-repeat:no-repeat;
+    background-position:center;
+    background-size:contain;
+    filter:drop-shadow(0 10px 22px rgba(22,96,232,0.28));
+}
+  .eyebrow{
+    font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--gold); font-weight:700; margin-bottom:10px;
+  }
+  [dir="rtl"] .eyebrow{ letter-spacing:0.02em; }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-size:clamp(30px,5vw,42px); margin:0 0 10px; color:var(--ink-2);
+    letter-spacing:-0.01em;
+  }
+  [dir="rtl"] h1{ font-family:'Cairo',sans-serif; font-weight:800; letter-spacing:0; }
+  .subtitle{ color:var(--muted); font-size:15px; max-width:420px; margin:0 auto; line-height:1.6; }
+
+  .roles{
+    width:100%; max-width:920px; display:grid;
+    grid-template-columns:repeat(3,1fr); gap:18px;
+  }
+.hub-grid{
+  width:100%; max-width:920px; margin:0 auto; display:flex; flex-wrap:wrap;
+  justify-content:center; gap:18px;
+}
+.hub-grid .role-card{ flex:0 1 190px; width:190px; max-width:210px; }
+  @media (max-width:760px){
+    .roles{ grid-template-columns:1fr; max-width:420px; }
+    .hub-grid{ max-width:520px; }
+    .hub-grid .role-card{ flex:1 1 150px; }
+  }
+
+  .role-card{
+    position:relative; background:var(--card); border:1px solid var(--line);
+    border-radius:28px 12px 28px 12px; padding:30px 22px 24px; text-align:center;
+    cursor:pointer; box-shadow:var(--shadow-sm); text-decoration:none; color:inherit;
+    display:block; overflow:hidden;
+    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .role-card::before{
+    content:""; position:absolute; inset:0; border-radius:inherit;
+    background:linear-gradient(135deg, var(--gold-soft) 0%, transparent 55%);
+    opacity:0; transition:opacity .25s ease; pointer-events:none;
+  }
+  .role-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-lg); border-color:var(--gold-soft-2); }
+  .role-card:hover::before{ opacity:1; }
+  .role-card:active{ transform:translateY(-1px) scale(0.98); }
+  .role-card.stamped{ animation:stamp .45s ease; }
+  @keyframes stamp{
+    0%{ transform:scale(1); box-shadow:var(--shadow-sm); }
+    40%{ transform:scale(0.96); }
+    70%{ transform:scale(1.03); box-shadow:0 0 0 9px var(--gold-soft), var(--shadow-md); }
+    100%{ transform:scale(1); box-shadow:var(--shadow-sm); }
+  }
+  .role-icon{
+    position:relative;
+    width:54px; height:54px; border-radius:50%; margin:0 auto 16px;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%);
+    color:var(--on-accent);
+  }
+  .role-icon::after{
+    content:""; position:absolute; inset:-6px; border-radius:50%;
+    border:1.5px dashed var(--gold-soft-2); opacity:0;
+  }
+  .role-card:hover .role-icon::after{ opacity:1; animation:orbitSpin 3.2s linear infinite; }
+  @keyframes orbitSpin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  .role-icon svg{ width:23px; height:23px; }
+  .role-card h2{
+    font-family:'Space Grotesk',sans-serif; font-size:21px; font-weight:700;
+    margin:0 0 6px; color:var(--ink);
+  }
+  [dir="rtl"] .role-card h2{ font-family:'Cairo',sans-serif; font-weight:700; }
+  .role-card p{ font-size:12.5px; color:var(--muted); margin:0; line-height:1.55; }
+
+  .hub-grid .role-card{ padding:24px 16px 20px; }
+  .hub-grid .role-icon{ width:44px; height:44px; }
+  .hub-grid .role-icon svg{ width:20px; height:20px; }
+  .hub-grid .role-card h2{ font-size:18px; }
+
+  .role-card.danger .role-icon{ background:linear-gradient(135deg, var(--error) 0%, #FF9B9B 100%); color:var(--on-accent); }
+  .role-card.danger .role-icon::after{ border-color:var(--error-soft); }
+  .role-card.danger:hover{ border-color:var(--error); }
+
+  .hub-actions{ display:flex; gap:14px; margin-top:26px; align-items:center; flex-wrap:wrap; justify-content:center; }
+
+  .back-top-row{ width:100%; max-width:920px; margin:0 0 8px; }
+  .back-top-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    height:38px; padding:0 14px; border-radius:10px;
+    background:var(--card); border:1px solid var(--line); color:var(--ink);
+    font-family:inherit; font-size:12.5px; font-weight:700;
+    cursor:pointer; box-shadow:var(--shadow-sm);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .back-top-btn:hover{ transform:translateY(-1px); box-shadow:var(--shadow-md); }
+  .back-top-btn svg{ width:16px; height:16px; transform:scaleX(-1); }
+  [dir="rtl"] .back-top-btn svg{ transform:none; }
+  .link-btn{
+    background:none; border:none; cursor:pointer; color:var(--muted);
+    font-family:inherit; font-size:12.5px; font-weight:700; text-decoration:underline;
+    text-underline-offset:3px; padding:4px;
+  }
+  .link-btn:hover{ color:var(--gold); }
+
+  .footer{
+    margin-top:40px; font-size:11.5px; color:var(--muted);
+    letter-spacing:0.04em; text-align:center; width:100%;
+  }
+
+  #hubScreen, #assistantHubScreen{ display:none; width:100%; }
+  #hubScreen .hero, #assistantHubScreen .hero{ margin-bottom:28px; }
+
+  /* Overlays (password / change-password) */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,18,32,0.5);
+    display:none; align-items:center; justify-content:center; padding:20px;
+    z-index:50; backdrop-filter:blur(2px);
+  }
+  .overlay.open{ display:flex; }
+  .auth-card{
+    width:100%; max-width:340px; background:var(--card); border-radius:18px;
+    padding:30px 26px 26px; box-shadow:var(--shadow-lg); text-align:center;
+    border:1px solid var(--line);
+  }
+  .auth-card .role-icon{ margin-bottom:14px; }
+  .auth-card h3{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px; margin:0 0 6px; color:var(--ink);
+  }
+  [dir="rtl"] .auth-card h3{ font-family:'Cairo',sans-serif; font-weight:700; }
+  .auth-card .hint{ font-size:12.5px; color:var(--muted); margin-bottom:18px; }
+  .field{ text-align:start; margin-bottom:14px; }
+  .field label{ display:block; font-size:11.5px; font-weight:700; color:var(--muted); margin-bottom:6px; }
+  .field input{
+    width:100%; height:44px; border-radius:10px; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink); font-size:14px; padding:0 14px;
+    font-family:inherit; outline:none;
+  }
+  .field input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .msg-text{
+    font-size:12px; border-radius:8px; padding:8px 10px; margin-bottom:12px; display:none;
+  }
+  .msg-text.show{ display:block; }
+  .msg-text.error{ color:var(--error); background:var(--error-soft); }
+  .msg-text.success{ color:var(--success); background:var(--success-soft); }
+  .btn-row{ display:flex; gap:10px; }
+  .btn{
+    flex:1; height:44px; border-radius:10px; border:none; cursor:pointer;
+    font-family:inherit; font-size:13.5px; font-weight:700;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:var(--on-accent); box-shadow:0 6px 16px rgba(11,63,174,0.24);
+  }
+  .btn-primary:hover{ filter:brightness(1.05); }
+  .btn-primary:disabled{ opacity:0.7; cursor:default; }
+  .btn-ghost{ background:transparent; color:var(--muted); border:1px solid var(--line); }
+
+  /* ============ Professional animation layer ============ */
+
+  /* --- Page intro / splash --- */
+  .page-intro{
+    position:fixed; inset:0; z-index:300;
+    background:var(--paper);
+    display:flex; align-items:center; justify-content:center;
+    animation:introFadeOut .85s ease forwards;
+    animation-delay:.55s;
+  }
+  .page-intro-mark{
+    width:108px; height:108px;
+    background:var(--gold);
+    -webkit-mask-image:var(--logo-mask); mask-image:var(--logo-mask);
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+    -webkit-mask-position:center; mask-position:center;
+    -webkit-mask-size:contain; mask-size:contain;
+    animation:introPulse 1s ease-in-out infinite;
+  }
+  @keyframes introPulse{
+    0%,100%{ transform:scale(1); opacity:.82; }
+    50%{ transform:scale(1.1); opacity:1; }
+  }
+  @keyframes introFadeOut{
+    0%{ opacity:1; visibility:visible; }
+    88%{ opacity:0; }
+    100%{ opacity:0; visibility:hidden; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .page-intro{ display:none; }
+  }
+
+  /* --- Generic entrance keyframes --- */
+  @keyframes fadeInUp{
+    from{ opacity:0; transform:translateY(16px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @keyframes fadeInDown{
+    from{ opacity:0; transform:translateY(-10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @keyframes screenIn{
+    from{ opacity:0; transform:translateY(14px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @keyframes screenOut{
+    from{ opacity:1; transform:translateY(0); }
+    to{ opacity:0; transform:translateY(-10px); }
+  }
+
+  /* --- Hero staggered entrance --- */
+  .hero .brand-mark{ opacity:0; animation:fadeInDown .6s ease .05s both; }
+  .hero .eyebrow{ opacity:0; animation:fadeInUp .5s ease .15s both; }
+  .hero h1{ opacity:0; animation:fadeInUp .55s ease .22s both; }
+  .hero .subtitle{ opacity:0; animation:fadeInUp .55s ease .3s both; }
+
+  /* --- Topbar entrance --- */
+  .topbar{ opacity:0; animation:fadeInDown .5s ease both; }
+
+  /* --- Screens crossfade (whole-section transition) --- */
+  #roleScreen, #hubScreen, #assistantHubScreen{ animation:screenIn .45s ease both; }
+  #roleScreen.screen-exit, #hubScreen.screen-exit, #assistantHubScreen.screen-exit{
+    animation:screenOut .2s ease forwards;
+  }
+
+  /* --- Role card entrance stagger + refined interactions --- */
+  .role-card{ opacity:0; animation:fadeInUp .5s ease both; will-change:transform; }
+  .roles .role-card:nth-child(1){ animation-delay:.32s; }
+  .roles .role-card:nth-child(2){ animation-delay:.4s; }
+  .roles .role-card:nth-child(3){ animation-delay:.48s; }
+  .hub-grid .role-card:nth-child(1){ animation-delay:.3s; }
+  .hub-grid .role-card:nth-child(2){ animation-delay:.37s; }
+  .hub-grid .role-card:nth-child(3){ animation-delay:.44s; }
+  .hub-grid .role-card:nth-child(4){ animation-delay:.51s; }
+  .hub-grid .role-card:nth-child(5){ animation-delay:.58s; }
+
+  .role-icon{ transition:transform .35s cubic-bezier(.34,1.56,.64,1), background .25s ease, color .25s ease; }
+  .role-card:hover .role-icon{ transform:scale(1.14) rotate(-6deg); }
+  .role-card:active .role-icon{ transform:scale(0.95) rotate(0deg); }
+  .role-card.danger:hover .role-icon{ transform:scale(1.14) rotate(6deg); }
+  .role-card h2, .role-card p{ transition:color .2s ease; }
+
+  /* --- Buttons: micro-interactions --- */
+  .icon-toggle-btn, .back-top-btn{ transition:transform .18s ease, box-shadow .18s ease, background .2s ease; }
+  .icon-toggle-btn:active, .back-top-btn:active{ transform:translateY(0) scale(.94); }
+  .link-btn{ transition:color .2s ease, transform .15s ease; display:inline-block; }
+  .link-btn:active{ transform:scale(.96); }
+  .btn{ transition:transform .16s ease, filter .2s ease, box-shadow .2s ease; }
+  .btn:active{ transform:scale(.97); }
+  .btn-primary:not(:disabled):hover{ box-shadow:0 8px 20px rgba(11,63,174,0.3); transform:translateY(-1px); }
+  .btn-ghost:hover{ border-color:var(--gold); color:var(--gold); }
+
+  /* --- Overlays: smooth scale + fade instead of instant toggle --- */
+  .overlay{
+    display:flex; opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .25s ease, visibility .25s ease;
+  }
+  .overlay.open{ opacity:1; visibility:visible; pointer-events:auto; }
+  .auth-card{
+    transform:scale(.9) translateY(14px);
+    transition:transform .32s cubic-bezier(.34,1.56,.64,1);
+  }
+  .overlay.open .auth-card{ transform:scale(1) translateY(0); }
+
+  /* --- Message banners: soft pop-in --- */
+  .msg-text.show{ animation:fadeInUp .3s ease both; }
+
+  /* --- Field focus micro-lift --- */
+  .field input{ transition:border-color .2s ease, box-shadow .2s ease, transform .15s ease; }
+  .field input:focus{ transform:translateY(-1px); }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation-duration:.001ms !important; animation-delay:0s !important; transition-duration:.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-left"></div>
+    <div style="display:flex; gap:10px;">
+      <button class="icon-toggle-btn" id="langBtn" onclick="toggleLanguage()">EN</button>
+      <button class="icon-toggle-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    </div>
+  </div>
+
+  <!-- ROLE SELECTION SCREEN -->
+  <div id="roleScreen">
+    <div class="hero">
+      <div class="brand-mark">
+        </div>
+      <h1 data-i18n="title">أهلاً بيك، مين حضرتك؟</h1>
+      <p class="subtitle" data-i18n="subtitle">اختر دورك للمتابعة إلى الصفحة المناسبة لك</p>
+    </div>
+
+    <div class="roles">
+      <div class="role-card" onclick="selectRole('teacher', this)">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3L1 8l11 5 9-4.09V17h2V8L12 3z" fill="currentColor"/>
+            <path d="M5 10.18V14c0 1.86 3.13 4 7 4s7-2.14 7-4v-3.82l-7 3.18-7-3.18z" fill="currentColor"/>
+          </svg>
+        </div>
+        <h2 data-i18n="teacherTitle">المدرس</h2>
+        <p data-i18n="teacherDesc">دخول كامل للوحة التحكم والإدارة</p>
+      </div>
+
+      <div class="role-card" onclick="selectRole('Parent Portal', this)">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 19V9.5L12 4L20 9.5V19" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M9 19V13H15V19" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="Parent PortalTitle">ولي الأمر</h2>
+        <p data-i18n="Parent PortalDesc">تابع تقرير ابنك: الحضور والدرجات والمدفوعات</p>
+      </div>
+
+      <div class="role-card" onclick="selectRole('assistant', this)">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="assistantTitle">المساعد</h2>
+        <p data-i18n="assistantDesc">تسجيل حضور الطلاب عن طريق المسح</p>
+      </div>
+    </div>
+
+    <div class="footer">Powered by <a href="milex.html" target="_blank" rel="noopener noreferrer" style="color:inherit;">MilEX</a></div>
+  </div>
+
+  <!-- TEACHER HUB SCREEN (shown after correct password) -->
+  <div id="hubScreen">
+    <div class="back-top-row">
+      <button class="back-top-btn" onclick="showRoleScreen()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span data-i18n="backLink">رجوع</span>
+      </button>
+    </div>
+    <div class="hero">
+      <div class="brand-mark">
+        </div>
+      <div class="eyebrow" data-i18n="hubEyebrow">المدرس</div>
+      <h1 data-i18n="hubTitle">إيه اللي عايز تعمله؟</h1>
+      <p class="subtitle" data-i18n="hubSubtitle">اختر الأداة اللي محتاجها دلوقتي</p>
+    </div>
+
+    <div class="hub-grid">
+      <a class="role-card" href="dashboard.html">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 20V10M11 20V4M18 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="hubDash">لوحة التحكم</h2>
+        <p data-i18n="hubDashDesc">نظرة حية على المركز</p>
+      </a>
+
+      <a class="role-card" href="student_serch.html">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M20 20l-4.7-4.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="hubSearch">بحث الطلاب</h2>
+        <p data-i18n="hubSearchDesc">دوّر على أي طالب</p>
+      </a>
+
+      <a class="role-card" href="manage_exams.html">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="hubExams">إدارة الامتحانات</h2>
+        <p data-i18n="hubExamsDesc">أضف امتحانات ودرجات</p>
+      </a>
+
+      <a class="role-card" href="student_registration.html">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="8" r="3.3" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M4 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M18 8v5M15.5 10.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="hubRegister">تسجيل طالب</h2>
+        <p data-i18n="hubRegisterDesc">ضيف طالب جديد</p>
+      </a>
+
+      <a class="role-card" href="scanner.html">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="hubScanner">ماسح الحضور</h2>
+        <p data-i18n="hubScannerDesc">سجّل حضور طالب</p>
+      </a>
+
+      <a class="role-card danger" href="student_delete.html">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7M18.5 7l-.8 12.4A2 2 0 0 1 15.7 21H8.3a2 2 0 0 1-2-1.6L5.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="hubDelete">حذف طالب</h2>
+        <p data-i18n="hubDeleteDesc">إزالة بيانات طالب نهائيًا</p>
+      </a>
+    </div>
+
+    <div class="hub-actions">
+      <button class="link-btn" onclick="openChangePasswordOverlay()" data-i18n="changePasswordLink">تغيير كلمة المرور</button>
+      <button class="link-btn" onclick="logoutTeacher()" data-i18n="logoutLink">تسجيل خروج</button>
+    </div>
+
+    <div class="footer">Powered by <a href="milex.html" target="_blank" rel="noopener noreferrer" style="color:inherit;">MilEX</a></div>
+  </div>
+
+  <!-- ASSISTANT HUB SCREEN -->
+  <div id="assistantHubScreen">
+    <div class="back-top-row">
+      <button class="back-top-btn" onclick="showRoleScreen()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span data-i18n="backLink">رجوع</span>
+      </button>
+    </div>
+    <div class="hero">
+      <div class="brand-mark">
+        </div>
+      <div class="eyebrow" data-i18n="assistantHubEyebrow">المساعد</div>
+      <h1 data-i18n="hubTitle">إيه اللي عايز تعمله؟</h1>
+      <p class="subtitle" data-i18n="hubSubtitle">اختر الأداة اللي محتاجها دلوقتي</p>
+    </div>
+
+    <div class="hub-grid">
+      <a class="role-card" href="scanner.html">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="hubScanner">ماسح الحضور</h2>
+        <p data-i18n="hubScannerDesc">سجّل حضور طالب</p>
+      </a>
+
+      <a class="role-card" href="manage_exams.html">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="hubExams">إدارة الامتحانات</h2>
+        <p data-i18n="hubExamsDesc">أضف امتحانات ودرجات</p>
+      </a>
+
+      <a class="role-card" href="student_serch.html">
+        <div class="role-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M20 20l-4.7-4.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 data-i18n="hubSearch">بحث الطلاب</h2>
+        <p data-i18n="hubSearchDesc">دوّر على أي طالب</p>
+      </a>
+    </div>
+
+    <div class="hub-actions">
+      <button class="link-btn" onclick="logoutAssistant()" data-i18n="logoutLink">تسجيل خروج</button>
+    </div>
+
+    <div class="footer">Powered by <a href="milex.html" target="_blank" rel="noopener noreferrer" style="color:inherit;">MilEX</a></div>
+  </div>
+
+  <!-- Teacher login overlay -->
+  <div class="overlay" id="teacherOverlay">
+    <div class="auth-card">
+      <div class="role-icon" style="margin-inline:auto;">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3L1 8l11 5 9-4.09V17h2V8L12 3z" fill="currentColor"/>
+          <path d="M5 10.18V14c0 1.86 3.13 4 7 4s7-2.14 7-4v-3.82l-7 3.18-7-3.18z" fill="currentColor"/>
+        </svg>
+      </div>
+      <h3 data-i18n="teacherAuthTitle">دخول المدرس</h3>
+      <div class="hint" data-i18n="teacherAuthHint">من فضلك أدخل كلمة المرور للمتابعة</div>
+      <div class="field">
+        <label for="teacherPassword" data-i18n="passwordLabel">كلمة المرور</label>
+        <input type="password" id="teacherPassword" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitTeacherPassword()">
+      </div>
+      <div class="msg-text error" id="teacherError" data-i18n="wrongPassword">كلمة المرور غير صحيحة</div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeTeacherOverlay()" data-i18n="cancel">إلغاء</button>
+        <button class="btn btn-primary" onclick="submitTeacherPassword()" data-i18n="enter">دخول</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assistant login overlay (real Supabase auth) -->
+  <div class="overlay" id="assistantOverlay">
+    <div class="auth-card">
+      <div class="role-icon" style="margin-inline:auto;">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h3 data-i18n="assistantAuthTitle">دخول المساعد</h3>
+      <div class="hint" data-i18n="assistantAuthHint">أدخل الإيميل وكلمة المرور للمتابعة</div>
+      <div class="field">
+        <label for="assistantEmail" data-i18n="emailLabel">الإيميل</label>
+        <input type="email" id="assistantEmail" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="assistantPassword" data-i18n="passwordLabel">كلمة المرور</label>
+        <input type="password" id="assistantPassword" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitAssistantLogin()">
+      </div>
+      <div class="msg-text error" id="assistantError"></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeAssistantOverlay()" data-i18n="cancel">إلغاء</button>
+        <button class="btn btn-primary" id="assistantSubmitBtn" onclick="submitAssistantLogin()" data-i18n="enter">دخول</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change password overlay -->
+  <div class="overlay" id="changePasswordOverlay">
+    <div class="auth-card">
+      <h3 data-i18n="changePasswordTitle">تغيير كلمة المرور</h3>
+      <div class="hint" data-i18n="changePasswordHint">هتتحفظ على المتصفح ده بس</div>
+      <div class="field">
+        <label for="currentPassword" data-i18n="currentPasswordLabel">كلمة المرور الحالية</label>
+        <input type="password" id="currentPassword" autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label for="newPassword" data-i18n="newPasswordLabel">كلمة المرور الجديدة</label>
+        <input type="password" id="newPassword" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="confirmPassword" data-i18n="confirmPasswordLabel">تأكيد كلمة المرور</label>
+        <input type="password" id="confirmPassword" autocomplete="new-password" onkeydown="if(event.key==='Enter') submitChangePassword()">
+      </div>
+      <div class="msg-text error" id="changePasswordError"></div>
+      <div class="msg-text success" id="changePasswordSuccess" data-i18n="passwordChanged">تم تغيير كلمة المرور بنجاح</div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeChangePasswordOverlay()" data-i18n="cancel">إلغاء</button>
+        <button class="btn btn-primary" onclick="submitChangePassword()" data-i18n="save">حفظ</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // First-time default teacher password (used only if none has been set yet on this browser).
+  const DEFAULT_TEACHER_PASSWORD = "2026";
+
+  function getTeacherPassword(){
+    return localStorage.getItem('mgTeacherPassword') || DEFAULT_TEACHER_PASSWORD;
+  }
+
+  // ---- Supabase client (used for real email/password login for the Assistant role) ----
+  const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const translations = {
+    ar:{
+      pageTitle:"بوابة الدخول | MilEX",
+      title:"أهلاً بيك، مين حضرتك؟",
+      subtitle:"اختر دورك للمتابعة إلى الصفحة المناسبة لك",
+      teacherTitle:"المدرس", teacherDesc:"دخول كامل للوحة التحكم والإدارة",
+      "Parent PortalTitle":"ولي الأمر", "Parent PortalDesc":"تابع تقرير ابنك: الحضور والدرجات والمدفوعات",
+      assistantTitle:"المساعد", assistantDesc:"تسجيل حضور الطلاب عن طريق المسح",
+      footer:"MilEX",
+      teacherAuthTitle:"دخول المدرس", teacherAuthHint:"من فضلك أدخل كلمة المرور للمتابعة",
+      passwordLabel:"كلمة المرور", wrongPassword:"كلمة المرور غير صحيحة",
+      cancel:"إلغاء", enter:"دخول",
+      hubEyebrow:"المدرس", hubTitle:"إيه اللي عايز تعمله؟", hubSubtitle:"اختر الأداة اللي محتاجها دلوقتي",
+      hubDash:"لوحة التحكم", hubDashDesc:"نظرة حية على المركز",
+      hubSearch:"بحث الطلاب", hubSearchDesc:"دوّر على أي طالب",
+      hubExams:"إدارة الامتحانات", hubExamsDesc:"أضف امتحانات ودرجات",
+      hubRegister:"تسجيل طالب", hubRegisterDesc:"ضيف طالب جديد",
+      hubScanner:"ماسح الحضور", hubScannerDesc:"سجّل حضور طالب",
+      hubDelete:"حذف طالب", hubDeleteDesc:"إزالة بيانات طالب نهائيًا",
+      changePasswordLink:"تغيير كلمة المرور", logoutLink:"تسجيل خروج",
+      assistantHubEyebrow:"المساعد", backLink:"رجوع",
+      changePasswordTitle:"تغيير كلمة المرور", changePasswordHint:"هتتحفظ على المتصفح ده بس",
+      currentPasswordLabel:"كلمة المرور الحالية", newPasswordLabel:"كلمة المرور الجديدة",
+      confirmPasswordLabel:"تأكيد كلمة المرور", passwordChanged:"تم تغيير كلمة المرور بنجاح",
+      save:"حفظ",
+      errCurrentWrong:"كلمة المرور الحالية غير صحيحة",
+      errMismatch:"كلمة المرور الجديدة وتأكيدها مش متطابقين",
+      errTooShort:"لازم تكون كلمة المرور 4 حروف/أرقام على الأقل",
+      assistantAuthTitle:"دخول المساعد",
+      assistantAuthHint:"أدخل الإيميل وكلمة المرور للمتابعة",
+      emailLabel:"الإيميل",
+      wrongCredentials:"الإيميل أو كلمة المرور غير صحيحة",
+      signingIn:"جاري الدخول..."
+    },
+    en:{
+      pageTitle:"Sign In | MilEX",
+      title:"Welcome — who are you?",
+      subtitle:"Choose your role to continue to the right page",
+      teacherTitle:"Teacher", teacherDesc:"Full access to the dashboard and management",
+      "Parent PortalTitle":"Parent Portal", "Parent PortalDesc":"Track your child's attendance, grades and payments",
+      assistantTitle:"Assistant", assistantDesc:"Check students in with the scanner",
+      footer:"MilEX",
+      teacherAuthTitle:"Teacher sign in", teacherAuthHint:"Enter your password to continue",
+      passwordLabel:"Password", wrongPassword:"Incorrect password",
+      cancel:"Cancel", enter:"Enter",
+      hubEyebrow:"Teacher", hubTitle:"What do you need?", hubSubtitle:"Pick the tool you need right now",
+      hubDash:"Dashboard", hubDashDesc:"Live view of the center",
+      hubSearch:"Student Search", hubSearchDesc:"Look up any student",
+      hubExams:"Manage Exams", hubExamsDesc:"Add exams and grades",
+      hubRegister:"Register Student", hubRegisterDesc:"Add a new student",
+      hubScanner:"Attendance Scanner", hubScannerDesc:"Check a student in",
+      hubDelete:"Delete Student", hubDeleteDesc:"Permanently remove a student's data",
+      changePasswordLink:"Change password", logoutLink:"Log out",
+      assistantHubEyebrow:"Assistant", backLink:"Back",
+      changePasswordTitle:"Change password", changePasswordHint:"Saved to this browser only",
+      currentPasswordLabel:"Current password", newPasswordLabel:"New password",
+      confirmPasswordLabel:"Confirm password", passwordChanged:"Password changed successfully",
+      save:"Save",
+      errCurrentWrong:"Current password is incorrect",
+      errMismatch:"New password and confirmation don't match",
+      errTooShort:"Password must be at least 4 characters",
+      assistantAuthTitle:"Assistant sign in",
+      assistantAuthHint:"Enter your email and password to continue",
+      emailLabel:"Email",
+      wrongCredentials:"Incorrect email or password",
+      signingIn:"Signing in..."
+    }
+  };
+
+  let currentLang = 'ar';
+
+  function applyLanguage(lang){
+    currentLang = lang;
+    const dict = translations[lang];
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    document.getElementById('langBtn').textContent = lang === 'ar' ? 'EN' : 'عربي';
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const key = el.getAttribute('data-i18n');
+      if(dict[key]) el.textContent = dict[key];
+    });
+  }
+
+  function toggleLanguage(){
+    applyLanguage(currentLang === 'ar' ? 'en' : 'ar');
+  }
+
+  function toggleTheme(){
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+    try{ localStorage.setItem('mgTheme', next); }catch(e){}
+  }
+
+  async function selectRole(role, cardEl){
+    cardEl.classList.add('stamped');
+    setTimeout(()=>cardEl.classList.remove('stamped'), 400);
+
+    if(role === 'Parent Portal'){
+      setTimeout(()=>{ window.location.href = 'parent_portal.html'; }, 180);
+      return;
+    }
+
+    if(role === 'assistant'){
+      // Remembered on this device: skip the login form if we already have a
+      // saved flag AND a still-valid Supabase session (auto-refreshed by supabase-js).
+      let hasSession = false;
+      try{
+        const { data } = await supa.auth.getSession();
+        hasSession = !!(data && data.session);
+      }catch(e){}
+
+      if(localStorage.getItem('mgAssistantOk') === '1' && hasSession){
+        setTimeout(showAssistantHub, 180);
+      } else {
+        setTimeout(openAssistantOverlay, 180);
+      }
+      return;
+    }
+
+    if(role === 'teacher'){
+      if(localStorage.getItem('mgTeacherOk') === '1'){
+        setTimeout(showHub, 180);
+        return;
+      }
+      setTimeout(openTeacherOverlay, 180);
+    }
+  }
+
+  function showHub(){
+    document.getElementById('roleScreen').style.display = 'none';
+    document.getElementById('assistantHubScreen').style.display = 'none';
+    document.getElementById('hubScreen').style.display = 'block';
+  }
+  function showAssistantHub(){
+    document.getElementById('roleScreen').style.display = 'none';
+    document.getElementById('hubScreen').style.display = 'none';
+    document.getElementById('assistantHubScreen').style.display = 'block';
+  }
+  function showRoleScreen(){
+    document.getElementById('hubScreen').style.display = 'none';
+    document.getElementById('assistantHubScreen').style.display = 'none';
+    document.getElementById('roleScreen').style.display = 'block';
+  }
+
+  // Teacher: remembered permanently on this device (localStorage) until logout.
+  function logoutTeacher(){
+    localStorage.removeItem('mgTeacherOk');
+    showRoleScreen();
+  }
+
+  // Assistant: remembered permanently on this device (localStorage + Supabase session) until logout.
+  async function logoutAssistant(){
+    try{ await supa.auth.signOut(); }catch(e){}
+    localStorage.removeItem('mgAssistantOk');
+    showRoleScreen();
+  }
+
+  function openTeacherOverlay(){
+    document.getElementById('teacherOverlay').classList.add('open');
+    document.getElementById('teacherError').classList.remove('show');
+    document.getElementById('teacherPassword').value = '';
+    document.getElementById('teacherPassword').focus();
+  }
+  function closeTeacherOverlay(){
+    document.getElementById('teacherOverlay').classList.remove('open');
+  }
+  function submitTeacherPassword(){
+    const val = document.getElementById('teacherPassword').value;
+    if(val === getTeacherPassword()){
+      localStorage.setItem('mgTeacherOk','1');
+      closeTeacherOverlay();
+      showHub();
+    } else {
+      document.getElementById('teacherError').classList.add('show');
+      const card = document.querySelector('#teacherOverlay .auth-card');
+      card.style.animation = 'none';
+      requestAnimationFrame(()=>{ card.style.animation = 'stamp .38s ease'; });
+    }
+  }
+
+  // ---- Assistant login (real Supabase email/password auth) ----
+  function openAssistantOverlay(){
+    document.getElementById('assistantOverlay').classList.add('open');
+    document.getElementById('assistantError').classList.remove('show');
+    document.getElementById('assistantEmail').value = '';
+    document.getElementById('assistantPassword').value = '';
+    document.getElementById('assistantEmail').focus();
+  }
+  function closeAssistantOverlay(){
+    document.getElementById('assistantOverlay').classList.remove('open');
+  }
+  async function submitAssistantLogin(){
+    const dict = translations[currentLang];
+    const email = document.getElementById('assistantEmail').value.trim();
+    const password = document.getElementById('assistantPassword').value;
+    const errEl = document.getElementById('assistantError');
+    const btn = document.getElementById('assistantSubmitBtn');
+    errEl.classList.remove('show');
+
+    if(!email || !password){
+      errEl.textContent = dict.wrongCredentials;
+      errEl.classList.add('show');
+      return;
+    }
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = dict.signingIn;
+
+    try{
+      const { error } = await supa.auth.signInWithPassword({ email, password });
+      if(error){
+        errEl.textContent = dict.wrongCredentials;
+        errEl.classList.add('show');
+        const card = document.querySelector('#assistantOverlay .auth-card');
+        card.style.animation = 'none';
+        requestAnimationFrame(()=>{ card.style.animation = 'stamp .38s ease'; });
+      } else {
+        localStorage.setItem('mgAssistantOk','1');
+        closeAssistantOverlay();
+        showAssistantHub();
+      }
+    } catch(e){
+      errEl.textContent = dict.wrongCredentials;
+      errEl.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+
+  function openChangePasswordOverlay(){
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    document.getElementById('changePasswordError').classList.remove('show');
+    document.getElementById('changePasswordSuccess').classList.remove('show');
+    document.getElementById('changePasswordOverlay').classList.add('open');
+    document.getElementById('currentPassword').focus();
+  }
+  function closeChangePasswordOverlay(){
+    document.getElementById('changePasswordOverlay').classList.remove('open');
+  }
+  function submitChangePassword(){
+    const dict = translations[currentLang];
+    const cur = document.getElementById('currentPassword').value;
+    const next = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    const errEl = document.getElementById('changePasswordError');
+    const okEl = document.getElementById('changePasswordSuccess');
+    errEl.classList.remove('show'); okEl.classList.remove('show');
+
+    if(cur !== getTeacherPassword()){
+      errEl.textContent = dict.errCurrentWrong; errEl.classList.add('show'); return;
+    }
+    if(next.length < 4){
+      errEl.textContent = dict.errTooShort; errEl.classList.add('show'); return;
+    }
+    if(next !== confirm){
+      errEl.textContent = dict.errMismatch; errEl.classList.add('show'); return;
+    }
+    localStorage.setItem('mgTeacherPassword', next);
+    okEl.classList.add('show');
+    setTimeout(closeChangePasswordOverlay, 1200);
+  }
+
+  // init
+  applyLanguage('ar');
+  if(document.documentElement.getAttribute('data-theme') === 'dark'){
+    document.getElementById('themeBtn').textContent = '☀️';
+  }
+</script>
+</body>
+</html>
