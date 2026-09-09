@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إدارة الامتحانات</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://evbjulsahncllewwvlxp.supabase.co">
+<style>
+  :root{
+    --bg-main:#F5F9FF; --bg-secondary:#DCE8FB; --bg-dark-beige:#CFE4FB;
+    --card-bg:#FFFFFF; --text-main:#10151D; --text-secondary:#4B5A70;
+    --petrol:#1565C0; --petrol-dark:#0D47A1; --wood:#2E8BF0; --wood-light:#7FB2F5;
+    --border:#D6E7FA;
+
+    --ink:var(--text-main); --ink-2:var(--petrol-dark);
+    --paper:var(--bg-main); --card:var(--card-bg);
+    --line:#D6E7FA;
+    --gold:var(--petrol); --gold-2:var(--petrol-dark); --gold-soft:rgba(40,86,90,0.09);
+    --success:#5B8C6E; --success-soft:rgba(91,140,110,0.13);
+    --error:#B5555A; --error-soft:rgba(181,85,90,0.12);
+    --muted:var(--text-secondary);
+    --cream-bg-1:var(--bg-main); --cream-bg-2:var(--bg-secondary);
+    --on-accent:#FFFFFF;
+    --shadow-sm:0 1px 2px rgba(48,47,44,0.08);
+    --shadow-md:0 8px 24px rgba(48,47,44,0.10);
+    --shadow-lg:0 20px 50px rgba(48,47,44,0.14);
+  }
+  body.dark{
+    --ink:#DCE8FB; --ink-2:#7FB2F5;
+    --paper:#0B1220; --card:#101B2E;
+    --line:rgba(237,229,216,0.14);
+    --gold:#3B82F6; --gold-2:#7FB2F5; --gold-soft:rgba(63,138,143,0.20);
+    --success:#6FA98A; --success-soft:rgba(111,169,138,0.18);
+    --error:#C77378; --error-soft:rgba(199,115,120,0.18);
+    --muted:#7E93AC;
+    --cream-bg-1:#0B1220; --cream-bg-2:#0F1B2E;
+    --on-accent:#FFFFFF;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.30);
+    --shadow-md:0 8px 24px rgba(0,0,0,0.40);
+    --shadow-lg:0 20px 50px rgba(0,0,0,0.5);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Inter',sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(40,86,90,0.05), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(150,115,84,0.04), transparent 45%),
+      linear-gradient(160deg, var(--cream-bg-1), var(--cream-bg-2));
+    color:var(--ink);
+    min-height:100vh;
+    padding:32px 24px 64px;
+    transition:background .2s ease, color .2s ease;
+  }
+  [dir="rtl"] body{ font-family:'Cairo','Inter',sans-serif; }
+  .num{ font-family:'Space Grotesk',sans-serif; }
+
+  /* ===== Header ===== */
+  .topbar{
+    max-width:1100px; margin:0 auto 26px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{
+    height:58px; flex-shrink:0;
+    background:transparent;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand-mark img{ height:100%; width:auto; object-fit:contain; display:block; }
+  .brand-eyebrow{ font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-weight:700; margin-bottom:2px; }
+  [dir="rtl"] .brand-eyebrow{ letter-spacing:0; }
+  .brand h1{ font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold-2); letter-spacing:-0.01em; }
+  [dir="rtl"] .brand h1{ font-family:'Cairo',serif; letter-spacing:0; }
+  .brand p{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .topbar-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+
+  .back-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 18px; border-radius:10px;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:var(--on-accent); font-family:'Inter',sans-serif; font-size:13px; font-weight:700;
+    text-decoration:none; box-shadow:0 6px 16px rgba(29,65,69,0.28);
+    transition:transform .15s ease, box-shadow .15s ease;
+    white-space:nowrap;
+  }
+  [dir="rtl"] .back-btn{ font-family:'Cairo','Inter',sans-serif; }
+  .back-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(29,65,69,0.35); }
+  .back-btn svg{ width:16px; height:16px; flex-shrink:0; }
+
+  .icon-toggle-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:42px; height:42px; padding:0 14px; border-radius:10px;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    font-family:'Inter',sans-serif; font-size:14px; font-weight:700; cursor:pointer;
+    transition:all .15s ease;
+  }
+  [dir="rtl"] .icon-toggle-btn{ font-family:'Cairo','Inter',sans-serif; font-size:13px; }
+  .icon-toggle-btn:hover{ border-color:var(--gold); color:var(--gold-2); }
+
+  .wrap{ max-width:1100px; margin:0 auto; }
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px; box-shadow:var(--shadow-lg);
+    transition:background .2s ease, border-color .2s ease;
+  }
+
+  .controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .grade-select{
+    padding:11px 16px; border-radius:10px; border:1px solid var(--line); background:var(--paper);
+    color:var(--ink); font-family:'Inter',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer; outline:none;
+    min-width:190px; transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  [dir="rtl"] .grade-select{ font-family:'Cairo','Inter',sans-serif; }
+  .grade-select:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .search-box{ flex:1; min-width:220px; position:relative; }
+  .search-box input{
+    width:100%; padding:11px 15px 11px 38px; border-radius:10px; border:1px solid var(--line);
+    background:var(--paper); font-family:'Inter',sans-serif; font-size:13.5px; outline:none; color:var(--ink);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  [dir="rtl"] .search-box input{ font-family:'Cairo','Inter',sans-serif; padding:11px 38px 11px 15px; }
+  .search-box input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .search-box::before{
+    content:"⌕"; position:absolute; left:13px; top:50%; transform:translateY(-50%);
+    color:var(--muted); font-size:15px; pointer-events:none;
+  }
+  [dir="rtl"] .search-box::before{ left:auto; right:13px; }
+
+  .add-exam-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 18px; border-radius:10px; border:none;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:var(--on-accent); font-family:'Inter',sans-serif; font-size:13px; font-weight:700;
+    cursor:pointer; box-shadow:0 6px 16px rgba(29,65,69,0.28);
+    transition:transform .15s ease, box-shadow .15s ease;
+    white-space:nowrap;
+  }
+  [dir="rtl"] .add-exam-btn{ font-family:'Cairo','Inter',sans-serif; }
+  .add-exam-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(29,65,69,0.35); }
+  .add-exam-btn:disabled{ opacity:.6; cursor:default; transform:none; }
+
+  .result-count{ font-size:12px; color:var(--muted); margin-bottom:12px; }
+
+  .state-msg{
+    display:none; align-items:center; justify-content:center; gap:10px;
+    padding:64px 10px; color:var(--muted); font-size:13.5px; text-align:center;
+  }
+  .state-msg.show{ display:flex; }
+  .state-msg.err{ color:var(--error); flex-direction:column; gap:9px; }
+  .state-msg .spinner{
+    width:18px; height:18px; border-radius:50%; border:2px solid rgba(29,65,69,0.18);
+    border-top-color:var(--gold); animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .content{ display:none; }
+  .content.show{ display:block; }
+
+  /* ===== Score Entry Panel ===== */
+  .chart-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:19px;
+    margin-bottom:22px;
+  }
+
+  .section-title{
+    display:flex; align-items:center; gap:9px;
+    font-family:'Cormorant Garamond',serif; font-weight:700; font-size:18px; color:var(--gold-2);
+    margin-bottom:15px;
+  }
+  [dir="rtl"] .section-title{ font-family:'Cairo',serif; }
+  .section-title .tag{
+    font-family:'Inter',sans-serif; font-size:10px; font-weight:700; color:var(--gold); background:var(--gold-soft);
+    padding:3px 9px; border-radius:999px; letter-spacing:.03em; text-transform:uppercase;
+  }
+  [dir="rtl"] .section-title .tag{ font-family:'Cairo','Inter',sans-serif; letter-spacing:0; }
+
+  .list-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:11px 4px; border-bottom:1px solid var(--line); font-size:13px;
+  }
+  .list-row:last-child{ border-bottom:none; }
+  .list-name .name{ font-weight:600; color:var(--ink); }
+
+  .score-input{
+    width:90px; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); font-family:'Space Grotesk',sans-serif; font-size:13px; color:var(--ink); outline:none;
+  }
+  .score-input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+
+  .action-btns{ display:flex; gap:10px; margin-top:14px; }
+  .save-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 18px; border-radius:10px; border:none;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:var(--on-accent); font-family:'Inter',sans-serif; font-weight:700; font-size:13px;
+    cursor:pointer; box-shadow:0 6px 16px rgba(29,65,69,0.28);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  [dir="rtl"] .save-btn{ font-family:'Cairo','Inter',sans-serif; }
+  .save-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(29,65,69,0.35); }
+  .save-btn:disabled{ opacity:.6; cursor:default; transform:none; }
+
+  .cancel-btn{
+    padding:11px 18px; border-radius:10px; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); font-family:'Inter',sans-serif; font-weight:700; font-size:13px; cursor:pointer;
+    transition:all .15s ease;
+  }
+  [dir="rtl"] .cancel-btn{ font-family:'Cairo','Inter',sans-serif; }
+  .cancel-btn:hover{ border-color:var(--gold); color:var(--gold-2); }
+
+  /* ===== Table ===== */
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
+  .hist-table-note{ font-size:11px; color:var(--muted); margin-bottom:12px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:600px; }
+  thead th{
+    text-align:start; padding:12px 14px; background:var(--paper); color:var(--gold-2);
+    font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  [dir="rtl"] thead th{ letter-spacing:0; }
+  tbody td{ padding:11px 14px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr{ transition:background .12s ease; }
+  tbody tr:hover{ background:rgba(29,65,69,0.06); }
+  .empty-note{ text-align:center; color:var(--muted); font-size:12.5px; padding:20px 0; }
+
+  .unpaid-link{
+    border:none; background:rgba(29,65,69,0.09); color:var(--gold-2); cursor:pointer;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:11.5px; padding:6px 11px; border-radius:8px;
+    transition:all .15s ease;
+  }
+  [dir="rtl"] .unpaid-link{ font-family:'Cairo','Inter',sans-serif; }
+  .unpaid-link:hover{ background:var(--gold-soft); }
+
+  /* ===== Modal ===== */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(48,47,44,0.5); z-index:80;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:var(--card); border-radius:16px; max-width:440px; width:100%; max-height:80vh;
+    overflow:auto; padding:22px; box-shadow:var(--shadow-lg); border:1px solid var(--line);
+  }
+  .modal-close{ border:none; background:none; font-size:22px; cursor:pointer; color:var(--muted); line-height:1; }
+  .modal-close:hover{ color:var(--ink); }
+
+  .field-label{ font-size:10.5px; color:var(--muted); font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; }
+  [dir="rtl"] .field-label{ letter-spacing:0; }
+
+  .modal-input{
+    width:100%; padding:11px 16px; border-radius:10px; border:1px solid var(--line); background:var(--paper);
+    color:var(--ink); font-family:'Inter',sans-serif; font-size:13px; outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  [dir="rtl"] .modal-input{ font-family:'Cairo','Inter',sans-serif; }
+  .modal-input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+
+  .footer-note{ text-align:center; font-size:11.5px; color:var(--muted); margin-top:24px; display:flex; align-items:center; justify-content:center; gap:7px; }
+  .footer-note::before{ content:"🔒"; font-size:11px; }
+
+  @media (max-width:640px){
+    .controls{ flex-direction:column; align-items:stretch; }
+    .grade-select{ min-width:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+    <img src="logo.png" alt="Logo">    </div>
+    <div>
+      <div class="brand-eyebrow" id="t_eyebrow">بيانات حية</div>
+      <h1 id="t_title">إدارة الامتحانات</h1>
+      <p id="t_subtitle">أضف امتحانات وسجّل درجات الطلاب</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="icon-toggle-btn" id="langToggleBtn" onclick="toggleLanguage()">EN</button>
+    <button class="icon-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">🌙</button>
+    <a class="back-btn" href="javascript:void(0)" id="t_back" onclick="goBack()">
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+  </svg>
+  <span id="backBtnText">رجوع</span>
+</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+
+    <div class="state-msg show" id="examManageLoadingMsg">
+      <span class="spinner"></span> <span id="t_loading">جاري تحميل الدرجات…</span>
+    </div>
+    <div class="state-msg err" id="examManageErrorMsg"></div>
+
+    <div class="content" id="examManageContent">
+
+      <div class="controls">
+        <select class="grade-select" id="examManageGradeSelect" onchange="onExamManageGradeChange()"></select>
+        <div class="search-box">
+          <input type="text" id="examManageSearch" placeholder="ابحث باسم الطالب…" oninput="renderExamManageTable()">
+        </div>
+        <button class="add-exam-btn" onclick="openAddExamModal()" id="t_addExamBtn">➕ إضافة امتحان</button>
+      </div>
+
+      <div class="chart-card" id="examEntryPanel" style="display:none;">
+        <div class="section-title" id="examEntryTitle"></div>
+        <div id="examEntryBody"></div>
+        <div class="action-btns">
+          <button class="save-btn" id="saveExamEntryBtn" onclick="saveScoreEntry()">💾 <span id="t_saveGradesLabel">حفظ الدرجات</span></button>
+          <button class="cancel-btn" onclick="cancelScoreEntry()" id="t_cancelBtn">إلغاء</button>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:0;">
+        <div class="section-title"><span id="t_manageGradesTitle">إدارة الدرجات</span> <span class="tag" id="t_manageGradesTag">تسجيل الدرجات وإدارة الامتحانات</span></div>
+        <div class="hist-table-note" id="t_manageGradesNote">يُحفظ كل امتحان جديد في عمود مستقل، وتبقى الدرجات القديمة كما هي بعد إضافة امتحانات جديدة.</div>
+        <div class="table-wrap">
+          <table>
+            <thead id="examManageTableHead"></thead>
+            <tbody id="examManageTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer-note" id="t_footerNote">يتم حفظ التغييرات مباشرة على Supabase</div>
+</div>
+
+<!-- Add exam modal -->
+<div class="modal-overlay" id="addExamModalOverlay" onclick="if(event.target===this) closeAddExamModal()">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:0;" id="t_addExamModalTitle">إضافة امتحان</div>
+      <button class="modal-close" onclick="closeAddExamModal()">×</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div>
+        <div class="field-label" id="t_examNameLabel">اسم الامتحان</div>
+        <input type="text" id="examNameInput" class="modal-input" placeholder="مثال: اختبار قصير 1">
+      </div>
+      <div>
+        <div class="field-label" id="t_maxScoreLabel">الدرجة النهائية</div>
+        <input type="number" id="examMaxScoreInput" class="modal-input" value="100" min="1">
+      </div>
+      <div>
+        <div class="field-label" id="t_gradeLabel">الصف الدراسي</div>
+        <select id="examGradeInput" class="grade-select" style="width:100%;"></select>
+      </div>
+      <button class="save-btn" id="saveNewExamBtn" onclick="saveNewExam()" style="justify-content:center;">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ============================================================
+     SUPABASE CONNECTION — same project as the dashboard
+     ============================================================ */
+ const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const LEVEL_AR = { first: "أولى", second: "تانية", third: "تالتة" };
+  const STAGE_AR = { prep: "إعدادي", secondary: "ثانوي" };
+  function splitGrade(g){ const i = g.indexOf("_"); return { level: g.slice(0,i), stage: g.slice(i+1) }; }
+
+  const SCHEMA = {
+    attendanceTable: (g) => { const { level, stage } = splitGrade(g); return `حضور_${LEVEL_AR[level]}_${STAGE_AR[stage]}`; },
+    paymentsTable: (g) => { const { level, stage } = splitGrade(g); return `دفع_${LEVEL_AR[level]}_${STAGE_AR[stage]}`; },
+    col: {
+      fullName: "full_name",
+      qrCode: "qr_code",
+      studentPhone: "student_phone",
+      parentPhone: "parent_phone",
+      city: "city",
+      groupName: "group_name",
+      attendanceCount: "attendance_count",
+      absenceCount: "absence_count",
+      lastAttendance: "last_attendance",
+      amountPaid: "amount_paid",
+      paymentStatus: "payment_status",
+      lastPaymentDate: "last_payment_date"
+    }
+  };
+
+  const GRADES = ["first_prep","second_prep","third_prep","first_secondary","second_secondary","third_secondary"];
+  const GRADE_LABELS = {
+    first_prep:      { ar: "الصف الأول الإعدادي",  en: "First Prep" },
+    second_prep:      { ar: "الصف الثاني الإعدادي", en: "Second Prep" },
+    third_prep:      { ar: "الصف الثالث الإعدادي", en: "Third Prep" },
+    first_secondary:  { ar: "الصف الأول الثانوي",   en: "First Secondary" },
+    second_secondary: { ar: "الصف الثاني الثانوي",  en: "Second Secondary" },
+    third_secondary:  { ar: "الصف الثالث الثانوي",  en: "Third Secondary" }
+  };
+
+  const STRINGS = {
+    ar: {
+      dir:"rtl", htmlLang:"ar",
+      eyebrow:"بيانات حية", title:"إدارة الامتحانات", subtitle:"أضف امتحانات وسجّل درجات الطلاب",
+      back:"ماسح الحضور",
+      langToggle:"EN", themeToggleDark:"☀️", themeToggleLight:"🌙",
+      searchPlaceholder:"ابحث باسم الطالب…",
+      addExamBtn:"➕ إضافة امتحان",
+      manageGradesTitle:"إدارة الدرجات", manageGradesTag:"تسجيل الدرجات وإدارة الامتحانات",
+      manageGradesNote:"يُحفظ كل امتحان جديد في عمود مستقل، وتبقى الدرجات القديمة كما هي بعد إضافة امتحانات جديدة.",
+      loading:"جاري تحميل الدرجات…",
+      errCouldntLoad:"تعذّر تحميل الدرجات",
+      errHint:"على الأغلب لأن جدولي \"الامتحانات\" أو \"نتائج_الامتحانات\" غير موجودين بعد، أو صلاحية anon role لا تسمح بالقراءة/الإضافة عليهما. راجع الكود لمعرفة تفاصيل الجداول المطلوبة.",
+      thName:"الاسم", thAverage:"المعدل",
+      noStudents:"لا يوجد طلاب في هذا الصف",
+      noMatch:(q)=>`لا يوجد طلاب مطابقين لـ "${q}"`,
+      enterBtn:"✏️ تسجيل", deleteBtnTitle:"حذف هذا الامتحان",
+      saveGrades:"💾 حفظ الدرجات", cancel:"إلغاء",
+      addExamModalTitle:"إضافة امتحان",
+      examNameLabel:"اسم الامتحان", examNamePlaceholder:"مثال: اختبار قصير 1",
+      maxScoreLabel:"الدرجة النهائية", gradeLabel:"الصف الدراسي",
+      saveBtn:"حفظ", saving:"جارٍ الحفظ…",
+      alertEnterName:"من فضلك أدخل اسم الامتحان", alertEnterMaxScore:"من فضلك أدخل درجة نهائية صحيحة",
+      alertSaveExamFail:(msg)=>`تعذّر حفظ الامتحان: ${msg}`,
+      alertSaveExamHint:"\nتأكد من وجود جدول \"الامتحانات\" مع صلاحيات SELECT/INSERT لدور anon.",
+      alertSaveScoresFail:(msg)=>`تعذّر حفظ الدرجات: ${msg}`,
+      alertDeleteFail:(msg)=>`تعذّر حذف الامتحان: ${msg}`,
+      confirmDelete:(name)=>`هل أنت متأكد من حذف "${name}"؟\n\nسيؤدي هذا إلى حذف الامتحان وكل درجات الطلاب المسجلة له نهائيًا، ولا يمكن التراجع عن ذلك.`,
+      enterGradesTitle:(name,max)=>`تسجيل الدرجات: ${name} (من ${max})`,
+      footerNote:"يتم حفظ التغييرات مباشرة على Supabase",
+      gradeOptions: Object.fromEntries(GRADES.map(g => [g, GRADE_LABELS[g].ar]))
+    },
+    en: {
+      dir:"ltr", htmlLang:"en",
+      eyebrow:"Live data", title:"Manage Exams", subtitle:"Add exams and enter student scores",
+      back:"Attendance Scanner",
+      langToggle:"AR", themeToggleDark:"☀️", themeToggleLight:"🌙",
+      searchPlaceholder:"Search by student name…",
+      addExamBtn:"➕ Add Exam",
+      manageGradesTitle:"Manage Grades", manageGradesTag:"Enter scores & manage exams",
+      manageGradesNote:"Each new exam is saved as a separate column, and old grades stay in place even after you add new exam scores.",
+      loading:"Loading grades…",
+      errCouldntLoad:"Couldn't load grades",
+      errHint:"This most likely means the \"الامتحانات\" or \"نتائج_الامتحانات\" tables don't exist yet, or the anon role doesn't have SELECT/INSERT permission for them. See the schema in the code comments.",
+      thName:"Name", thAverage:"Average",
+      noStudents:"No students in this grade",
+      noMatch:(q)=>`No students match "${q}"`,
+      enterBtn:"✏️ Enter", deleteBtnTitle:"Delete this exam",
+      saveGrades:"💾 Save Grades", cancel:"Cancel",
+      addExamModalTitle:"Add Exam",
+      examNameLabel:"Exam Name", examNamePlaceholder:"e.g. Quiz 1",
+      maxScoreLabel:"Maximum Score", gradeLabel:"Grade",
+      saveBtn:"Save", saving:"Saving…",
+      alertEnterName:"Please enter an exam name", alertEnterMaxScore:"Please enter a valid maximum score",
+      alertSaveExamFail:(msg)=>`Couldn't save the exam: ${msg}`,
+      alertSaveExamHint:"\nMake sure an \"الامتحانات\" table exists with SELECT/INSERT grants + policies for the anon role.",
+      alertSaveScoresFail:(msg)=>`Couldn't save grades: ${msg}`,
+      alertDeleteFail:(msg)=>`Couldn't delete the exam: ${msg}`,
+      confirmDelete:(name)=>`Are you sure you want to delete "${name}"?\n\nThis will permanently remove the exam and all student grades entered for it. This can't be undone.`,
+      enterGradesTitle:(name,max)=>`Enter Grades: ${name} (out of ${max})`,
+      footerNote:"Changes are written live to Supabase",
+      gradeOptions: Object.fromEntries(GRADES.map(g => [g, GRADE_LABELS[g].en]))
+    }
+  };
+
+  let currentLang = localStorage.getItem("eduTrackLang") || "ar";
+  let currentTheme = localStorage.getItem("eduTrackTheme") || "light";
+
+  function t(){ return STRINGS[currentLang]; }
+
+  function populateGradeSelects(){
+    ["examManageGradeSelect","examGradeInput"].forEach(id => {
+      const sel = document.getElementById(id);
+      const prev = sel.value;
+      sel.innerHTML = "";
+      GRADES.forEach(g => {
+        const opt = document.createElement("option");
+        opt.value = g;
+        opt.textContent = t().gradeOptions[g];
+        sel.appendChild(opt);
+      });
+      sel.value = GRADES.includes(prev) ? prev : GRADES[0];
+    });
+  }
+
+  function applyLanguage(){
+    const s = t();
+    document.documentElement.setAttribute("dir", s.dir);
+    document.documentElement.setAttribute("lang", s.htmlLang);
+
+    document.getElementById("t_eyebrow").textContent = s.eyebrow;
+    document.getElementById("t_title").textContent = s.title;
+    document.getElementById("t_subtitle").textContent = s.subtitle;
+    document.getElementById("backBtnText").textContent = currentLang === "ar" ? "رجوع" : "Back";
+    document.getElementById("langToggleBtn").textContent = s.langToggle;
+    document.getElementById("examManageSearch").placeholder = s.searchPlaceholder;
+    document.getElementById("t_addExamBtn").textContent = s.addExamBtn;
+    document.getElementById("t_manageGradesTitle").textContent = s.manageGradesTitle;
+    document.getElementById("t_manageGradesTag").textContent = s.manageGradesTag;
+    document.getElementById("t_manageGradesNote").textContent = s.manageGradesNote;
+    document.getElementById("t_loading").textContent = s.loading;
+    document.getElementById("t_saveGradesLabel").textContent = s.saveGrades.replace("💾 ", "");
+    document.getElementById("t_cancelBtn").textContent = s.cancel;
+    document.getElementById("t_footerNote").textContent = s.footerNote;
+    document.getElementById("t_addExamModalTitle").textContent = s.addExamModalTitle;
+    document.getElementById("t_examNameLabel").textContent = s.examNameLabel;
+    document.getElementById("examNameInput").placeholder = s.examNamePlaceholder;
+    document.getElementById("t_maxScoreLabel").textContent = s.maxScoreLabel;
+    document.getElementById("t_gradeLabel").textContent = s.gradeLabel;
+    document.getElementById("saveNewExamBtn").textContent = s.saveBtn;
+
+    populateGradeSelects();
+
+    renderExamManageTable();
+    const panel = document.getElementById("examEntryPanel");
+    if(panel.style.display === "block" && panel.dataset.examId){
+      openScoreEntryById(Number(panel.dataset.examId));
+    }
+  }
+
+  function toggleLanguage(){
+    currentLang = currentLang === "ar" ? "en" : "ar";
+    localStorage.setItem("eduTrackLang", currentLang);
+    applyLanguage();
+  }
+
+  function applyTheme(){
+    if(currentTheme === "dark"){
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.remove("dark");
+    }
+    document.getElementById("themeToggleBtn").textContent = currentTheme === "dark" ? "☀️" : "🌙";
+  }
+
+  function toggleTheme(){
+    currentTheme = currentTheme === "dark" ? "light" : "dark";
+    localStorage.setItem("eduTrackTheme", currentTheme);
+    applyTheme();
+  }
+
+  async function fetchGrade(grade){
+    const [{ data: att, error: attErr }, { data: pay, error: payErr }] = await Promise.all([
+      supa.from(SCHEMA.attendanceTable(grade)).select("*"),
+      supa.from(SCHEMA.paymentsTable(grade)).select("*")
+    ]);
+    if(attErr) throw new Error(`(${SCHEMA.attendanceTable(grade)}) ${attErr.message}`);
+    if(payErr) throw new Error(`(${SCHEMA.paymentsTable(grade)}) ${payErr.message}`);
+
+    const col = SCHEMA.col;
+    const payByCode = {};
+    (pay || []).forEach(p => { payByCode[p[col.qrCode]] = p; });
+
+    return (att || []).map(a => {
+      const p = payByCode[a[col.qrCode]] || {};
+      return {
+        grade,
+        name: a[col.fullName] ?? "",
+        qrCode: a[col.qrCode] ?? "",
+        studentPhone: a[col.studentPhone] ?? "",
+        parentPhone: a[col.parentPhone] ?? "",
+        city: a[col.city] ?? "",
+        groupName: a[col.groupName] ?? "",
+        attendanceCount: Number(a[col.attendanceCount] || 0),
+        absenceCount: Number(a[col.absenceCount] || 0),
+        lastAttendance: a[col.lastAttendance] ?? "",
+        paymentStatus: p[col.paymentStatus] ?? "",
+        amountPaid: Number(p[col.amountPaid] || 0),
+        lastPaymentDate: p[col.lastPaymentDate] ?? ""
+      };
+    });
+  }
+
+  const EXAMS_SCHEMA = {
+    table: "الامتحانات",
+    col: { id: "id", name: "exam_name", maxScore: "max_score", grade: "grade", createdAt: "created_at" }
+  };
+  const SCORES_SCHEMA = {
+    table: "نتائج_الامتحانات",
+    col: { id: "id", examId: "exam_id", studentCode: "student_code", score: "score" }
+  };
+
+  let examGrade = GRADES[0];
+  let examStudents = [];
+  let examList = [];
+  let examScores = [];
+
+  function onExamManageGradeChange(){
+    examGrade = document.getElementById("examManageGradeSelect").value;
+    loadExamGrades();
+  }
+
+  async function loadExamGrades(){
+    const loadingEl = document.getElementById("examManageLoadingMsg");
+    const errorEl = document.getElementById("examManageErrorMsg");
+    const contentEl = document.getElementById("examManageContent");
+    loadingEl.classList.add("show");
+    errorEl.classList.remove("show");
+    contentEl.classList.remove("show");
+    try{
+      const ecol = EXAMS_SCHEMA.col;
+      const [students, { data: exams, error: examsErr }] = await Promise.all([
+        fetchGrade(examGrade),
+        supa.from(EXAMS_SCHEMA.table).select("*").eq(ecol.grade, examGrade).order(ecol.createdAt, { ascending: true })
+      ]);
+      if(examsErr) throw examsErr;
+
+      examStudents = students;
+      examList = exams || [];
+
+      let scores = [];
+      if(examList.length){
+        const scol = SCORES_SCHEMA.col;
+        const ids = examList.map(e => e[ecol.id]);
+        const { data: scoreRows, error: scoresErr } = await supa.from(SCORES_SCHEMA.table).select("*").in(scol.examId, ids);
+        if(scoresErr) throw scoresErr;
+        scores = scoreRows || [];
+      }
+      examScores = scores;
+
+      renderExamManageTable();
+      contentEl.classList.add("show");
+    }catch(err){
+      console.error(err);
+      const s = t();
+      errorEl.innerHTML = `
+        <div style="font-weight:700;">${s.errCouldntLoad}</div>
+        <div style="font-size:12px; max-width:520px;">
+          ${err.message || err}<br><br>
+          ${s.errHint}
+        </div>`;
+      errorEl.classList.add("show");
+    }finally{
+      loadingEl.classList.remove("show");
+    }
+  }
+
+  function renderExamManageTable(){
+    const head = document.getElementById("examManageTableHead");
+    const body = document.getElementById("examManageTableBody");
+    if(!head || !body) return;
+    const ecol = EXAMS_SCHEMA.col;
+    const scol = SCORES_SCHEMA.col;
+    const s = t();
+
+    head.innerHTML = `<tr>
+      <th>${s.thName}</th>
+      ${examList.map(e => `
+        <th>
+          ${e[ecol.name]}
+          <button class="unpaid-link" style="margin-inline-start:6px; padding:2px 8px;" onclick="openScoreEntryById(${e[ecol.id]})">${s.enterBtn}</button>
+          <button class="unpaid-link" style="margin-inline-start:4px; padding:2px 8px;" onclick="confirmDeleteExam(${e[ecol.id]})" title="${s.deleteBtnTitle}">🗑</button>
+        </th>`).join("")}
+      <th>${s.thAverage}</th>
+    </tr>`;
+
+    if(!examStudents.length){
+      body.innerHTML = `<tr><td colspan="${examList.length + 2}" class="empty-note">${s.noStudents}</td></tr>`;
+      return;
+    }
+
+    const q = (document.getElementById("examManageSearch")?.value || "").trim().toLowerCase();
+    const rowsToShow = q ? examStudents.filter(st => (st.name || "").toLowerCase().includes(q)) : examStudents;
+
+    if(!rowsToShow.length){
+      body.innerHTML = `<tr><td colspan="${examList.length + 2}" class="empty-note">${s.noMatch(q)}</td></tr>`;
+      return;
+    }
+
+    body.innerHTML = rowsToShow.map(st => {
+      let sumPct = 0, cnt = 0;
+      const cells = examList.map(e => {
+        const row = examScores.find(sc => sc[scol.examId] === e[ecol.id] && sc[scol.studentCode] === st.qrCode);
+        if(!row){ return `<td style="color:var(--muted); text-align:center;">☐</td>`; }
+        const sc = Number(row[scol.score]);
+        const mx = Number(e[ecol.maxScore]) || 100;
+        if(!isNaN(sc)){ sumPct += (sc / mx) * 100; cnt++; }
+        return `<td>${row[scol.score]} / ${e[ecol.maxScore]}</td>`;
+      }).join("");
+      const avg = cnt ? Math.round(sumPct / cnt) : null;
+      return `<tr>
+        <td style="font-weight:600;">${st.name || "—"}</td>
+        ${cells}
+        <td>${avg != null ? avg + "%" : "—"}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function confirmDeleteExam(examId){
+    const ecol = EXAMS_SCHEMA.col;
+    const exam = examList.find(e => e[ecol.id] === examId);
+    const name = exam ? exam[ecol.name] : "";
+    const ok = confirm(t().confirmDelete(name));
+    if(ok) deleteExam(examId);
+  }
+
+  async function deleteExam(examId){
+    try{
+      const scol = SCORES_SCHEMA.col;
+      const ecol = EXAMS_SCHEMA.col;
+      await supa.from(SCORES_SCHEMA.table).delete().eq(scol.examId, examId);
+      const { error } = await supa.from(EXAMS_SCHEMA.table).delete().eq(ecol.id, examId);
+      if(error) throw error;
+
+      const panel = document.getElementById("examEntryPanel");
+      if(panel.dataset.examId && Number(panel.dataset.examId) === examId){
+        cancelScoreEntry();
+      }
+
+      await loadExamGrades();
+    }catch(err){
+      alert(t().alertDeleteFail(err.message || err));
+    }
+  }
+
+  function openAddExamModal(){
+    document.getElementById("examNameInput").value = "";
+    document.getElementById("examMaxScoreInput").value = "100";
+    document.getElementById("examGradeInput").value = examGrade;
+    document.getElementById("addExamModalOverlay").classList.add("show");
+  }
+  function closeAddExamModal(){
+    document.getElementById("addExamModalOverlay").classList.remove("show");
+  }
+
+  async function saveNewExam(){
+    const s = t();
+    const name = document.getElementById("examNameInput").value.trim();
+    const maxScore = Number(document.getElementById("examMaxScoreInput").value);
+    const grade = document.getElementById("examGradeInput").value;
+    if(!name){ alert(s.alertEnterName); return; }
+    if(!maxScore || maxScore <= 0){ alert(s.alertEnterMaxScore); return; }
+
+    const btn = document.getElementById("saveNewExamBtn");
+    btn.disabled = true; btn.textContent = s.saving;
+    try{
+      const ecol = EXAMS_SCHEMA.col;
+      const { data, error } = await supa.from(EXAMS_SCHEMA.table).insert([{
+        [ecol.name]: name, [ecol.maxScore]: maxScore, [ecol.grade]: grade
+      }]).select();
+      if(error) throw error;
+
+      closeAddExamModal();
+      examGrade = grade;
+      document.getElementById("examManageGradeSelect").value = grade;
+      await loadExamGrades();
+
+      const newExam = data && data[0];
+      if(newExam) openScoreEntry(newExam);
+    }catch(err){
+      alert(s.alertSaveExamFail(err.message || err) +
+        (err.hint ? "\nHint: " + err.hint : "") +
+        (err.details ? "\nDetails: " + err.details : "") +
+        s.alertSaveExamHint);
+    }finally{
+      btn.disabled = false; btn.textContent = s.saveBtn;
+    }
+  }
+
+  function openScoreEntryById(examId){
+    const ecol = EXAMS_SCHEMA.col;
+    const exam = examList.find(e => e[ecol.id] === examId);
+    if(exam) openScoreEntry(exam);
+  }
+
+  function openScoreEntry(exam){
+    const ecol = EXAMS_SCHEMA.col;
+    const scol = SCORES_SCHEMA.col;
+    const s = t();
+    const maxScore = exam[ecol.maxScore];
+    const panel = document.getElementById("examEntryPanel");
+    document.getElementById("examEntryTitle").textContent = s.enterGradesTitle(exam[ecol.name], maxScore);
+    document.getElementById("examEntryBody").innerHTML = examStudents.map(st => {
+      const existing = examScores.find(sc => sc[scol.examId] === exam[ecol.id] && sc[scol.studentCode] === st.qrCode);
+      return `
+      <div class="list-row">
+        <div class="list-name"><span class="name">${st.name || "—"}</span></div>
+        <input type="number" class="score-input" data-code="${st.qrCode}" min="0" max="${maxScore}" step="0.5" placeholder="/ ${maxScore}" value="${existing ? existing[scol.score] : ''}" onkeydown="handleScoreEntryKeydown(event)">
+      </div>`;
+    }).join("");
+    panel.style.display = "block";
+    panel.dataset.examId = exam[ecol.id];
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const firstInput = document.querySelector("#examEntryBody .score-input");
+    if(firstInput) firstInput.focus();
+  }
+
+  function handleScoreEntryKeydown(e){
+    if(e.key !== "Enter") return;
+    e.preventDefault();
+    const inputs = Array.from(document.querySelectorAll("#examEntryBody .score-input"));
+    const idx = inputs.indexOf(e.target);
+    if(idx > -1 && idx < inputs.length - 1){
+      inputs[idx + 1].focus();
+      inputs[idx + 1].select();
+    } else if(idx === inputs.length - 1){
+      document.getElementById("saveExamEntryBtn").click();
+    }
+  }
+
+  function cancelScoreEntry(){
+    document.getElementById("examEntryPanel").style.display = "none";
+  }
+
+  async function saveScoreEntry(){
+    const panel = document.getElementById("examEntryPanel");
+    const examId = Number(panel.dataset.examId);
+    const inputs = panel.querySelectorAll(".score-input");
+    const scol = SCORES_SCHEMA.col;
+    const rows = [];
+    inputs.forEach(inp => {
+      const v = inp.value.trim();
+      if(v === "") return;
+      rows.push({
+        [scol.examId]: examId,
+        [scol.studentCode]: inp.dataset.code,
+        [scol.score]: Number(v)
+      });
+    });
+
+    const s = t();
+    const btn = document.getElementById("saveExamEntryBtn");
+    btn.disabled = true; btn.textContent = s.saving;
+    try{
+      await supa.from(SCORES_SCHEMA.table).delete().eq(scol.examId, examId);
+      if(rows.length){
+        const { error } = await supa.from(SCORES_SCHEMA.table).insert(rows);
+        if(error) throw error;
+      }
+      cancelScoreEntry();
+      await loadExamGrades();
+    }catch(err){
+      alert(s.alertSaveScoresFail(err.message || err));
+    }finally{
+      btn.disabled = false; btn.textContent = s.saveGrades;
+    }
+  }
+function goBack(){
+  if(document.referrer && document.referrer !== window.location.href){
+    window.history.back();
+  } else {
+    window.location.href = "index.html";
+  }
+}
+  // init
+  applyTheme();
+  populateGradeSelects();
+  examGrade = document.getElementById("examManageGradeSelect").value;
+  applyLanguage();
+  loadExamGrades();
+</script>
+</body>
+</html>
