@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حذف طالب</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="prefetch" href="index.html">
+<link rel="prefetch" href="dashboard.html">
+<link rel="prefetch" href="student_serch.html">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://evbjulsahncllewwvlxp.supabase.co">
+<style>
+  :root{
+    --ink:#10151D; --ink-2:#1565C0;
+    --paper:#EAF3FE; --card:#FFFFFF;
+    --line:rgba(38,50,56,0.15);
+    --gold:#1565C0; --gold-2:#0D47A1; --gold-soft:rgba(36,79,82,0.12);
+    --success:#2F9E73; --success-soft:rgba(46,125,82,0.12);
+    --error:#A94442;
+    --error-soft:rgba(169,68,66,0.12);
+    --muted:#4B5A70;
+    --cream-bg-1:#F0F6FE; --cream-bg-2:#EAF3FE;
+    --on-accent:#F5F9FF;
+    --danger:#8A6F52;
+    --danger-2:#6F5943; --danger-soft:rgba(179,38,30,0.12);
+    --shadow-sm:0 1px 2px rgba(14,31,48,0.10);
+    --shadow-md:0 8px 24px rgba(14,31,48,0.14);
+    --shadow-lg:0 20px 50px rgba(14,31,48,0.18);
+  }
+  body.dark{
+    --ink:#DCE8FB; --ink-2:#BBD6F7;
+    --paper:#0B1220; --card:#101B2E;
+    --line:rgba(232,237,244,0.14);
+    --gold:#2E8BF0; --gold-2:#7FC8EE; --gold-soft:rgba(79,168,216,0.20);
+    --success:#4CAF50; --success-soft:rgba(63,168,115,0.18);
+    --error:#2E8BF0; --error-soft:rgba(79,168,216,0.18);
+    --muted:#8DA3C2;
+    --cream-bg-1:#0B1220; --cream-bg-2:#0F1B2E;
+    --on-accent:#F5F9FF;
+    --danger:#e5564c; --danger-2:#c0392b; --danger-soft:rgba(229,86,76,0.18);
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.35);
+    --shadow-md:0 8px 24px rgba(0,0,0,0.45);
+    --shadow-lg:0 20px 50px rgba(0,0,0,0.55);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Cairo','Inter',sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(36,79,82,0.06), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(36,79,82,0.04), transparent 45%),
+      linear-gradient(160deg, var(--cream-bg-1), var(--cream-bg-2));
+    color:var(--ink);
+    min-height:100vh;
+    padding:32px 24px 64px;
+    transition:background .2s ease, color .2s ease;
+  }
+
+  .topbar{
+    max-width:1100px; margin:0 auto 26px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-eyebrow{ font-size:10.5px; letter-spacing:0; text-transform:uppercase; color:var(--danger); font-weight:700; margin-bottom:2px; }
+  .brand h1{ font-family:'Cairo',serif; font-size:26px; font-weight:700; color:var(--danger-2); }
+  .brand p{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .topbar-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .icon-toggle-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:42px; height:42px; padding:0 14px; border-radius:10px;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    font-family:'Inter',sans-serif; font-size:14px; font-weight:700; cursor:pointer;
+    transition:all .15s ease;
+  }
+  .icon-toggle-btn:hover{ border-color:var(--gold); color:var(--gold-2); }
+  .back-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 18px; border-radius:10px;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:var(--on-accent); font-family:'Cairo','Inter',sans-serif; font-size:13px; font-weight:700;
+    text-decoration:none; box-shadow:0 6px 16px rgba(27,79,114,0.28); border:none; cursor:pointer;
+    white-space:nowrap;
+  }
+  .back-btn svg{ width:16px; height:16px; flex-shrink:0; }
+
+  .wrap{ max-width:1100px; margin:0 auto; }
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px; box-shadow:var(--shadow-lg);
+  }
+
+  .warn-banner{
+    display:flex; align-items:flex-start; gap:12px;
+    background:var(--danger-soft); border:1px solid rgba(179,38,30,0.28); border-radius:12px;
+    padding:14px 16px; margin-bottom:20px; font-size:13px; color:var(--danger-2); font-weight:600;
+    line-height:1.7;
+  }
+  .warn-banner span.ic{ font-size:18px; flex-shrink:0; }
+
+  .controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .grade-select{
+    padding:11px 16px; border-radius:10px; border:1px solid var(--line); background:var(--paper);
+    color:var(--ink); font-family:'Cairo','Inter',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer; outline:none;
+    min-width:190px;
+  }
+  .grade-select:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .search-box{ flex:1; min-width:220px; position:relative; }
+  .search-box input{
+    width:100%; padding:11px 38px 11px 15px; border-radius:10px; border:1px solid var(--line);
+    background:var(--paper); font-family:'Cairo','Inter',sans-serif; font-size:13.5px; outline:none; color:var(--ink);
+  }
+  .search-box input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .search-box::before{
+    content:"⌕"; position:absolute; right:13px; top:50%; transform:translateY(-50%);
+    color:var(--muted); font-size:15px; pointer-events:none;
+  }
+
+  .result-count{ font-size:12px; color:var(--muted); margin-bottom:12px; }
+
+  .state-msg{
+    display:none; align-items:center; justify-content:center; gap:10px;
+    padding:64px 10px; color:var(--muted); font-size:13.5px; text-align:center;
+  }
+  .state-msg.show{ display:flex; }
+  .state-msg.err{ color:var(--error); flex-direction:column; gap:9px; }
+  .state-msg .spinner{
+    width:18px; height:18px; border-radius:50%; border:2px solid rgba(27,79,114,0.18);
+    border-top-color:var(--gold); animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; display:none; }
+  .table-wrap.show{ display:block; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:680px; }
+  thead th{
+    text-align:start; padding:12px 14px; background:var(--paper); color:var(--gold-2);
+    font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:0;
+    border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  tbody td{ padding:11px 14px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:rgba(27,79,114,0.06); }
+  .grade-chip{
+    font-size:9.5px; font-weight:700; color:var(--gold-2); background:rgba(27,79,114,0.12);
+    padding:2px 7px; border-radius:999px;
+  }
+  .chip{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .chip.paid{ background:var(--success-soft); color:var(--success); }
+  .chip.unpaid{ background:var(--error-soft); color:var(--error); }
+  .delete-btn{
+    border:1px solid rgba(179,38,30,0.35); background:var(--danger-soft); color:var(--danger-2); cursor:pointer;
+    font-family:'Cairo','Inter',sans-serif; font-weight:700; font-size:12.5px; padding:8px 14px; border-radius:8px;
+    display:inline-flex; align-items:center; gap:6px; transition:all .15s ease;
+  }
+  .delete-btn:hover{ background:var(--danger); color:#FFF; border-color:var(--danger); }
+  .delete-btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .footer-note{ text-align:center; font-size:11.5px; color:var(--muted); margin-top:24px; display:flex; align-items:center; justify-content:center; gap:7px; }
+  .footer-note::before{ content:"🔒"; font-size:11px; }
+
+  /* ===== Modal ===== */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(20,20,18,0.55); z-index:80;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:var(--card); border-radius:16px; max-width:480px; width:100%; max-height:85vh;
+    overflow:auto; padding:24px; box-shadow:var(--shadow-lg); border:1px solid var(--line);
+  }
+  .modal-close{ border:none; background:none; font-size:22px; cursor:pointer; color:var(--muted); line-height:1; }
+  .modal-close:hover{ color:var(--ink); }
+  .modal-icon{
+    width:52px; height:52px; border-radius:50%; background:var(--danger-soft); color:var(--danger-2);
+    display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 14px;
+  }
+  .modal-title{
+    font-family:'Cairo',serif; font-weight:700; font-size:18px; color:var(--danger-2);
+    text-align:center; margin-bottom:8px;
+  }
+  .modal-sub{ text-align:center; font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.7; }
+  .modal-sub b{ color:var(--ink); }
+  .impact-list{ list-style:none; margin:0 0 18px; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .impact-list li{
+    display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--ink-2);
+    background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+  }
+  .impact-list li .dot{ width:7px; height:7px; border-radius:50%; background:var(--danger); flex-shrink:0; }
+  .confirm-label{ font-size:12.5px; font-weight:700; color:var(--ink); margin-bottom:8px; display:block; }
+  .confirm-input{
+    width:100%; padding:11px 14px; border-radius:10px; border:1.5px solid var(--line); background:var(--paper);
+    font-family:'Cairo','Inter',sans-serif; font-size:13.5px; outline:none; color:var(--ink); margin-bottom:18px;
+  }
+  .confirm-input:focus{ border-color:var(--danger); box-shadow:0 0 0 3px var(--danger-soft); }
+  .modal-actions{ display:flex; gap:10px; }
+  .modal-actions button{
+    flex:1; padding:12px; border-radius:10px; font-family:'Cairo','Inter',sans-serif; font-size:13.5px; font-weight:700;
+    cursor:pointer; border:none; transition:all .15s ease;
+  }
+  .btn-cancel{ background:var(--paper); color:var(--ink); border:1px solid var(--line) !important; }
+  .btn-cancel:hover{ background:var(--line); }
+  .btn-confirm-delete{ background:var(--danger); color:#FFF; }
+  .btn-confirm-delete:hover{ background:var(--danger-2); }
+  .btn-confirm-delete:disabled{ opacity:.5; cursor:not-allowed; }
+  .modal-status{ margin-top:14px; font-size:12.5px; text-align:center; min-height:18px; }
+  .modal-status.ok{ color:var(--success); font-weight:700; }
+  .modal-status.err{ color:var(--error); font-weight:700; }
+  .modal-status .spinner{
+    width:14px; height:14px; border-radius:50%; border:2px solid rgba(179,38,30,0.2);
+    border-top-color:var(--danger); animation:spin .7s linear infinite; display:inline-block; vertical-align:middle; margin-inline-end:6px;
+  }
+
+  @media (max-width:640px){
+    .controls{ flex-direction:column; align-items:stretch; }
+    .grade-select{ min-width:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div>
+      <div class="brand-eyebrow">إدارة الطلاب</div>
+      <h1>حذف طالب</h1>
+      <p>ابحث عن طالب واحذف كل بياناته نهائيًا: الحضور، الدفع، والامتحانات</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="icon-toggle-btn" id="darkModeToggle" onclick="toggleDarkMode()" title="الوضع الليلي">🌙</button>
+    <button class="back-btn" onclick="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 12H5M5 12l7-7M5 12l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>رجوع</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="warn-banner">
+      <span class="ic">⚠️</span>
+      <span>هذا الإجراء يحذف الطالب نهائيًا من جدول الحضور وجدول الدفع وكل درجات امتحاناته. لا يمكن التراجع عن الحذف بعد التأكيد.</span>
+    </div>
+
+    <div class="controls">
+      <select class="grade-select" id="gradeSelect" onchange="onGradeChange()">
+        <option value="all">كل الصفوف</option>
+      </select>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="ابحث بالاسم أو رقم الهاتف…" oninput="renderResults()">
+      </div>
+    </div>
+
+    <div class="state-msg show" id="loadingMsg">
+      <span class="spinner"></span> <span>جاري تحميل البيانات من Supabase…</span>
+    </div>
+    <div class="state-msg err" id="errorMsg"></div>
+
+    <div id="resultsWrap" style="display:none;">
+      <div class="result-count" id="resultCount"></div>
+      <div class="table-wrap show" id="studentTableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>الاسم</th>
+              <th>الصف</th>
+              <th>المدينة</th>
+              <th>المجموعة</th>
+              <th>هاتف الطالب</th>
+              <th>الدفع</th>
+              <th>حذف</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="footer-note">التعديلات تتم مباشرة على قاعدة بيانات Supabase</div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" id="deleteModalOverlay" onclick="if(event.target===this) closeDeleteModal()">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:flex-end;">
+      <button class="modal-close" onclick="closeDeleteModal()">×</button>
+    </div>
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">هل أنت متأكد من حذف هذا الطالب؟</div>
+    <div class="modal-sub">سيتم حذف <b id="deleteStudentName"></b> نهائيًا وكل البيانات المرتبطة به. لا يمكن التراجع عن هذا الإجراء.</div>
+    <ul class="impact-list">
+      <li><span class="dot"></span> سجل الحضور والغياب</li>
+      <li><span class="dot"></span> سجل الدفع</li>
+      <li><span class="dot"></span> جميع درجات الامتحانات المسجلة</li>
+    </ul>
+    <label class="confirm-label">للتأكيد، اكتب اسم الطالب بالكامل: <span id="deleteStudentNameHint" style="color:var(--danger-2);"></span></label>
+    <input type="text" class="confirm-input" id="confirmNameInput" oninput="checkConfirmInput()" autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeDeleteModal()">إلغاء</button>
+      <button class="btn-confirm-delete" id="confirmDeleteBtn" disabled onclick="performDelete()">تأكيد الحذف نهائيًا</button>
+    </div>
+    <div class="modal-status" id="deleteStatus"></div>
+  </div>
+</div>
+
+<script>
+  /* ============================================================
+     SUPABASE CONNECTION — same database as the main dashboard
+     ============================================================ */
+  const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ---------------------------------------------------------------
+     GRADE MODEL — same as student-search.html
+     --------------------------------------------------------------- */
+  const LEVEL_AR = { first: "أولى", second: "تانية", third: "تالتة" };
+  const STAGE_AR = { prep: "إعدادي", secondary: "ثانوي" };
+  function splitGrade(g){ const i = g.indexOf("_"); return { level: g.slice(0,i), stage: g.slice(i+1) }; }
+
+  const SCHEMA = {
+    attendanceTable: (g) => { const { level, stage } = splitGrade(g); return `حضور_${LEVEL_AR[level]}_${STAGE_AR[stage]}`; },
+    paymentsTable: (g) => { const { level, stage } = splitGrade(g); return `دفع_${LEVEL_AR[level]}_${STAGE_AR[stage]}`; },
+    col: {
+      fullName: "full_name",
+      qrCode: "qr_code",
+      studentPhone: "student_phone",
+      parentPhone: "parent_phone",
+      city: "city",
+      groupName: "group_name",
+      attendanceCount: "attendance_count",
+      absenceCount: "absence_count",
+      lastAttendance: "last_attendance_date",
+      amountPaid: "amount_paid",
+      paymentStatus: "payment_status",
+      lastPaymentDate: "last_payment_date"
+    }
+  };
+
+  const SCORES_SCHEMA = {
+    table: "نتائج_الامتحانات",
+    col: { id: "id", examId: "exam_id", studentCode: "student_code", score: "score" }
+  };
+
+  const GRADES = ["first_prep","second_prep","third_prep","first_secondary","second_secondary","third_secondary"];
+  const GRADE_LABELS = {
+    first_prep: "الصف الأول الإعدادي",
+    second_prep: "الصف الثاني الإعدادي",
+    third_prep: "الصف الثالث الإعدادي",
+    first_secondary: "الصف الأول الثانوي",
+    second_secondary: "الصف الثاني الثانوي",
+    third_secondary: "الصف الثالث الثانوي"
+  };
+
+  let currentGrade = "all";
+  let students = [];
+  let pendingDelete = null; // { qrCode, grade, name }
+
+  function isPaid(status){
+    const s = String(status ?? "").trim().toLowerCase();
+    return s === "paid" || s === "true" || s === "yes" || s === "1";
+  }
+
+  function goBack(){
+    if(window.history.length > 1){ history.back(); }
+    else{ window.location.href = "index.html"; }
+  }
+
+  function toggleDarkMode(){
+    const on = !document.body.classList.contains("dark");
+    document.body.classList.toggle("dark", on);
+    document.getElementById("darkModeToggle").textContent = on ? "☀️" : "🌙";
+    try{ localStorage.setItem("studentSearchDarkMode", on ? "1" : "0"); }catch(e){}
+  }
+
+  function populateGradeSelect(){
+    const sel = document.getElementById("gradeSelect");
+    GRADES.forEach(g => {
+      const opt = document.createElement("option");
+      opt.value = g;
+      opt.textContent = GRADE_LABELS[g];
+      sel.appendChild(opt);
+    });
+  }
+
+  function onGradeChange(){
+    currentGrade = document.getElementById("gradeSelect").value;
+    loadData();
+  }
+
+  async function fetchGrade(grade){
+    const [{ data: att, error: attErr }, { data: pay, error: payErr }] = await Promise.all([
+      supa.from(SCHEMA.attendanceTable(grade)).select("*"),
+      supa.from(SCHEMA.paymentsTable(grade)).select("*")
+    ]);
+    if(attErr) throw new Error(`(${SCHEMA.attendanceTable(grade)}) ${attErr.message}`);
+    if(payErr) throw new Error(`(${SCHEMA.paymentsTable(grade)}) ${payErr.message}`);
+
+    const col = SCHEMA.col;
+    const payByCode = {};
+    (pay || []).forEach(p => { payByCode[p[col.qrCode]] = p; });
+
+    return (att || []).map(a => {
+      const p = payByCode[a[col.qrCode]] || {};
+      return {
+        grade,
+        name: a[col.fullName] ?? "",
+        qrCode: a[col.qrCode] ?? "",
+        studentPhone: a[col.studentPhone] ?? "",
+        city: a[col.city] ?? "",
+        groupName: a[col.groupName] ?? "",
+        paymentStatus: p[col.paymentStatus] ?? ""
+      };
+    });
+  }
+
+  async function loadData(){
+    const loadingEl = document.getElementById("loadingMsg");
+    const errorEl = document.getElementById("errorMsg");
+    const resultsWrap = document.getElementById("resultsWrap");
+
+    loadingEl.classList.add("show");
+    errorEl.classList.remove("show");
+    resultsWrap.style.display = "none";
+
+    try{
+      const gradesToFetch = currentGrade === "all" ? GRADES : [currentGrade];
+      const results = await Promise.all(gradesToFetch.map(fetchGrade));
+      students = results.flat();
+      document.getElementById("searchInput").value = "";
+      renderResults();
+      resultsWrap.style.display = "block";
+    }catch(err){
+      console.error(err);
+      errorEl.innerHTML = `
+        <div style="font-weight:700;">تعذر تحميل البيانات من Supabase</div>
+        <div style="font-size:12px; max-width:520px;">${err.message || err}</div>`;
+      errorEl.classList.add("show");
+    }finally{
+      loadingEl.classList.remove("show");
+    }
+  }
+
+  function renderResults(){
+    const q = document.getElementById("searchInput").value.trim().toLowerCase();
+    let rows = students;
+    if(q){
+      rows = rows.filter(s =>
+        (s.name || "").toLowerCase().includes(q) ||
+        (s.studentPhone || "").includes(q) ||
+        (s.city || "").toLowerCase().includes(q) ||
+        (s.groupName || "").toLowerCase().includes(q)
+      );
+    }
+
+    document.getElementById("resultCount").textContent = `تم العثور على ${rows.length} طالب`;
+
+    const body = document.getElementById("resultsBody");
+    if(!rows.length){
+      body.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">لا توجد نتائج مطابقة</td></tr>`;
+      return;
+    }
+
+    body.innerHTML = rows.map((s, i) => {
+      const paid = isPaid(s.paymentStatus);
+      const hasPaymentRecord = s.paymentStatus !== "";
+      const safeName = (s.name || "").replace(/'/g, "\\'");
+      return `
+        <tr>
+          <td style="font-weight:600;">${s.name || "—"}</td>
+          <td><span class="grade-chip">${GRADE_LABELS[s.grade]}</span></td>
+          <td>${s.city || "—"}</td>
+          <td>${s.groupName || "—"}</td>
+          <td>${s.studentPhone || "—"}</td>
+          <td>${hasPaymentRecord ? `<span class="chip ${paid ? 'paid' : 'unpaid'}">${paid ? 'مدفوع' : 'غير مدفوع'}</span>` : "—"}</td>
+          <td><button class="delete-btn" onclick="openDeleteModal('${s.qrCode}','${s.grade}','${safeName}')">🗑️ حذف</button></td>
+        </tr>`;
+    }).join("");
+  }
+
+  /* ---------- Delete flow ---------- */
+  function openDeleteModal(qrCode, grade, name){
+    pendingDelete = { qrCode, grade, name };
+    document.getElementById("deleteStudentName").textContent = name || "هذا الطالب";
+    document.getElementById("deleteStudentNameHint").textContent = name || "";
+    document.getElementById("confirmNameInput").value = "";
+    document.getElementById("confirmDeleteBtn").disabled = true;
+    document.getElementById("deleteStatus").textContent = "";
+    document.getElementById("deleteStatus").className = "modal-status";
+    document.getElementById("deleteModalOverlay").classList.add("show");
+  }
+
+  function closeDeleteModal(){
+    document.getElementById("deleteModalOverlay").classList.remove("show");
+    pendingDelete = null;
+  }
+
+  function checkConfirmInput(){
+    if(!pendingDelete) return;
+    const typed = document.getElementById("confirmNameInput").value.trim();
+    document.getElementById("confirmDeleteBtn").disabled = (typed !== pendingDelete.name.trim());
+  }
+
+  async function performDelete(){
+    if(!pendingDelete) return;
+    const { qrCode, grade, name } = pendingDelete;
+    const statusEl = document.getElementById("deleteStatus");
+    const confirmBtn = document.getElementById("confirmDeleteBtn");
+
+    confirmBtn.disabled = true;
+    statusEl.className = "modal-status";
+    statusEl.innerHTML = `<span class="spinner"></span> جاري حذف بيانات الطالب…`;
+
+    try{
+      const col = SCHEMA.col;
+
+      const { error: scoresErr } = await supa
+        .from(SCORES_SCHEMA.table)
+        .delete()
+        .eq(SCORES_SCHEMA.col.studentCode, qrCode);
+      if(scoresErr) throw new Error(`(الامتحانات) ${scoresErr.message}`);
+
+      const { error: payErr } = await supa
+        .from(SCHEMA.paymentsTable(grade))
+        .delete()
+        .eq(col.qrCode, qrCode);
+      if(payErr) throw new Error(`(الدفع) ${payErr.message}`);
+
+      const { error: attErr } = await supa
+        .from(SCHEMA.attendanceTable(grade))
+        .delete()
+        .eq(col.qrCode, qrCode);
+      if(attErr) throw new Error(`(الحضور) ${attErr.message}`);
+
+      statusEl.className = "modal-status ok";
+      statusEl.textContent = `تم حذف ${name} وكل بياناته بنجاح`;
+
+      students = students.filter(s => !(s.qrCode === qrCode && s.grade === grade));
+      renderResults();
+
+      setTimeout(closeDeleteModal, 1200);
+    }catch(err){
+      console.error(err);
+      statusEl.className = "modal-status err";
+      statusEl.textContent = "تعذر حذف الطالب: " + (err.message || err);
+      confirmBtn.disabled = false;
+    }
+  }
+
+  populateGradeSelect();
+  (function initDark(){
+    let savedDark = false;
+    try{ savedDark = localStorage.getItem("studentSearchDarkMode") === "1"; }catch(e){}
+    if(savedDark){
+      document.body.classList.add("dark");
+      document.getElementById("darkModeToggle").textContent = "☀️";
+    }
+  })();
+  loadData();
+</script>
+</body>
+</html>
