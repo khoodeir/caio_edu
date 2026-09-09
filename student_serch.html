@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Search</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Speed up navigation to the other two pages: fetch them into the browser cache in the background -->
+<link rel="prefetch" href="index.html">
+<link rel="prefetch" href="dashboard.html">
+<!-- Warm up connections to the CDNs this page and the linked pages depend on -->
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://evbjulsahncllewwvlxp.supabase.co">
+<style>
+  :root{
+    --bg-main:#F5F9FF; --bg-secondary:#DCE8FB; --bg-dark-beige:#CFE4FB;
+    --card-bg:#FFFFFF; --text-main:#10151D; --text-secondary:#4B5A70;
+    --petrol:#1565C0; --petrol-dark:#0D47A1; --wood:#2E8BF0; --wood-light:#7FB2F5;
+    --border:#D6E7FA;
+
+    --ink:var(--text-main); --ink-2:var(--petrol-dark);
+    --paper:var(--bg-main); --card:var(--card-bg);
+    --line:#D6E7FA;
+    --gold:var(--petrol); --gold-2:var(--petrol-dark); --gold-soft:rgba(40,86,90,0.09);
+    --success:#5B8C6E; --success-soft:rgba(91,140,110,0.13);
+    --error:#B5555A; --error-soft:rgba(181,85,90,0.12);
+    --muted:var(--text-secondary);
+    --cream-bg-1:var(--bg-main); --cream-bg-2:var(--bg-secondary);
+    --on-accent:#FFFFFF;
+    --shadow-sm:0 1px 2px rgba(48,47,44,0.08);
+    --shadow-md:0 8px 24px rgba(48,47,44,0.10);
+    --shadow-lg:0 20px 50px rgba(48,47,44,0.14);
+  }
+  body.dark{
+    --ink:#DCE8FB; --ink-2:#7FB2F5;
+    --paper:#0B1220; --card:#101B2E;
+    --line:rgba(237,229,216,0.14);
+    --gold:#3B82F6; --gold-2:#7FB2F5; --gold-soft:rgba(63,138,143,0.20);
+    --success:#6FA98A; --success-soft:rgba(111,169,138,0.18);
+    --error:#C77378; --error-soft:rgba(199,115,120,0.18);
+    --muted:#7E93AC;
+    --cream-bg-1:#0B1220; --cream-bg-2:#0F1B2E;
+    --on-accent:#FFFFFF;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.30);
+    --shadow-md:0 8px 24px rgba(0,0,0,0.40);
+    --shadow-lg:0 20px 50px rgba(0,0,0,0.5);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Inter',sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(29,65,69,0.08), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(29,65,69,0.06), transparent 45%),
+      linear-gradient(160deg, var(--cream-bg-1), var(--cream-bg-2));
+    color:var(--ink);
+    min-height:100vh;
+    padding:32px 24px 64px;
+    transition:background .2s ease, color .2s ease;
+  }
+  [dir="rtl"] body{ font-family:'Cairo','Inter',sans-serif; }
+  .num{ font-family:'Space Grotesk',sans-serif; }
+
+  .topbar{
+    max-width:1100px; margin:0 auto 26px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{
+    height:46px; flex-shrink:0;
+    background:transparent;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand-mark img{ height:100%; width:auto; object-fit:contain; }
+  .brand-eyebrow{ font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-weight:700; margin-bottom:2px; }
+  [dir="rtl"] .brand-eyebrow{ letter-spacing:0; }
+  .brand h1{ font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold-2); letter-spacing:-0.01em; }
+  [dir="rtl"] .brand h1{ font-family:'Cairo',serif; letter-spacing:0; }
+  .brand p{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .topbar-actions{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .updated-note{ font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .updated-note::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--success); box-shadow:0 0 0 3px var(--success-soft); }
+  .scanner-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 18px; border-radius:10px;
+    background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%);
+    color:var(--on-accent); font-family:'Inter',sans-serif; font-size:13px; font-weight:700;
+    text-decoration:none; box-shadow:0 6px 16px rgba(29,65,69,0.28);
+    transition:transform .15s ease, box-shadow .15s ease;
+    white-space:nowrap;
+  }
+  .scanner-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(29,65,69,0.35); }
+  .scanner-btn svg{ width:16px; height:16px; flex-shrink:0; }
+
+  .icon-toggle-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:42px; height:42px; padding:0 14px; border-radius:10px;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    font-family:'Inter',sans-serif; font-size:14px; font-weight:700; cursor:pointer;
+    transition:all .15s ease;
+  }
+  .icon-toggle-btn:hover{ border-color:var(--gold); color:var(--gold-2); }
+
+  .wrap{ max-width:1100px; margin:0 auto; }
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px; box-shadow:var(--shadow-lg);
+    transition:background .2s ease, border-color .2s ease;
+  }
+
+  .controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .grade-select{
+    padding:11px 16px; border-radius:10px; border:1px solid var(--line); background:var(--paper);
+    color:var(--ink); font-family:'Inter',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer; outline:none;
+    min-width:190px; transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .grade-select:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .search-box{ flex:1; min-width:220px; position:relative; }
+  .search-box input{
+    width:100%; padding:11px 15px 11px 38px; border-radius:10px; border:1px solid var(--line);
+    background:var(--paper); font-family:'Inter',sans-serif; font-size:13.5px; outline:none; color:var(--ink);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  [dir="rtl"] .search-box input{ font-family:'Cairo','Inter',sans-serif; padding:11px 38px 11px 15px; }
+  .search-box input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+  .search-box::before{
+    content:"⌕"; position:absolute; left:13px; top:50%; transform:translateY(-50%);
+    color:var(--muted); font-size:15px; pointer-events:none;
+  }
+  [dir="rtl"] .search-box::before{ left:auto; right:13px; }
+  .pay-filter{ display:flex; gap:6px; }
+  .pay-filter button{
+    padding:10px 14px; border-radius:9px; border:1px solid var(--line); background:var(--paper);
+    color:var(--muted); font-family:'Inter',sans-serif; font-size:12px; font-weight:600; cursor:pointer;
+    transition:all .15s ease;
+  }
+  [dir="rtl"] .pay-filter button{ font-family:'Cairo','Inter',sans-serif; }
+  .pay-filter button:hover{ border-color:var(--gold); color:var(--ink); }
+  .pay-filter button.active{ background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); color:var(--on-accent); border-color:var(--gold); }
+
+  .result-count{ font-size:12px; color:var(--muted); margin-bottom:12px; }
+
+  .state-msg{
+    display:none; align-items:center; justify-content:center; gap:10px;
+    padding:64px 10px; color:var(--muted); font-size:13.5px; text-align:center;
+  }
+  .state-msg.show{ display:flex; }
+  .state-msg.err{ color:var(--error); flex-direction:column; gap:9px; }
+  .state-msg .spinner{
+    width:18px; height:18px; border-radius:50%; border:2px solid rgba(29,65,69,0.18);
+    border-top-color:var(--gold); animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; display:none; }
+  .table-wrap.show{ display:block; }
+  .table-scroll-controls{
+  display:none;
+  align-items:center;
+  justify-content:flex-start;
+  margin-bottom:8px;
+}
+
+.table-scroll-controls.show{
+  display:flex;
+}
+
+.table-scroll-arrows{
+  display:flex;
+  gap:6px;
+}
+
+.table-scroll-btn{
+  width:42px;
+  height:42px;
+  border:1px solid var(--line);
+  border-radius:50%;
+  background:var(--card);
+  color:var(--gold-2);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:var(--shadow-md);
+  transition:all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1.5px solid var(--gold-soft);
+}
+
+.table-scroll-btn:hover{
+  background:var(--gold);
+  color:var(--on-accent);
+  border-color:var(--gold);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.table-scroll-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.table-scroll-arrows{
+  display:flex;
+  gap:12px;
+  padding: 4px;
+}
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:760px; }
+  thead th{
+    text-align:start; padding:12px 14px; background:var(--paper); color:var(--gold-2);
+    font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  [dir="rtl"] thead th{ letter-spacing:0; }
+  tbody td{ padding:11px 14px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr{ transition:background .12s ease; }
+  tbody tr:hover{ background:rgba(29,65,69,0.06); }
+  .chip{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .chip.paid{ background:var(--success-soft); color:var(--success); }
+  .chip.unpaid{ background:var(--error-soft); color:var(--error); }
+  .bar-track{ width:70px; height:6px; border-radius:4px; background:rgba(29,65,69,0.10); display:inline-block; vertical-align:middle; margin-inline-end:7px; }
+  .bar-fill{ height:100%; border-radius:4px; background:var(--gold); }
+  .phone-link{
+    font-size:11px; color:var(--muted); text-decoration:none; display:inline-block;
+    padding:3px 8px; border-radius:6px; background:rgba(29,65,69,0.06); transition:all .15s ease;
+  }
+  .phone-link:hover{ color:var(--gold-2); background:var(--gold-soft); }
+  .grade-chip{
+    font-size:9.5px; font-weight:700; color:var(--gold-2); background:rgba(29,65,69,0.12);
+    padding:2px 7px; border-radius:999px;
+  }
+  .trend-btn{
+    border:none; background:rgba(29,65,69,0.09); color:var(--gold-2); cursor:pointer;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:13px; padding:6px 11px; border-radius:8px;
+    transition:all .15s ease;
+  }
+    .trend-btn:hover{ background:var(--gold-soft); }
+  .months-badge{
+    display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600;
+    background:rgba(29,65,69,0.12); color:var(--gold-2);
+  }
+
+  .footer-note{ text-align:center; font-size:11.5px; color:var(--muted); margin-top:24px; display:flex; align-items:center; justify-content:center; gap:7px; }
+  .footer-note::before{ content:"🔒"; font-size:11px; }
+
+  /* ===== Modal ===== */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(48,47,44,0.5); z-index:80;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:var(--card); border-radius:16px; max-width:560px; width:100%; max-height:80vh;
+    overflow:auto; padding:22px; box-shadow:var(--shadow-lg); border:1px solid var(--line);
+  }
+  .modal-close{ border:none; background:none; font-size:22px; cursor:pointer; color:var(--muted); line-height:1; }
+  .modal-close:hover{ color:var(--ink); }
+  .section-title{
+    display:flex; align-items:center; gap:9px;
+    font-family:'Cormorant Garamond',serif; font-weight:700; font-size:18px; color:var(--gold-2);
+  }
+  [dir="rtl"] .section-title{ font-family:'Cairo',serif; }
+  .chart-box{ position:relative; height:260px; }
+  .chart-empty{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    color:var(--muted); font-size:12.5px; text-align:center; padding:0 20px;
+  }
+  .chart-empty.show{ display:flex; }
+  .delta-badge{ font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:3px; }
+  .delta-badge.up{ color:var(--success); }
+  .delta-badge.down{ color:var(--error); }
+  .delta-badge.flat{ color:var(--muted); }
+  .grade-list-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:11px 4px; border-bottom:1px solid var(--line); font-size:13px;
+  }
+  .grade-list-row:last-child{ border-bottom:none; }
+  .grade-list-row .exam-name{ font-weight:600; color:var(--ink); }
+  .grade-list-row .exam-score{ font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--ink); flex-shrink:0; display:flex; align-items:center; gap:8px; }
+  .grade-list-row .exam-pct{ font-size:11px; color:var(--gold-2); background:var(--gold-soft); padding:2px 8px; border-radius:999px; font-weight:700; }
+  .grades-avg-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 4px 2px; margin-top:6px; border-top:2px solid var(--line); font-size:13px;
+  }
+  .qr-wrap{ display:flex; flex-direction:column; align-items:center; gap:14px; padding:10px 0 4px; }
+  .qr-wrap img{ width:220px; height:220px; object-fit:contain; border:1px solid var(--line); border-radius:12px; background:#FFF; padding:10px; }
+
+  @media (max-width:640px){
+    .controls{ flex-direction:column; align-items:stretch; }
+    .grade-select{ min-width:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+<img src="logo.png" alt="logo">    </div>
+    <div>
+      <div class="brand-eyebrow" id="brandEyebrow">بحث عن طالب</div>
+      <h1 id="brandTitle">بحث الطلاب</h1>
+      <p id="brandSubtitle">ابحث عن طالب بالاسم أو رقم الهاتف، لكل صف</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <span class="updated-note" id="updatedNote"></span>
+    <button class="icon-toggle-btn" id="langToggleBtn" onclick="toggleLang()" title="Switch language">EN</button>
+    <button class="icon-toggle-btn" id="darkModeToggle" onclick="toggleDarkMode()" title="Dark mode">🌙</button>
+    <button class="scanner-btn" onclick="goBack()" style="border:none;">
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 12H5M5 12l7-7M5 12l7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <span id="scannerBtnText">رجوع</span>
+</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="controls">
+      <select class="grade-select" id="gradeSelect" onchange="onGradeChange()">
+        <option value="all" id="optGradeAll">كل الصفوف</option>
+      </select>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="ابحث بالاسم أو رقم الهاتف…" oninput="renderResults()">
+      </div>
+      <div class="pay-filter" id="payFilter">
+        <button class="active" data-f="all" id="filterAllBtn" onclick="setPayFilter('all')">الكل</button>
+        <button data-f="paid" id="filterPaidBtn" onclick="setPayFilter('paid')">مدفوع</button>
+        <button data-f="unpaid" id="filterUnpaidBtn" onclick="setPayFilter('unpaid')">غير مدفوع</button>
+      </div>
+    </div>
+
+    <div class="state-msg show" id="loadingMsg">
+      <span class="spinner"></span> <span id="loadingMsgText">جاري تحميل البيانات من Supabase…</span>
+    </div>
+    <div class="state-msg err" id="errorMsg"></div>
+
+    <div id="resultsWrap" style="display:none;">
+      <div class="result-count" id="resultCount"></div>
+      <div class="table-scroll-controls show">
+  <div class="table-scroll-arrows">
+    <button class="table-scroll-btn" onclick="scrollTable('right')" title="السابق">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+
+    <button class="table-scroll-btn" onclick="scrollTable('left')" title="التالي">
+      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="table-wrap show" id="studentTableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th id="thName">الاسم</th>
+              <th id="thGrade">الصف</th>
+              <th id="thCity">المدينة</th>
+              <th id="thGroupName">المجموعة</th>
+              <th id="thPresent">حضور</th>
+              <th id="thAbsent">غياب</th>
+              <th id="thRate">نسبة الحضور</th>
+              <th id="thStudentPhone">هاتف الطالب</th>
+              <th id="thParentPhone">هاتف ولي الأمر</th>
+              <th id="thPayment">الدفع</th>
+              <th id="thLast">آخر حضور</th>
+              <th id="thMonths">الشهور المدفوعة</th>
+              <th id="thExams">الامتحانات</th>
+              <th id="thQr">عرض QR</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="footer-note"><span id="footerNoteText">يتم قراءة البيانات مباشرة من Supabase باستخدام مفتاح للقراءة فقط</span></div>
+</div>
+
+<!-- Student exam trend modal -->
+<div class="modal-overlay" id="studentTrendModalOverlay" onclick="if(event.target===this) closeStudentTrendModal()">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" id="studentTrendTitle" style="margin-bottom:0;"></div>
+      <button class="modal-close" onclick="closeStudentTrendModal()">×</button>
+    </div>
+    <div class="state-msg show" id="trendLoadingMsg">
+      <span class="spinner"></span> <span id="trendLoadingMsgText"></span>
+    </div>
+    <div class="chart-box" style="display:none;" id="trendChartWrap">
+      <canvas id="studentTrendChart"></canvas>
+      <div class="chart-empty" id="studentTrendEmpty"></div>
+    </div>
+    <div id="studentTrendSummary" style="margin-top:14px; font-size:12.5px; color:var(--muted); text-align:center;"></div>
+  </div>
+</div>
+
+<!-- Student plain grades list modal -->
+<div class="modal-overlay" id="studentGradesModalOverlay" onclick="if(event.target===this) closeStudentGradesModal()">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" id="studentGradesTitle" style="margin-bottom:0;"></div>
+      <button class="modal-close" onclick="closeStudentGradesModal()">×</button>
+    </div>
+    <div class="state-msg show" id="gradesLoadingMsg">
+      <span class="spinner"></span> <span id="gradesLoadingMsgText"></span>
+    </div>
+    <div id="studentGradesBody" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- Student QR code modal -->
+<div class="modal-overlay" id="studentQrModalOverlay" onclick="if(event.target===this) closeStudentQrModal()">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" id="studentQrTitle" style="margin-bottom:0;"></div>
+      <button class="modal-close" onclick="closeStudentQrModal()">×</button>
+    </div>
+    <div class="state-msg show" id="qrLoadingMsg">
+      <span class="spinner"></span> <span id="qrLoadingMsgText"></span>
+    </div>
+    <div id="studentQrBody" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- Student paid months modal -->
+<div class="modal-overlay" id="studentPaidMonthsModalOverlay" onclick="if(event.target===this) closeStudentPaidMonthsModal()">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" id="studentPaidMonthsTitle" style="margin-bottom:0;"></div>
+      <button class="modal-close" onclick="closeStudentPaidMonthsModal()">×</button>
+    </div>
+    <div id="studentPaidMonthsBody"></div>
+  </div>
+</div>
+
+<script>
+  /* ============================================================
+     SUPABASE CONNECTION — same database as the main dashboard
+     ============================================================ */
+   const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ----------------------------------------------------------------
+     GRADE MODEL: every grade is "<level>_<stage>"
+     level: first | second | third   (أولى / تانية / تالتة)
+     stage: prep | secondary          (إعدادي / ثانوي)
+     Real Arabic table names in Supabase follow: حضور_<level>_<stage> / دفع_<level>_<stage>
+     ---------------------------------------------------------------- */
+  const LEVEL_AR = { first: "أولى", second: "تانية", third: "تالتة" };
+  const STAGE_AR = { prep: "إعدادي", secondary: "ثانوي" };
+  function splitGrade(g){ const i = g.indexOf("_"); return { level: g.slice(0,i), stage: g.slice(i+1) }; }
+
+  const SCHEMA = {
+    attendanceTable: (g) => { const { level, stage } = splitGrade(g); return `حضور_${LEVEL_AR[level]}_${STAGE_AR[stage]}`; },
+    paymentsTable: (g) => { const { level, stage } = splitGrade(g); return `دفع_${LEVEL_AR[level]}_${STAGE_AR[stage]}`; },
+    col: {
+      fullName: "full_name",
+      qrCode: "qr_code",
+      qrUrl: "qr_url",
+      studentPhone: "student_phone",
+      parentPhone: "parent_phone",
+      city: "city",
+      groupName: "group_name",
+      attendanceCount: "attendance_count",
+      absenceCount: "absence_count",
+      lastAttendance: "last_attendance_date",
+      amountPaid: "amount_paid",
+      paymentStatus: "payment_status",
+      lastPaymentDate: "last_payment_date"
+    }
+  };
+
+  // Payment history table schema
+  const PAYMENT_HISTORY_SCHEMA = {
+    table: "payment_history",
+    col: {
+      id: "id",
+      studentCode: "qr_code",
+      month: "month",
+      year: "year",
+      paymentDate: "created_at",
+      amount: "amount_paid"
+    }
+  };
+
+  // Shared exam tables used by the dashboard's "Exam Grades" tab.
+  // Real Arabic table names: الامتحانات (exam definitions) / نتائج_الامتحانات (scores)
+  const EXAMS_SCHEMA = {
+    table: "الامتحانات",
+    col: { id: "id", name: "exam_name", maxScore: "max_score", grade: "grade", createdAt: "created_at" }
+  };
+  const SCORES_SCHEMA = {
+    table: "نتائج_الامتحانات",
+    col: { id: "id", examId: "exam_id", studentCode: "student_code", score: "score" }
+  };
+
+  const GRADES = ["first_prep","second_prep","third_prep","first_secondary","second_secondary","third_secondary"];
+
+  /* ============================================================
+     TRANSLATIONS — Arabic (default) & English
+     ============================================================ */
+  const GRADE_LABELS = {
+    first_prep:      { ar: "الصف الأول الإعدادي",  en: "First Prep" },
+    second_prep:      { ar: "الصف الثاني الإعدادي", en: "Second Prep" },
+    third_prep:      { ar: "الصف الثالث الإعدادي", en: "Third Prep" },
+    first_secondary:  { ar: "الصف الأول الثانوي",   en: "First Secondary" },
+    second_secondary: { ar: "الصف الثاني الثانوي",  en: "Second Secondary" },
+    third_secondary:  { ar: "الصف الثالث الثانوي",  en: "Third Secondary" }
+  };
+
+  const translations = {
+    en: {
+      eyebrow: "Student lookup", title: "Student Search",
+      subtitle: "Find a student by name or phone, per grade",
+      backBtn: "Back",
+      updatedPrefix: "Last updated: ",
+      gradeAll: "All Grades",
+      searchPlaceholder: "Search by name or phone…",
+      filterAll: "All", filterPaid: "Paid", filterUnpaid: "Unpaid",
+      loadingData: "Loading data from Supabase…",
+      resultCount: (n) => `${n} student${n === 1 ? "" : "s"} found`,
+      noResults: "No matching results",
+      thName: "Name", thGrade: "Grade", thCity: "City", thGroupName: "Group", thPresent: "Present", thAbsent: "Absent", thRate: "Attendance Rate",
+      thStudentPhone: "Student Phone", thParentPhone: "Parent Phone", thPayment: "Payment", thLast: "Last Attendance", thMonths: "Paid Months",
+      paid: "Paid", unpaid: "Unpaid",
+      thExams: "\u00A0Exams",
+      thQr: "QR",
+      footer: "Data is read live from Supabase using a read-only anon key",
+      trendTitleSuffix: " — Exams", gradesTitleSuffix: " — Grades", qrTitleSuffix: " — QR Code",
+      loadingExams: "Loading exam scores…", loadingQr: "Loading QR code…",
+      onlyOneExam: "Only one exam recorded so far — add another exam score to see a trend",
+      noExamsYet: "No exam scores recorded yet for this student",
+      noExamsGrade: "No exams recorded yet for this grade",
+      notEntered: "Not entered", average: "Average",
+      improvedBy: (d) => `▲ Improved by ${d}%`,
+      droppedBy: (d) => `▼ Dropped by ${d}%`,
+      noChange: "— No change",
+      fromTo: (a, b) => `from "${a}" to "${b}"`,
+      couldntLoad: "Couldn't load data from Supabase",
+      commonCauses: "Common causes: the table/column names in SCHEMA don't match your database, or Row Level Security is enabled on these tables without a SELECT policy for the anon role.",
+      couldntLoadExams: "Couldn't load exam scores: ",
+      couldntLoadGrades: "Couldn't load grades: ",
+      noQrSaved: "No QR code saved for this student",
+      openFullSize: "Open Full Size",
+      couldntLoadQr: "Couldn't load the QR image",
+      student: "Student", dash: "—",
+      paidMonthsTitleSuffix: " — Paid Months",
+      paidMonthsBtn: (n) => `📅 ${n} mo (View)`,
+      totalPaidMonths: "Total Paid Months",
+      totalPaidAmount: "Total Amount Paid",
+      noPaidMonthsRecorded: "No paid months recorded",
+      monthYearFormat: (m, y) => `Month ${m}, ${y}`,
+      paymentDateLabel: "Paid on: ",
+      currencyEGP: "EGP"
+    },
+    ar: {
+      eyebrow: "بحث عن طالب", title: "بحث الطلاب",
+      subtitle: "ابحث عن طالب بالاسم أو رقم الهاتف، لكل صف",
+      backBtn: "رجوع",
+      updatedPrefix: "آخر تحديث: ",
+      gradeAll: "كل الصفوف",
+      searchPlaceholder: "ابحث بالاسم أو رقم الهاتف…",
+      filterAll: "الكل", filterPaid: "مدفوع", filterUnpaid: "غير مدفوع",
+      loadingData: "جاري تحميل البيانات من Supabase…",
+      resultCount: (n) => `تم العثور على ${n} طالب`,
+      noResults: "لا توجد نتائج مطابقة",
+      thName: "الاسم", thGrade: "الصف", thCity: "المدينة", thGroupName: "المجموعة", thPresent: "حضور", thAbsent: "غياب", thRate: "نسبة الحضور",
+      thStudentPhone: "هاتف الطالب", thParentPhone: "هاتف ولي الأمر", thPayment: "الدفع", thLast: "آخر حضور", thMonths: "الشهور المدفوعة",
+      thExams: "الامتحانات", thQr: "QR",
+      paid: "مدفوع", unpaid: "غير مدفوع",
+      footer: "يتم قراءة البيانات مباشرة من Supabase باستخدام مفتاح للقراءة فقط",
+      trendTitleSuffix: " — الامتحانات", gradesTitleSuffix: " — الدرجات", qrTitleSuffix: " — رمز QR",
+      loadingExams: "جاري تحميل درجات الامتحانات…", loadingQr: "جاري تحميل رمز QR…",
+      onlyOneExam: "تم تسجيل امتحان واحد فقط حتى الآن — أضف درجة امتحان أخرى لعرض المنحنى",
+      noExamsYet: "لا توجد درجات امتحانات مسجلة لهذا الطالب بعد",
+      noExamsGrade: "لا توجد امتحانات مسجلة لهذا الصف بعد",
+      notEntered: "لم تُدخل", average: "المتوسط",
+      improvedBy: (d) => `▲ تحسن بنسبة ${d}%`,
+      droppedBy: (d) => `▼ انخفض بنسبة ${d}%`,
+      noChange: "— لا تغيير",
+      fromTo: (a, b) => `من "${a}" إلى "${b}"`,
+      couldntLoad: "تعذر تحميل البيانات من Supabase",
+      commonCauses: "الأسباب الشائعة: أسماء الجداول أو الأعمدة في SCHEMA لا تطابق قاعدة بياناتك، أو تفعيل Row Level Security على هذه الجداول بدون سياسة SELECT لدور anon.",
+      couldntLoadExams: "تعذر تحميل درجات الامتحانات: ",
+      couldntLoadGrades: "تعذر تحميل الدرجات: ",
+      noQrSaved: "لا يوجد رمز QR محفوظ لهذا الطالب",
+      openFullSize: "فتح بالحجم الكامل",
+      couldntLoadQr: "تعذر تحميل صورة QR",
+      student: "طالب", dash: "—",
+      paidMonthsTitleSuffix: " — الشهور المدفوعة",
+      paidMonthsBtn: (n) => `📅 ${n} شهر (عرض)`,
+      totalPaidMonths: "إجمالي عدد الشهور المدفوعة",
+      totalPaidAmount: "إجمالي المبلغ المدفوع",
+      noPaidMonthsRecorded: "لا توجد شهور مدفوعة مسجلة",
+      monthYearFormat: (m, y) => `شهر ${m} لسنة ${y}`,
+      paymentDateLabel: "تاريخ الدفع: ",
+      currencyEGP: "ج.م"
+    }
+  };
+
+  let currentLang = "ar";
+  let currentGrade = "all";
+  let payFilterState = "all";
+  let students = [];
+
+  function t(){ return translations[currentLang]; }
+
+  function gradeLabel(g){
+    const gl = GRADE_LABELS[g];
+    if(gl) return gl[currentLang];
+    return t().dash;
+  }
+
+  function isPaid(status){
+    const s = String(status ?? "").trim().toLowerCase();
+    return s === "paid" || s === "true" || s === "yes" || s === "1";
+  }
+  function pct(att, abs){
+    const a = Number(att) || 0, b = Number(abs) || 0;
+    const total = a + b;
+    return total > 0 ? Math.round((a / total) * 100) : null;
+  }
+
+  /* ---------- Language & dark mode ---------- */
+  function toggleLang(){
+    setLang(currentLang === "ar" ? "en" : "ar");
+  }
+
+  function setLang(lang){
+    currentLang = lang;
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.getElementById("langToggleBtn").textContent = lang === "ar" ? "EN" : "AR";
+    applyStaticTranslations();
+    populateGradeSelect();
+    renderResults();
+    try{ localStorage.setItem("studentSearchLang", lang); }catch(e){}
+  }
+
+  function toggleDarkMode(){
+    const on = !document.body.classList.contains("dark");
+    document.body.classList.toggle("dark", on);
+    document.getElementById("darkModeToggle").textContent = on ? "☀️" : "🌙";
+    try{ localStorage.setItem("studentSearchDarkMode", on ? "1" : "0"); }catch(e){}
+  }
+
+  function populateGradeSelect(){
+    const sel = document.getElementById("gradeSelect");
+    const prev = sel.value || currentGrade;
+    sel.innerHTML = "";
+    const allOpt = document.createElement("option");
+    allOpt.value = "all";
+    allOpt.textContent = t().gradeAll;
+    sel.appendChild(allOpt);
+    GRADES.forEach(g => {
+      const opt = document.createElement("option");
+      opt.value = g;
+      opt.textContent = gradeLabel(g);
+      sel.appendChild(opt);
+    });
+    sel.value = GRADES.includes(prev) || prev === "all" ? prev : "all";
+  }
+
+  function applyStaticTranslations(){
+    const tr = t();
+    document.getElementById("brandEyebrow").textContent = tr.eyebrow;
+    document.getElementById("brandTitle").textContent = tr.title;
+    document.getElementById("brandSubtitle").textContent = tr.subtitle;
+    document.getElementById("scannerBtnText").textContent = tr.backBtn;
+    document.getElementById("searchInput").placeholder = tr.searchPlaceholder;
+    document.getElementById("filterAllBtn").textContent = tr.filterAll;
+    document.getElementById("filterPaidBtn").textContent = tr.filterPaid;
+    document.getElementById("filterUnpaidBtn").textContent = tr.filterUnpaid;
+    document.getElementById("thName").textContent = tr.thName;
+    document.getElementById("thGrade").textContent = tr.thGrade;
+    document.getElementById("thCity").textContent = tr.thCity;
+    document.getElementById("thGroupName").textContent = tr.thGroupName;
+    document.getElementById("thPresent").textContent = tr.thPresent;
+    document.getElementById("thAbsent").textContent = tr.thAbsent;
+    document.getElementById("thRate").textContent = tr.thRate;
+    document.getElementById("thStudentPhone").textContent = tr.thStudentPhone;
+    document.getElementById("thParentPhone").textContent = tr.thParentPhone;
+    document.getElementById("thPayment").textContent = tr.thPayment;
+    document.getElementById("thLast").textContent = tr.thLast;
+    document.getElementById("thMonths").textContent = tr.thMonths;
+    document.getElementById("thExams").textContent = tr.thExams;
+    document.getElementById("thQr").textContent = tr.thQr;
+    document.getElementById("footerNoteText").textContent = tr.footer;
+    document.getElementById("loadingMsgText").textContent = tr.loadingData;
+
+    const updatedEl = document.getElementById("updatedNote");
+    if(updatedEl.dataset.time) updatedEl.textContent = tr.updatedPrefix + updatedEl.dataset.time;
+  }
+ function goBack(){
+  if(document.referrer && document.referrer !== location.href){
+    history.back();
+  } else {
+    window.location.href = "index.html";
+  }
+}
+  function onGradeChange(){
+    currentGrade = document.getElementById("gradeSelect").value;
+    loadData();
+  }
+
+  function setPayFilter(f){
+    payFilterState = f;
+    document.querySelectorAll("#payFilter button").forEach(b => b.classList.toggle("active", b.dataset.f === f));
+    renderResults();
+  }
+
+  // Fetch payment history for a student
+  async function fetchPaymentHistoryByStudent(studentCode){
+    const col = PAYMENT_HISTORY_SCHEMA.col;
+    const { data, error } = await supa
+      .from(PAYMENT_HISTORY_SCHEMA.table)
+      .select("*")
+      .eq(col.studentCode, studentCode)
+      .order(col.year, { ascending: false })
+      .order(col.month, { ascending: false });
+    if(error) throw error;
+    return data || [];
+  }
+
+  async function fetchGrade(grade){
+    const [{ data: att, error: attErr }, { data: pay, error: payErr }] = await Promise.all([
+      supa.from(SCHEMA.attendanceTable(grade)).select("*"),
+      supa.from(SCHEMA.paymentsTable(grade)).select("*")
+    ]);
+    if(attErr) throw new Error(`(${SCHEMA.attendanceTable(grade)}) ${attErr.message}`);
+    if(payErr) throw new Error(`(${SCHEMA.paymentsTable(grade)}) ${payErr.message}`);
+
+    const col = SCHEMA.col;
+    const payByCode = {};
+    (pay || []).forEach(p => { payByCode[p[col.qrCode]] = p; });
+
+    return (att || []).map(a => {
+      const p = payByCode[a[col.qrCode]] || {};
+      return {
+        grade,
+        name: a[col.fullName] ?? "",
+        qrCode: a[col.qrCode] ?? "",
+        qrUrl: a[col.qrUrl] ?? "",
+        studentPhone: a[col.studentPhone] ?? "",
+        parentPhone: a[col.parentPhone] ?? "",
+        city: a[col.city] ?? "",
+        groupName: a[col.groupName] ?? "",
+        attendanceCount: Number(a[col.attendanceCount] || 0),
+        absenceCount: Number(a[col.absenceCount] || 0),
+        lastAttendance: a[col.lastAttendance] ?? "",
+        paymentStatus: p[col.paymentStatus] ?? "",
+        amountPaid: Number(p[col.amountPaid] || 0),
+        lastPaymentDate: p[col.lastPaymentDate] ?? "",
+        paidMonths: []
+      };
+    });
+  }
+
+  async function loadData(){
+    const loadingEl = document.getElementById("loadingMsg");
+    const errorEl = document.getElementById("errorMsg");
+    const resultsWrap = document.getElementById("resultsWrap");
+
+    loadingEl.classList.add("show");
+    errorEl.classList.remove("show");
+    resultsWrap.style.display = "none";
+
+    try{
+      const gradesToFetch = currentGrade === "all" ? GRADES : [currentGrade];
+      const results = await Promise.all(gradesToFetch.map(fetchGrade));
+      students = results.flat();
+
+      // Fetch payment history for all students in one batch query for better performance
+      const allCodes = students.map(s => String(s.qrCode || "").trim()).filter(c => c !== "");
+      
+      if (allCodes.length > 0) {
+        try {
+          // We fetch all history records for these students in one go
+          const { data: historyData, error: historyErr } = await supa
+            .from(PAYMENT_HISTORY_SCHEMA.table)
+            .select("*")
+            .in(PAYMENT_HISTORY_SCHEMA.col.studentCode, allCodes)
+            .order(PAYMENT_HISTORY_SCHEMA.col.year, { ascending: false })
+            .order(PAYMENT_HISTORY_SCHEMA.col.month, { ascending: false });
+
+          if (historyErr) throw historyErr;
+
+          // Group history by student code
+          const historyByCode = {};
+          (historyData || []).forEach(h => {
+            const code = String(h[PAYMENT_HISTORY_SCHEMA.col.studentCode] || "").trim();
+            if (!historyByCode[code]) historyByCode[code] = [];
+            historyByCode[code].push(h);
+          });
+
+          // Assign to students
+          students.forEach(s => {
+            const code = String(s.qrCode || "").trim();
+            s.paidMonths = historyByCode[code] || [];
+          });
+        } catch (hErr) {
+          console.error("Payment history batch fetch error:", hErr);
+          // Fallback: ensure all students have an empty array if fetch fails
+          students.forEach(s => { if(!s.paidMonths) s.paidMonths = []; });
+        }
+      }
+
+      document.getElementById("searchInput").value = "";
+      payFilterState = "all";
+      document.querySelectorAll("#payFilter button").forEach(b => b.classList.toggle("active", b.dataset.f === "all"));
+
+      renderResults();
+      resultsWrap.style.display = "block";
+      const timeStr = new Date().toLocaleTimeString(currentLang === "ar" ? "ar-EG" : "en-US", { hour: "2-digit", minute: "2-digit" });
+      document.getElementById("updatedNote").dataset.time = timeStr;
+      document.getElementById("updatedNote").textContent = t().updatedPrefix + timeStr;
+    }catch(err){
+      console.error(err);
+      errorEl.innerHTML = `
+        <div style="font-weight:700;">${t().couldntLoad}</div>
+        <div style="font-size:12px; max-width:520px;">
+          ${err.message || err}<br><br>
+          ${t().commonCauses}
+        </div>`;
+      errorEl.classList.add("show");
+    }finally{
+      loadingEl.classList.remove("show");
+    }
+  }
+
+  function renderResults(){
+    const tr = t();
+    const q = document.getElementById("searchInput").value.trim().toLowerCase();
+    let rows = students;
+
+    if(payFilterState === "paid") rows = rows.filter(s => isPaid(s.paymentStatus));
+    if(payFilterState === "unpaid") rows = rows.filter(s => !isPaid(s.paymentStatus));
+
+    if(q){
+      // Helper for phonetic matching between Arabic and English
+      const phonetic = (str) => {
+        if (!str) return "";
+        const map = {
+          'أ': 'a', 'إ': 'a', 'آ': 'a', 'ا': 'a', 'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j', 'ح': 'h', 'خ': 'kh',
+          'د': 'd', 'ذ': 'th', 'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z',
+          'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'q', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'و': 'w',
+          'ي': 'y', 'ى': 'a', 'ة': 'h', 'ئ': 'y', 'ؤ': 'o'
+        };
+        let normalized = str.split('').map(c => map[c] || c).join('').toLowerCase();
+        return normalized.replace(/[aeiou\s]/g, ''); // Remove vowels and spaces for rough phonetic match
+      };
+
+      const qPhonetic = phonetic(q);
+
+      rows = rows.filter(s => {
+        const name = (s.name || "").toLowerCase();
+        const namePhonetic = phonetic(name);
+        const studentPhone = (s.studentPhone || "");
+        const parentPhone = (s.parentPhone || "");
+        const qrCode = (s.qrCode || "").toLowerCase();
+        const city = (s.city || "").toLowerCase();
+        const groupName = (s.groupName || "").toLowerCase();
+
+        return name.includes(q) || (qPhonetic && namePhonetic.includes(qPhonetic)) ||
+               studentPhone.includes(q) ||
+               parentPhone.includes(q) ||
+               qrCode.includes(q) ||
+               city.includes(q) ||
+               groupName.includes(q);
+      });
+    }
+
+    document.getElementById("resultCount").textContent = tr.resultCount(rows.length);
+
+    const body = document.getElementById("resultsBody");
+    if(!rows.length){
+      body.innerHTML = `<tr><td colspan="13" style="text-align:center; color:var(--muted); padding:24px;">${tr.noResults}</td></tr>`;
+      return;
+    }
+
+    body.innerHTML = rows.map(s => {
+      const p = pct(s.attendanceCount, s.absenceCount);
+      const paid = isPaid(s.paymentStatus);
+      const hasPaymentRecord = s.paymentStatus !== "";
+      const safeName = (s.name || "").replace(/'/g, "\\'");
+      const safeQrUrl = (s.qrUrl || "").replace(/'/g, "\\'");
+      return `
+        <tr>
+          <td style="font-weight:600;">${s.name || tr.dash}</td>
+          <td><span class="grade-chip">${gradeLabel(s.grade)}</span></td>
+          <td>${s.city || tr.dash}</td>
+          <td>${s.groupName || tr.dash}</td>
+          <td>${s.attendanceCount}</td>
+          <td>${s.absenceCount}</td>
+          <td>
+            ${p != null ? `<span class="bar-track"><span class="bar-fill" style="width:${p}%;"></span></span>${p}%` : tr.dash}
+          </td>
+          <td>${s.studentPhone ? `<a class="phone-link" href="tel:${s.studentPhone}">${s.studentPhone}</a>` : tr.dash}</td>
+          <td>${s.parentPhone ? `<a class="phone-link" href="tel:${s.parentPhone}">${s.parentPhone}</a>` : tr.dash}</td>
+          <td>${hasPaymentRecord ? `<span class="chip ${paid ? 'paid' : 'unpaid'}">${paid ? tr.paid : tr.unpaid}</span>` : tr.dash}</td>
+          <td>${s.lastAttendance || tr.dash}</td>
+          <td>
+            ${s.paidMonths && s.paidMonths.length > 0 ? `
+              <button class="trend-btn" style="background:var(--success-soft); color:var(--success); display:inline-flex; align-items:center; gap:5px;" onclick="showStudentPaidMonths('${safeName}', '${encodeURIComponent(JSON.stringify(s.paidMonths))}')" title="${tr.thMonths}">
+                ${tr.paidMonthsBtn(s.paidMonths.length)}
+              </button>
+            ` : tr.dash}
+          </td>
+          <td style="display:flex; gap:6px;">
+            <button class="trend-btn" onclick="showStudentTrend('${s.qrCode}','${s.grade}','${safeName}')" title="${tr.thExams}">📈</button>
+            <button class="trend-btn" onclick="showStudentGrades('${s.qrCode}','${s.grade}','${safeName}')" title="${tr.thExams}">📋</button>
+          </td>
+          <td>
+            <button class="trend-btn" onclick="showStudentQr('${safeQrUrl}','${safeName}')" title="${tr.thQr}">🔳</button>
+          </td>
+        </tr>`;
+    }).join("");
+  }
+
+  function scrollTable(direction){
+  const table = document.getElementById("studentTableWrap");
+
+  if(!table) return;
+
+  const amount = 350;
+
+  table.scrollBy({
+    left: direction === "right" ? -amount : amount,
+    behavior: "smooth"
+  });
+}
+
+  /* ---------- Student exam-score trend ---------- */
+  let studentTrendChartInstance = null;
+
+  function chartThemeColors(){
+    const dark = document.body.classList.contains("dark");
+    return {
+      line: dark ? "rgba(63,138,143,0.95)" : "rgba(40,86,90,0.9)",
+      fill: dark ? "rgba(63,138,143,0.20)" : "rgba(40,86,90,0.15)",
+      point: dark ? "rgba(63,138,143,1)" : "rgba(40,86,90,1)",
+      grid: dark ? "rgba(237,229,216,0.10)" : "rgba(48,47,44,0.06)",
+      tick: dark ? "#DCE8FB" : "#10151D"
+    };
+  }
+
+  async function showStudentTrend(qrCode, grade, name){
+    const tr = t();
+    const overlay = document.getElementById("studentTrendModalOverlay");
+    const loadingEl = document.getElementById("trendLoadingMsg");
+    const chartWrap = document.getElementById("trendChartWrap");
+    const canvas = document.getElementById("studentTrendChart");
+    const emptyEl = document.getElementById("studentTrendEmpty");
+    const summaryEl = document.getElementById("studentTrendSummary");
+
+    document.getElementById("studentTrendTitle").textContent = `${name || tr.student}${tr.trendTitleSuffix}`;
+    document.getElementById("trendLoadingMsgText").textContent = tr.loadingExams;
+    loadingEl.classList.add("show");
+    chartWrap.style.display = "none";
+    emptyEl.classList.remove("show");
+    summaryEl.textContent = "";
+    if(studentTrendChartInstance){ studentTrendChartInstance.destroy(); studentTrendChartInstance = null; }
+    overlay.classList.add("show");
+
+    try{
+      const ecol = EXAMS_SCHEMA.col;
+      const scol = SCORES_SCHEMA.col;
+
+      const { data: exams, error: examsErr } = await supa
+        .from(EXAMS_SCHEMA.table).select("*")
+        .eq(ecol.grade, grade)
+        .order(ecol.createdAt, { ascending: true });
+      if(examsErr) throw examsErr;
+
+      let scores = [];
+      if(exams && exams.length){
+        const ids = exams.map(e => e[ecol.id]);
+        const { data: scoreRows, error: scoresErr } = await supa
+          .from(SCORES_SCHEMA.table).select("*")
+          .in(scol.examId, ids)
+          .eq(scol.studentCode, qrCode);
+        if(scoresErr) throw scoresErr;
+        scores = scoreRows || [];
+      }
+
+      const points = (exams || []).map(e => {
+        const row = scores.find(sc => sc[scol.examId] === e[ecol.id]);
+        if(!row) return null;
+        const sc = Number(row[scol.score]);
+        const mx = Number(e[ecol.maxScore]) || 100;
+        if(isNaN(sc)) return null;
+        return { examName: e[ecol.name], pct: Math.round((sc / mx) * 100), raw: row[scol.score], max: e[ecol.maxScore] };
+      }).filter(p => p != null);
+
+      loadingEl.classList.remove("show");
+      chartWrap.style.display = "block";
+
+      if(points.length < 2){
+        canvas.style.display = "none";
+        emptyEl.textContent = points.length === 1 ? tr.onlyOneExam : tr.noExamsYet;
+        emptyEl.classList.add("show");
+        return;
+      }
+
+      canvas.style.display = "block";
+      emptyEl.classList.remove("show");
+
+      const colors = chartThemeColors();
+      studentTrendChartInstance = new Chart(canvas, {
+        type: "line",
+        data: {
+          labels: points.map(p => p.examName),
+          datasets: [{
+            label: "Score",
+            data: points.map(p => p.pct),
+            borderColor: colors.line,
+            backgroundColor: colors.fill,
+            fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: colors.point
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => {
+              const p = points[c.dataIndex];
+              return `${p.raw} / ${p.max} (${p.pct}%)`;
+            } } }
+          },
+          scales: {
+            y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 }, color: colors.tick }, grid: { color: colors.grid } },
+            x: { ticks: { font: { size: 10 }, color: colors.tick }, grid: { display: false } }
+          }
+        }
+      });
+
+      const first = points[0].pct, last = points[points.length - 1].pct;
+      const diff = last - first;
+      const fromToStr = tr.fromTo(points[0].examName, points[points.length - 1].examName);
+      if(diff > 0) summaryEl.innerHTML = `<span class="delta-badge up">${tr.improvedBy(diff)}</span> ${fromToStr}`;
+      else if(diff < 0) summaryEl.innerHTML = `<span class="delta-badge down">${tr.droppedBy(Math.abs(diff))}</span> ${fromToStr}`;
+      else summaryEl.innerHTML = `<span class="delta-badge flat">${tr.noChange}</span> ${fromToStr}`;
+
+    }catch(err){
+      console.error(err);
+      loadingEl.classList.remove("show");
+      chartWrap.style.display = "block";
+      canvas.style.display = "none";
+      emptyEl.textContent = tr.couldntLoadExams + (err.message || err);
+      emptyEl.classList.add("show");
+    }
+  }
+
+  function closeStudentTrendModal(){
+    document.getElementById("studentTrendModalOverlay").classList.remove("show");
+  }
+
+  /* ---------- Student exam grades — plain list (no chart) ---------- */
+  async function showStudentGrades(qrCode, grade, name){
+    const tr = t();
+    const overlay = document.getElementById("studentGradesModalOverlay");
+    const loadingEl = document.getElementById("gradesLoadingMsg");
+    const bodyEl = document.getElementById("studentGradesBody");
+
+    document.getElementById("studentGradesTitle").textContent = `${name || tr.student}${tr.gradesTitleSuffix}`;
+    document.getElementById("gradesLoadingMsgText").textContent = tr.loadingExams;
+    loadingEl.classList.add("show");
+    bodyEl.style.display = "none";
+    bodyEl.innerHTML = "";
+    overlay.classList.add("show");
+
+    try{
+      const ecol = EXAMS_SCHEMA.col;
+      const scol = SCORES_SCHEMA.col;
+
+      const { data: exams, error: examsErr } = await supa
+        .from(EXAMS_SCHEMA.table).select("*")
+        .eq(ecol.grade, grade)
+        .order(ecol.createdAt, { ascending: true });
+      if(examsErr) throw examsErr;
+
+      let scores = [];
+      if(exams && exams.length){
+        const ids = exams.map(e => e[ecol.id]);
+        const { data: scoreRows, error: scoresErr } = await supa
+          .from(SCORES_SCHEMA.table).select("*")
+          .in(scol.examId, ids)
+          .eq(scol.studentCode, qrCode);
+        if(scoresErr) throw scoresErr;
+        scores = scoreRows || [];
+      }
+
+      const rows = (exams || []).map(e => {
+        const row = scores.find(sc => sc[scol.examId] === e[ecol.id]);
+        const mx = Number(e[ecol.maxScore]) || 100;
+        if(!row) return { examName: e[ecol.name], max: e[ecol.maxScore], raw: null, pct: null };
+        const sc = Number(row[scol.score]);
+        return { examName: e[ecol.name], max: e[ecol.maxScore], raw: row[scol.score], pct: isNaN(sc) ? null : Math.round((sc / mx) * 100) };
+      });
+
+      loadingEl.classList.remove("show");
+      bodyEl.style.display = "block";
+
+      if(!rows.length){
+        bodyEl.innerHTML = `<div style="text-align:center; color:var(--muted); padding:24px 0;">${tr.noExamsGrade}</div>`;
+        return;
+      }
+
+      const scored = rows.filter(r => r.pct != null);
+      const avg = scored.length ? Math.round(scored.reduce((a,b) => a + b.pct, 0) / scored.length) : null;
+
+      bodyEl.innerHTML =
+        rows.map(r => `
+          <div class="grade-list-row">
+            <span class="exam-name">${r.examName}</span>
+            <span class="exam-score">
+              ${r.raw != null ? `${r.raw} / ${r.max}` : `<span style="color:var(--muted); font-weight:600;">${tr.notEntered}</span>`}
+              ${r.pct != null ? `<span class="exam-pct">${r.pct}%</span>` : ""}
+            </span>
+          </div>
+        `).join("") +
+        `<div class="grades-avg-row">
+          <span style="font-weight:700; color:var(--gold-2);">${tr.average}</span>
+          <span class="exam-score">${avg != null ? avg + "%" : tr.dash}</span>
+        </div>`;
+
+    }catch(err){
+      console.error(err);
+      loadingEl.classList.remove("show");
+      bodyEl.style.display = "block";
+      bodyEl.innerHTML = `<div style="color:var(--error); font-size:12.5px; text-align:center; padding:16px 0;">${tr.couldntLoadGrades}${err.message || err}</div>`;
+    }
+  }
+
+  function closeStudentGradesModal(){
+    document.getElementById("studentGradesModalOverlay").classList.remove("show");
+  }
+
+  /* ---------- Student QR code ---------- */
+  function showStudentQr(qrUrl, name){
+    const tr = t();
+    const overlay = document.getElementById("studentQrModalOverlay");
+    const loadingEl = document.getElementById("qrLoadingMsg");
+    const bodyEl = document.getElementById("studentQrBody");
+
+    document.getElementById("studentQrTitle").textContent = `${name || tr.student}${tr.qrTitleSuffix}`;
+    document.getElementById("qrLoadingMsgText").textContent = tr.loadingQr;
+    bodyEl.style.display = "none";
+    bodyEl.innerHTML = "";
+    loadingEl.classList.add("show");
+    overlay.classList.add("show");
+
+    if(!qrUrl){
+      loadingEl.classList.remove("show");
+      bodyEl.style.display = "block";
+      bodyEl.innerHTML = `<div style="text-align:center; color:var(--muted); padding:24px 0;">${tr.noQrSaved}</div>`;
+      return;
+    }
+
+    loadingEl.classList.remove("show");
+    bodyEl.style.display = "block";
+    bodyEl.innerHTML = `
+      <div class="qr-wrap">
+        <img src="${qrUrl}" alt="Student QR code" onerror="this.parentElement.innerHTML='<div style=&quot;color:var(--error); font-size:12.5px; text-align:center;&quot;>${tr.couldntLoadQr}</div>';">
+        <a class="scanner-btn" href="${qrUrl}" target="_blank" rel="noopener">${tr.openFullSize}</a>
+      </div>`;
+  }
+
+  function closeStudentQrModal(){
+    document.getElementById("studentQrModalOverlay").classList.remove("show");
+  }
+
+  /* ---------- Student paid months modal ---------- */
+  function showStudentPaidMonths(name, encodedJson){
+    const tr = t();
+    const overlay = document.getElementById("studentPaidMonthsModalOverlay");
+    const titleEl = document.getElementById("studentPaidMonthsTitle");
+    const bodyEl = document.getElementById("studentPaidMonthsBody");
+
+    titleEl.textContent = `${name || tr.student}${tr.paidMonthsTitleSuffix}`;
+    bodyEl.innerHTML = "";
+    overlay.classList.add("show");
+
+    let months = [];
+    try {
+      months = JSON.parse(decodeURIComponent(encodedJson));
+    } catch(e) {
+      months = [];
+    }
+
+    if(!months.length){
+      bodyEl.innerHTML = `<div style="text-align:center; color:var(--muted); padding:24px 0;">${tr.noPaidMonthsRecorded}</div>`;
+      return;
+    }
+
+    const totalAmount = months.reduce((sum, m) => sum + Number(m.amount_paid || m.amount || 0), 0);
+
+    let html = `
+      <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; background:var(--paper); padding:12px 16px; border-radius:10px; border:1px solid var(--line);">
+        <div>
+          <span style="font-size:12px; color:var(--muted); display:block;">${tr.totalPaidMonths}</span>
+          <span style="font-size:16px; font-weight:700; color:var(--gold-2);">${months.length}</span>
+        </div>
+        ${totalAmount > 0 ? `
+        <div style="text-align:left;">
+          <span style="font-size:12px; color:var(--muted); display:block;">${tr.totalPaidAmount}</span>
+          <span class="num" style="font-size:16px; font-weight:700; color:var(--success);">${totalAmount} ${tr.currencyEGP}</span>
+        </div>` : ''}
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+    `;
+
+    months.forEach((m) => {
+      const monthNum = m.month || '-';
+      const yearNum = m.year || '-';
+      const amount = m.amount_paid || m.amount || null;
+      const paymentDate = m.created_at || m.paymentDate || null;
+      
+      const dateStr = paymentDate ? new Date(paymentDate).toLocaleDateString(currentLang === 'ar' ? 'ar-EG' : 'en-US') : '';
+
+      html += `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:var(--card); border:1px solid var(--line); border-radius:10px; transition:transform .1s ease;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; border-radius:8px; background:var(--success-soft); color:var(--success); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">
+              ✓
+            </div>
+            <div>
+              <div style="font-weight:700; font-size:14px; color:var(--ink);">${tr.monthYearFormat(monthNum, yearNum)}</div>
+              ${dateStr ? `<div style="font-size:11.5px; color:var(--muted); margin-top:2px;">${tr.paymentDateLabel}${dateStr}</div>` : ''}
+            </div>
+          </div>
+          <div>
+            ${amount != null && amount > 0 ? `<span class="chip paid" style="font-size:12px; padding:4px 10px;">${amount} ${tr.currencyEGP}</span>` : `<span class="chip paid" style="font-size:12px; padding:4px 10px;">${tr.paid}</span>`}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    bodyEl.innerHTML = html;
+  }
+
+  function closeStudentPaidMonthsModal(){
+    document.getElementById("studentPaidMonthsModalOverlay").classList.remove("show");
+  }
+
+  /* ---------- Init: restore saved language / dark-mode preference ---------- */
+  (function init(){
+    let savedLang = "ar", savedDark = false;
+    try{
+      savedLang = localStorage.getItem("studentSearchLang") || "ar";
+      savedDark = localStorage.getItem("studentSearchDarkMode") === "1";
+    }catch(e){}
+    currentLang = savedLang;
+    document.documentElement.lang = currentLang;
+    document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+    document.getElementById("langToggleBtn").textContent = currentLang === "ar" ? "EN" : "AR";
+    if(savedDark){
+      document.body.classList.add("dark");
+      document.getElementById("darkModeToggle").textContent = "☀️";
+    }
+    applyStaticTranslations();
+    populateGradeSelect();
+  })();
+
+  loadData();
+</script>
+</body>
+</html>
