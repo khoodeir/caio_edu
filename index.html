@@ -705,12 +705,87 @@
   </div>
 
 <script>
-  // First-time default teacher password (used only if none has been set yet on this browser).
-  const DEFAULT_TEACHER_PASSWORD = "2026";
+  // ============================================================
+  // CAIO Security Layer
+  // - Passwords are never stored or compared in plaintext: only
+  //   their SHA-256 hash is kept in localStorage / compared.
+  // - "Logged in" state is a session token with an expiry (4h),
+  //   stored in sessionStorage (cleared when the browser tab closes),
+  //   not a permanent flag that never expires.
+  // - Repeated wrong password attempts trigger a temporary lockout
+  //   to slow down brute-force guessing.
+  // NOTE: This hardens the UI gate on this browser. It does NOT
+  // replace real access control: the Supabase table data itself must
+  // be protected with Row Level Security (RLS) policies on the
+  // Supabase project, since the anon key is public by design.
+  // ============================================================
+  const CAIO_SESSION_KEY = 'caioTeacherSession';
+  const CAIO_SESSION_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
+  const CAIO_LOCK_KEY = 'caioTeacherLoginAttempts';
+  const CAIO_MAX_ATTEMPTS = 5;
 
-  function getTeacherPassword(){
-    return localStorage.getItem('mgTeacherPassword') || DEFAULT_TEACHER_PASSWORD;
+  async function caioSha256(text){
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
   }
+
+  function caioStartSession(){
+    try{ sessionStorage.setItem(CAIO_SESSION_KEY, JSON.stringify({ exp: Date.now() + CAIO_SESSION_DURATION_MS })); }catch(e){}
+  }
+  function caioClearSession(){
+    try{ sessionStorage.removeItem(CAIO_SESSION_KEY); }catch(e){}
+  }
+  function caioIsSessionValid(){
+    try{
+      const raw = sessionStorage.getItem(CAIO_SESSION_KEY);
+      if(!raw) return false;
+      const data = JSON.parse(raw);
+      return !!(data && data.exp && Date.now() < data.exp);
+    }catch(e){ return false; }
+  }
+
+  function caioGetAttempts(){
+    try{ return JSON.parse(localStorage.getItem(CAIO_LOCK_KEY)) || { count: 0, until: 0 }; }
+    catch(e){ return { count: 0, until: 0 }; }
+  }
+  function caioRegisterFailedAttempt(){
+    const a = caioGetAttempts();
+    a.count = (a.count || 0) + 1;
+    if(a.count >= CAIO_MAX_ATTEMPTS){
+      // Progressive lockout: 1 min, growing with repeated failures, capped at 10 min.
+      const minutes = Math.min(a.count - CAIO_MAX_ATTEMPTS + 1, 10);
+      a.until = Date.now() + minutes * 60 * 1000;
+    }
+    localStorage.setItem(CAIO_LOCK_KEY, JSON.stringify(a));
+  }
+  function caioRegisterSuccess(){
+    localStorage.removeItem(CAIO_LOCK_KEY);
+  }
+  function caioLockRemainingMs(){
+    const a = caioGetAttempts();
+    return a.until && Date.now() < a.until ? (a.until - Date.now()) : 0;
+  }
+
+  // First-time default teacher password is "2026", but it is never kept in
+  // plaintext — only its SHA-256 hash is stored/compared from here on.
+  const DEFAULT_TEACHER_PASSWORD_HASH = "158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab"; // sha256("2026")
+
+  function getTeacherPasswordHash(){
+    return localStorage.getItem('mgTeacherPasswordHash') || DEFAULT_TEACHER_PASSWORD_HASH;
+  }
+
+  // One-time migration: if an older version of this site left a plaintext
+  // password saved in localStorage, convert it to a hash and delete the
+  // plaintext copy so it never sits on disk unencrypted.
+  (async function caioMigrateLegacyPlaintextPassword(){
+    const legacy = localStorage.getItem('mgTeacherPassword');
+    if(legacy){
+      const hash = await caioSha256(legacy);
+      localStorage.setItem('mgTeacherPasswordHash', hash);
+      localStorage.removeItem('mgTeacherPassword');
+    }
+  })();
 
   // ---- Supabase client (used for real email/password login for the Assistant role) ----
   const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
@@ -728,6 +803,7 @@
       footer:"CAIO",
       teacherAuthTitle:"دخول المدرس", teacherAuthHint:"من فضلك أدخل كلمة المرور للمتابعة",
       passwordLabel:"كلمة المرور", wrongPassword:"كلمة المرور غير صحيحة",
+      tooManyAttempts:"محاولات كتير غلط. حاول تاني بعد", minutesShort:"دقيقة",
       cancel:"إلغاء", enter:"دخول",
       hubEyebrow:"المدرس", hubTitle:"إيه اللي عايز تعمله؟", hubSubtitle:"اختر الأداة اللي محتاجها دلوقتي",
       hubDash:"لوحة التحكم", hubDashDesc:"نظرة حية على المركز",
@@ -761,6 +837,7 @@
       footer:"CAIO",
       teacherAuthTitle:"Teacher sign in", teacherAuthHint:"Enter your password to continue",
       passwordLabel:"Password", wrongPassword:"Incorrect password",
+      tooManyAttempts:"Too many attempts. Try again in", minutesShort:"min",
       cancel:"Cancel", enter:"Enter",
       hubEyebrow:"Teacher", hubTitle:"What do you need?", hubSubtitle:"Pick the tool you need right now",
       hubDash:"Dashboard", hubDashDesc:"Live view of the center",
@@ -839,10 +916,11 @@
     }
 
     if(role === 'teacher'){
-      if(localStorage.getItem('mgTeacherOk') === '1'){
+      if(caioIsSessionValid()){
         setTimeout(showHub, 180);
         return;
       }
+      caioClearSession();
       setTimeout(openTeacherOverlay, 180);
     }
   }
@@ -863,9 +941,9 @@
     document.getElementById('roleScreen').style.display = 'block';
   }
 
-  // Teacher: remembered permanently on this device (localStorage) until logout.
+  // Teacher: session stays valid for 4 hours on this device/tab, or until logout.
   function logoutTeacher(){
-    localStorage.removeItem('mgTeacherOk');
+    caioClearSession();
     showRoleScreen();
   }
 
@@ -885,15 +963,32 @@
   function closeTeacherOverlay(){
     document.getElementById('teacherOverlay').classList.remove('open');
   }
-  function submitTeacherPassword(){
+  async function submitTeacherPassword(){
+    const dict = translations[currentLang];
+    const errEl = document.getElementById('teacherError');
+    const card = document.querySelector('#teacherOverlay .auth-card');
+
+    const lockMs = caioLockRemainingMs();
+    if(lockMs > 0){
+      const mins = Math.ceil(lockMs / 60000);
+      errEl.textContent = (dict.tooManyAttempts || 'Too many attempts. Try again in a few minutes.') + ' (' + mins + ' ' + (dict.minutesShort || 'min') + ')';
+      errEl.classList.add('show');
+      card.style.animation = 'none';
+      requestAnimationFrame(()=>{ card.style.animation = 'stamp .38s ease'; });
+      return;
+    }
+
     const val = document.getElementById('teacherPassword').value;
-    if(val === getTeacherPassword()){
-      localStorage.setItem('mgTeacherOk','1');
+    const inputHash = await caioSha256(val);
+    if(inputHash === getTeacherPasswordHash()){
+      caioRegisterSuccess();
+      caioStartSession();
       closeTeacherOverlay();
       showHub();
     } else {
-      document.getElementById('teacherError').classList.add('show');
-      const card = document.querySelector('#teacherOverlay .auth-card');
+      caioRegisterFailedAttempt();
+      errEl.textContent = dict.wrongPassword;
+      errEl.classList.add('show');
       card.style.animation = 'none';
       requestAnimationFrame(()=>{ card.style.animation = 'stamp .38s ease'; });
     }
@@ -962,7 +1057,7 @@
   function closeChangePasswordOverlay(){
     document.getElementById('changePasswordOverlay').classList.remove('open');
   }
-  function submitChangePassword(){
+  async function submitChangePassword(){
     const dict = translations[currentLang];
     const cur = document.getElementById('currentPassword').value;
     const next = document.getElementById('newPassword').value;
@@ -971,7 +1066,8 @@
     const okEl = document.getElementById('changePasswordSuccess');
     errEl.classList.remove('show'); okEl.classList.remove('show');
 
-    if(cur !== getTeacherPassword()){
+    const curHash = await caioSha256(cur);
+    if(curHash !== getTeacherPasswordHash()){
       errEl.textContent = dict.errCurrentWrong; errEl.classList.add('show'); return;
     }
     if(next.length < 4){
@@ -980,7 +1076,8 @@
     if(next !== confirm){
       errEl.textContent = dict.errMismatch; errEl.classList.add('show'); return;
     }
-    localStorage.setItem('mgTeacherPassword', next);
+    const nextHash = await caioSha256(next);
+    localStorage.setItem('mgTeacherPasswordHash', nextHash);
     okEl.classList.add('show');
     setTimeout(closeChangePasswordOverlay, 1200);
   }
