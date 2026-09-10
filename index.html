@@ -767,9 +767,7 @@
     return a.until && Date.now() < a.until ? (a.until - Date.now()) : 0;
   }
 
-  // First-time default teacher password is "2026", but it is never kept in
-  // plaintext — only its SHA-256 hash is stored/compared from here on.
-  const DEFAULT_TEACHER_PASSWORD_HASH = "158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab"; // sha256("2026")
+  const DEFAULT_TEACHER_PASSWORD_HASH = "158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab";
 
   function getTeacherPasswordHash(){
     return localStorage.getItem('mgTeacherPasswordHash') || DEFAULT_TEACHER_PASSWORD_HASH;
