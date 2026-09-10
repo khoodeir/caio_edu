@@ -248,6 +248,9 @@
     .lang-switch{ position:static; margin-bottom:12px; justify-content:center; display:flex; }
     .back-top-btn{ position:static; display:inline-flex; margin-bottom:12px; }
   }
+  @media (max-width:380px){
+    .kpi-grid{ grid-template-columns:1fr; }
+  }
 
   .two-col,
 .contact-grid,
@@ -388,6 +391,7 @@
 
     <div class="exam-card">
       <div class="section-title" data-i18n="examTableTitle">درجات الامتحانات بالتفصيل</div>
+      <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
       <table>
         <thead>
           <tr>
@@ -399,6 +403,7 @@
         </thead>
         <tbody id="examTableBody"></tbody>
       </table>
+      </div>
     </div>
   </div>
 
@@ -929,7 +934,7 @@
 </script>
 
   <footer style="text-align:center; padding:18px 10px 22px; font-size:13px; color:#8698B3; opacity:0.85;">
-    Powered by <a href="milex.html" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline; font-weight:600;">MilEX</a>
+    Powered by <a href="https://web.facebook.com/caio.egypt" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline; font-weight:600;">CAIO</a>
   </footer>
 </body>
 </html>
