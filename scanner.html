@@ -167,7 +167,7 @@
   html[dir="rtl"] #settingsBtn{ right:auto; }
 
   .brand-logo{
-    width:340px; height:auto; aspect-ratio:606/453;
+    width:100%; max-width:340px; height:auto; aspect-ratio:606/453;
     margin:35px auto 24px;
     background-image:url("logo.png");
     background-repeat:no-repeat;
@@ -633,6 +633,12 @@
     }
   }
 
+  @media (max-width:420px){
+    body{ padding:24px 10px; }
+    .container{ padding:16px 16px 24px; }
+    .header-actions{ padding:0 14px; }
+  }
+
   .session-ended-overlay{
     position:fixed; inset:0; z-index:150; display:none;
     align-items:center; justify-content:center; padding:20px;
@@ -744,7 +750,7 @@
     </div>
   </div>
 
-  <div class="footer">Powered by <a href="milex.html" target="_blank" rel="noopener noreferrer" style="color:inherit;">MilEX</a></div>
+  <div class="footer">Powered by <a href="https://web.facebook.com/caio.egypt" target="_blank" rel="noopener noreferrer" style="color:inherit;">CAIO</a></div>
 </div>
 
 
@@ -961,7 +967,7 @@
       status_cant_connect:"Can't reach the server",
       payment_hint_missing:"Please enter the month and amount first",
       history_title:"Last Scans", history_empty:"No scans yet",
-      footer_text:"Powered by MilEX",
+      footer_text:"Powered by CAIO",
 
       session_ended_title:"Session Ended",
       session_ended_text:"The attendance session has been ended by another user.",
@@ -1009,7 +1015,7 @@
       status_cant_connect:"تعذّر الوصول إلى الخادم",
       payment_hint_missing:"من فضلك أدخل الشهر والمبلغ أولاً",
       history_title:"آخر عمليات المسح", history_empty:"لا توجد عمليات مسح بعد",
-      footer_text:"بدعم من MilEX",
+      footer_text:"بدعم من CAIO",
 
       session_ended_title:"انتهت الجلسة",
       session_ended_text:"تم إنهاء جلسة الحضور بواسطة مستخدم آخر.",
