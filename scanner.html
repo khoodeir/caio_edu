@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Student Attendance Scanner</title>
 <script>
+  // Hide the page immediately until the access guard below confirms a
+  // valid teacher or assistant session; avoids flashing protected content.
+  document.documentElement.style.visibility = 'hidden';
+</script>
+<script>
   // Apply saved theme + language before first paint to avoid a flash of the wrong look.
   (function(){
     try{
@@ -848,6 +853,36 @@
   const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ---- CAIO access guard ----
+  // Only a teacher (password session from index.html) or an assistant
+  // (real Supabase email/password login) may use the scanner. Anyone else
+  // is sent back to the login page before the page becomes visible.
+  (async function caioGuardScanner(){
+    let teacherOk = false;
+    try{
+      const raw = sessionStorage.getItem('caioTeacherSession');
+      if(raw){
+        const data = JSON.parse(raw);
+        teacherOk = !!(data && data.exp && Date.now() < data.exp);
+      }
+    }catch(e){}
+
+    let assistantOk = false;
+    if(!teacherOk){
+      try{
+        const { data: sessData } = await supabaseClient.auth.getSession();
+        assistantOk = !!(sessData && sessData.session) && localStorage.getItem('mgAssistantOk') === '1';
+      }catch(e){}
+    }
+
+    if(!teacherOk && !assistantOk){
+      window.location.replace('index.html');
+      return;
+    }
+    document.documentElement.style.visibility = 'visible';
+  })();
+
   const SESSION_TABLE = "attendance_sessions";
   const SESSION_POLL_MS = 5000;
   let lastSupabaseError = "";
