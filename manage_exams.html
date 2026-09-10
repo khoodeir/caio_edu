@@ -3,6 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+// ---- CAIO access guard ----
+// This page is for teachers/admins only. If there is no valid, non-expired
+// login session (created by index.html after the correct password is
+// entered), redirect immediately back to the login page before any content
+// is shown. The session lives in sessionStorage (per-tab, auto-expires),
+// not in a permanent flag, so it can't just be set once and forgotten.
+(function(){
+  try{
+    var raw = sessionStorage.getItem('caioTeacherSession');
+    var valid = false;
+    if(raw){
+      var data = JSON.parse(raw);
+      valid = !!(data && data.exp && Date.now() < data.exp);
+    }
+    if(!valid){
+      window.location.replace('index.html');
+    }
+  }catch(e){
+    window.location.replace('index.html');
+  }
+})();
+</script>
+
 <title>إدارة الامتحانات</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
