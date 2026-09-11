@@ -433,6 +433,35 @@
   }
   .wa-btn:hover{ background:rgba(31,169,113,0.22); transform:translateY(-1px); }
   [data-theme="dark"] .wa-btn{ color:#3FC98A; background:rgba(63,201,138,0.16); }
+  .section-title-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:15px;
+  }
+  .section-title-row .section-title{ margin-bottom:0; }
+  .sendall-btn{
+    display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600;
+    font-family:'Inter',sans-serif; color:#1FA971; border:1px solid rgba(31,169,113,0.35);
+    background:rgba(31,169,113,0.08); padding:5px 11px; border-radius:999px; cursor:pointer;
+    transition:all .15s ease; white-space:nowrap; flex-shrink:0;
+  }
+  .sendall-btn:hover{ background:rgba(31,169,113,0.18); transform:translateY(-1px); }
+  [data-theme="dark"] .sendall-btn{ color:#3FC98A; border-color:rgba(63,201,138,0.4); background:rgba(63,201,138,0.1); }
+  .wa-bulk-progress{ font-size:11px; font-weight:600; color:var(--muted); letter-spacing:.03em; text-transform:uppercase; margin-bottom:6px; }
+  .wa-bulk-name{ font-family:'Cormorant Garamond',serif; font-weight:700; font-size:22px; color:var(--ink); margin-bottom:18px; }
+  .wa-bulk-actions{ display:flex; gap:10px; }
+  .wa-bulk-send{
+    flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    font-family:'Inter',sans-serif; font-size:13.5px; font-weight:700; color:#fff; border:none;
+    background:#1FA971; padding:11px 14px; border-radius:10px; cursor:pointer; transition:all .15s ease;
+  }
+  .wa-bulk-send:hover{ background:#188a5c; }
+  .wa-bulk-skip{
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600; color:var(--muted);
+    border:1px solid var(--line); background:transparent; padding:11px 14px; border-radius:10px; cursor:pointer;
+  }
+  .wa-bulk-skip:hover{ color:var(--ink); background:var(--gold-soft); }
+  .wa-bulk-done{ text-align:center; padding:12px 0; }
+  .wa-bulk-done-title{ font-family:'Cormorant Garamond',serif; font-weight:700; font-size:20px; color:var(--ink); margin-bottom:6px; }
+  .wa-bulk-done-sub{ font-size:12.5px; color:var(--muted); }
   .settings-card textarea.wa-template{
     width:100%; min-height:64px; resize:vertical; font-family:'Cairo','Inter',sans-serif; font-size:12.5px;
     padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink);
@@ -1106,14 +1135,20 @@
           <div id="topAttendersList"></div>
         </div>
         <div class="list-card">
-          <div class="section-title" data-i18n="secUnpaidStudents">Unpaid Students</div>
+          <div class="section-title-row">
+            <div class="section-title" data-i18n="secUnpaidStudents">Unpaid Students</div>
+            <button type="button" class="sendall-btn" onclick="openWaBulkModal('waUnpaidTemplate', lastUnpaidList)">💬 <span data-i18n="sendAllBtn">Send to All</span></button>
+          </div>
           <div id="unpaidList"></div>
         </div>
       </div>
 
       <div class="list-grid">
         <div class="list-card" style="grid-column:1 / -1;">
-          <div class="section-title"><span data-i18n="secAbsenceFollowup">Attendance Follow-up</span> <span class="tag" data-i18n="tagNeedsCall">needs follow-up</span></div>
+          <div class="section-title-row">
+            <div class="section-title"><span data-i18n="secAbsenceFollowup">Attendance Follow-up</span> <span class="tag" data-i18n="tagNeedsCall">needs follow-up</span></div>
+            <button type="button" class="sendall-btn" onclick="openWaBulkModal('waAbsenceTemplate', lastAbsenceList)">💬 <span data-i18n="sendAllBtn">Send to All</span></button>
+          </div>
           <div id="absenceFollowupList"></div>
         </div>
       </div>
@@ -1400,6 +1435,16 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="waBulkModalOverlay" onclick="if(event.target===this) closeWaBulkModal()">
+  <div class="modal-box" style="max-width:380px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:0;" data-i18n="sendAllBtn">Send to All</div>
+      <button class="modal-close" onclick="closeWaBulkModal()">×</button>
+    </div>
+    <div id="waBulkModalBody"></div>
+  </div>
+</div>
+
 <script>
   /* ============================================================
      SUPABASE CONNECTION
@@ -1514,6 +1559,9 @@
       settingsWA: "WhatsApp Reminders", settingsWASub: "Customize the one-click reminder messages",
       waUnpaidLabel: "Unpaid fee reminder", waAbsenceLabel: "Attendance follow-up message",
       waTemplateNote: "Use {name}, {grade}, {group}, {city} as placeholders — they're filled in automatically per student.",
+      sendAllBtn: "Send to All", waBulkSendBtn: "Open WhatsApp", waBulkSkipBtn: "Skip",
+      waBulkDoneTitle: "All done!", waBulkDoneSub: "You've gone through everyone on this list.",
+      waBulkNoPhones: "No parent phone numbers on file for this list.",
       searchNamePhone: "Search by name or phone…",
       filterAll: "All", filterPaid: "Paid", filterUnpaid: "Unpaid", filterAllGroups: "All Groups", exportExcel: "Export Excel",
       colName: "Name", colCity: "City", colGroup: "Group", colGrade: "Grade", colPresent: "Present", colAbsent: "Absent",
@@ -1596,6 +1644,9 @@
       settingsWA: "تذكيرات واتساب", settingsWASub: "خصّص نصوص رسائل التذكير بضغطة زر",
       waUnpaidLabel: "رسالة تذكير بالدفع", waAbsenceLabel: "رسالة متابعة الغياب",
       waTemplateNote: "استخدم {name}, {grade}, {group}, {city} كعناصر تُستبدل تلقائيًا ببيانات كل طالب.",
+      sendAllBtn: "إرسال للكل", waBulkSendBtn: "فتح واتساب", waBulkSkipBtn: "تخطي",
+      waBulkDoneTitle: "تم الإرسال للجميع!", waBulkDoneSub: "لقد انتهيت من كل من في هذه القائمة.",
+      waBulkNoPhones: "لا توجد أرقام هواتف لأولياء الأمور في هذه القائمة.",
       searchNamePhone: "ابحث بالاسم أو رقم الهاتف…",
       filterAll: "الكل", filterPaid: "مدفوع", filterUnpaid: "غير مدفوع", filterAllGroups: "كل المجموعات", exportExcel: "تصدير إكسل",
       colName: "الاسم", colCity: "المدينة", colGroup: "المجموعة", colGrade: "الصف", colPresent: "حضور", colAbsent: "غياب",
@@ -1685,8 +1736,8 @@
      ============================================================ */
   const WA_DEFAULT_COUNTRY_CODE = "20"; // Egypt — used when a phone has no country code
   const WA_TEMPLATE_DEFAULTS = {
-    waUnpaidTemplate: "السلام عليكم، نود تذكيركم بأن مصروفات الشهر الحالي لـ {name} ({grade} - {group}) لم تُسجَّل بعد. برجاء التواصل لإتمام الدفع في أقرب وقت. شكرًا لتعاونكم 🌿",
-    waAbsenceTemplate: "السلام عليكم، نلاحظ أن نسبة حضور {name} ({grade} - {group}) قلّت مؤخرًا. نتمنى الاطمئنان والتأكد من عدم وجود أي عائق، ونرحب بأي استفسار. شكرًا لمتابعتكم 🌿"
+    waUnpaidTemplate: "السلام عليكم، نود تذكيركم بأن مصروفات الشهر الحالي لـ {name} ({grade} - {group}) لم تُسجَّل بعد. برجاء التواصل لإتمام الدفع في أقرب وقت. شكرًا لتعاونكم",
+    waAbsenceTemplate: "السلام عليكم، نلاحظ أن نسبة حضور {name} ({grade} - {group}) قلّت مؤخرًا. نتمنى الاطمئنان والتأكد من عدم وجود أي عائق، ونرحب بأي استفسار. شكرًا لمتابعتكم"
   };
 
   function getWaTemplate(key){
@@ -1730,10 +1781,88 @@
   }
 
   function waButtonHtml(s, templateKey){
-    const phone = s.parentPhone || s.studentPhone;
+    // Reminders always go to the parent's phone, never the student's —
+    // if there's no parent number on file, we show "no phone" rather
+    // than silently falling back to the student's own phone.
+    const phone = s.parentPhone;
     const link = phone ? waLink(phone, fillWaTemplate(getWaTemplate(templateKey), s)) : null;
     if(!link) return `<span class="empty-note" style="padding:0;">${t("waNoPhone")}</span>`;
     return `<a class="wa-btn" href="${link}" target="_blank" rel="noopener">💬 ${t("waBtn")}</a>`;
+  }
+
+  function waBulkLink(s, templateKey){
+    // Same parent-only rule as waButtonHtml, exposed separately so the
+    // "send to all" flow can build a queue of {student, link} pairs.
+    const phone = s.parentPhone;
+    return phone ? waLink(phone, fillWaTemplate(getWaTemplate(templateKey), s)) : null;
+  }
+
+  /* ============================================================
+     WHATSAPP "SEND TO ALL"
+     Browsers block a page from popping open many wa.me tabs from a
+     single click, so instead of trying (and failing silently) to open
+     everyone at once, this walks the admin through the list one
+     student at a time: click "Open WhatsApp" for the current student,
+     it opens their chat with the message pre-filled, and the modal
+     auto-advances to the next one. Each open is still a real click, so
+     nothing gets blocked.
+     ============================================================ */
+  let waBulkQueue = [];
+  let waBulkIndex = 0;
+  let waBulkTemplateKey = null;
+  let lastUnpaidList = [];
+  let lastAbsenceList = [];
+
+  function openWaBulkModal(templateKey, students){
+    waBulkTemplateKey = templateKey;
+    waBulkQueue = (students || [])
+      .map(s => ({ student: s, link: waBulkLink(s, templateKey) }))
+      .filter(item => item.link);
+    waBulkIndex = 0;
+    document.getElementById("waBulkModalOverlay").classList.add("show");
+    renderWaBulkStep();
+  }
+
+  function renderWaBulkStep(){
+    const body = document.getElementById("waBulkModalBody");
+    const total = waBulkQueue.length;
+    if(!total){
+      body.innerHTML = `<div class="empty-note">${t("waBulkNoPhones")}</div>`;
+      return;
+    }
+    if(waBulkIndex >= total){
+      body.innerHTML = `
+        <div class="wa-bulk-done">
+          <div class="wa-bulk-done-title">${t("waBulkDoneTitle")}</div>
+          <div class="wa-bulk-done-sub">${t("waBulkDoneSub")}</div>
+        </div>`;
+      return;
+    }
+    const item = waBulkQueue[waBulkIndex];
+    body.innerHTML = `
+      <div class="wa-bulk-progress">${waBulkIndex + 1} ${t("outOf")} ${total}</div>
+      <div class="wa-bulk-name">${item.student.name}</div>
+      <div class="wa-bulk-actions">
+        <button class="wa-bulk-send" onclick="waBulkSendCurrent()">💬 ${t("waBulkSendBtn")}</button>
+        <button class="wa-bulk-skip" onclick="waBulkNext()">${t("waBulkSkipBtn")}</button>
+      </div>`;
+  }
+
+  function waBulkSendCurrent(){
+    const item = waBulkQueue[waBulkIndex];
+    if(item) window.open(item.link, "_blank", "noopener");
+    waBulkNext();
+  }
+
+  function waBulkNext(){
+    waBulkIndex++;
+    renderWaBulkStep();
+  }
+
+  function closeWaBulkModal(){
+    document.getElementById("waBulkModalOverlay").classList.remove("show");
+    waBulkQueue = [];
+    waBulkIndex = 0;
   }
 
   function applyTranslations(){
@@ -2896,6 +3025,7 @@ function goBack(){
 
   function renderUnpaidList(unpaidStudents){
     const el = document.getElementById("unpaidList");
+    lastUnpaidList = unpaidStudents; // full (unsliced) list, used by "send to all"
     if(!unpaidStudents.length){ el.innerHTML = `<div class="empty-note">🎉 Everyone has paid</div>`; return; }
     el.innerHTML = unpaidStudents.slice(0, 8).map(s => `
       <div class="list-row">
@@ -2922,6 +3052,7 @@ function goBack(){
       .filter(s => s.p != null && s.p < ABSENCE_THRESHOLD && (s.attendanceCount + s.absenceCount) > 0)
       .sort((a, b) => a.p - b.p);
 
+    lastAbsenceList = flagged; // full (unsliced) list, used by "send to all"
     if(!flagged.length){ el.innerHTML = `<div class="empty-note">${t("allCaughtUp")}</div>`; return; }
 
     el.innerHTML = flagged.slice(0, 8).map(s => `
