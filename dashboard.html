@@ -425,6 +425,21 @@
     cursor:pointer;
   }
   .phone-link:hover{ color:var(--gold-2); background:var(--gold-soft); }
+  .list-actions{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .wa-btn{
+    display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600;
+    color:#1FA971; text-decoration:none; padding:4px 9px; border-radius:6px;
+    background:rgba(31,169,113,0.12); transition:all .15s ease; white-space:nowrap; cursor:pointer;
+  }
+  .wa-btn:hover{ background:rgba(31,169,113,0.22); transform:translateY(-1px); }
+  [data-theme="dark"] .wa-btn{ color:#3FC98A; background:rgba(63,201,138,0.16); }
+  .settings-card textarea.wa-template{
+    width:100%; min-height:64px; resize:vertical; font-family:'Cairo','Inter',sans-serif; font-size:12.5px;
+    padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink);
+    margin-top:6px; margin-bottom:12px; line-height:1.6;
+  }
+  .settings-card textarea.wa-template:focus{ outline:none; border-color:var(--gold); }
+  .settings-card .wa-field-label{ font-size:12.5px; font-weight:600; color:var(--ink); }
   .empty-note{ text-align:center; color:var(--muted); font-size:12.5px; padding:20px 0; }
   .roster-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:15px; flex-wrap:wrap; }
   .search-box{ flex:1; min-width:220px; position:relative; }
@@ -1097,6 +1112,13 @@
       </div>
 
       <div class="list-grid">
+        <div class="list-card" style="grid-column:1 / -1;">
+          <div class="section-title"><span data-i18n="secAbsenceFollowup">Attendance Follow-up</span> <span class="tag" data-i18n="tagNeedsCall">needs follow-up</span></div>
+          <div id="absenceFollowupList"></div>
+        </div>
+      </div>
+
+      <div class="list-grid">
         <div class="list-card">
           <div class="section-title" data-i18n="secTopExam">Top Exam Performers</div>
           <div id="topExamList"></div>
@@ -1318,6 +1340,23 @@
           </div>
         </div>
 
+        <div class="settings-card" style="grid-column:1 / -1;">
+          <div class="settings-card-head">
+            <div class="settings-card-icon">💬</div>
+            <div>
+              <div class="settings-card-title" data-i18n="settingsWA">WhatsApp Reminders</div>
+              <div class="settings-card-sub" data-i18n="settingsWASub">Customize the one-click reminder messages</div>
+            </div>
+          </div>
+          <div class="wa-field-label" data-i18n="waUnpaidLabel">Unpaid fee reminder</div>
+          <textarea class="wa-template" id="waUnpaidTemplateInput" oninput="saveWaTemplate('waUnpaidTemplate', this.value)"></textarea>
+          <div class="wa-field-label" data-i18n="waAbsenceLabel">Attendance follow-up message</div>
+          <textarea class="wa-template" id="waAbsenceTemplateInput" oninput="saveWaTemplate('waAbsenceTemplate', this.value)"></textarea>
+          <div class="settings-note" data-i18n="waTemplateNote">
+            Use {name}, {grade}, {group}, {city} as placeholders — they're filled in automatically per student.
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1470,6 +1509,11 @@
       secScoreDist: "Score Distribution", tagByStudent: "by student",
       secTopAttendance: "Top Attendance", secUnpaidStudents: "Unpaid Students",
       secTopExam: "Top Exam Performers", secNeedsImprovement: "Needs Improvement",
+      secAbsenceFollowup: "Attendance Follow-up", tagNeedsCall: "needs follow-up",
+      waBtn: "WhatsApp", waNoPhone: "no phone on file", allCaughtUp: "🎉 Everyone is attending well",
+      settingsWA: "WhatsApp Reminders", settingsWASub: "Customize the one-click reminder messages",
+      waUnpaidLabel: "Unpaid fee reminder", waAbsenceLabel: "Attendance follow-up message",
+      waTemplateNote: "Use {name}, {grade}, {group}, {city} as placeholders — they're filled in automatically per student.",
       searchNamePhone: "Search by name or phone…",
       filterAll: "All", filterPaid: "Paid", filterUnpaid: "Unpaid", filterAllGroups: "All Groups", exportExcel: "Export Excel",
       colName: "Name", colCity: "City", colGroup: "Group", colGrade: "Grade", colPresent: "Present", colAbsent: "Absent",
@@ -1547,6 +1591,11 @@
       secScoreDist: "توزيع الدرجات", tagByStudent: "لكل طالب",
       secTopAttendance: "الأعلى حضورًا", secUnpaidStudents: "طلاب لم يدفعوا بعد",
       secTopExam: "الأعلى تحصيلًا للدرجات", secNeedsImprovement: "بحاجة إلى تحسين المستوى",
+      secAbsenceFollowup: "متابعة الغياب", tagNeedsCall: "يحتاج متابعة",
+      waBtn: "واتساب", waNoPhone: "لا يوجد رقم هاتف", allCaughtUp: "🎉 الكل ملتزم بالحضور",
+      settingsWA: "تذكيرات واتساب", settingsWASub: "خصّص نصوص رسائل التذكير بضغطة زر",
+      waUnpaidLabel: "رسالة تذكير بالدفع", waAbsenceLabel: "رسالة متابعة الغياب",
+      waTemplateNote: "استخدم {name}, {grade}, {group}, {city} كعناصر تُستبدل تلقائيًا ببيانات كل طالب.",
       searchNamePhone: "ابحث بالاسم أو رقم الهاتف…",
       filterAll: "الكل", filterPaid: "مدفوع", filterUnpaid: "غير مدفوع", filterAllGroups: "كل المجموعات", exportExcel: "تصدير إكسل",
       colName: "الاسم", colCity: "المدينة", colGroup: "المجموعة", colGrade: "الصف", colPresent: "حضور", colAbsent: "غياب",
@@ -1627,6 +1676,64 @@
       third_secondary: currentLang === "ar" ? I18N.ar.tabThirdSecondary : I18N.en.tabThirdSecondary
     };
     return map[grade] || GRADE_LABELS[grade] || "—";
+  }
+
+  /* ============================================================
+     WHATSAPP SMART REMINDERS
+     One-click wa.me links for unpaid fees and low attendance,
+     with admin-editable message templates saved in localStorage.
+     ============================================================ */
+  const WA_DEFAULT_COUNTRY_CODE = "20"; // Egypt — used when a phone has no country code
+  const WA_TEMPLATE_DEFAULTS = {
+    waUnpaidTemplate: "السلام عليكم، نود تذكيركم بأن مصروفات الشهر الحالي لـ {name} ({grade} - {group}) لم تُسجَّل بعد. برجاء التواصل لإتمام الدفع في أقرب وقت. شكرًا لتعاونكم 🌿",
+    waAbsenceTemplate: "السلام عليكم، نلاحظ أن نسبة حضور {name} ({grade} - {group}) قلّت مؤخرًا. نتمنى الاطمئنان والتأكد من عدم وجود أي عائق، ونرحب بأي استفسار. شكرًا لمتابعتكم 🌿"
+  };
+
+  function getWaTemplate(key){
+    return localStorage.getItem(key) || WA_TEMPLATE_DEFAULTS[key];
+  }
+
+  function saveWaTemplate(key, value){
+    localStorage.setItem(key, value && value.trim() ? value : WA_TEMPLATE_DEFAULTS[key]);
+  }
+
+  function loadWaTemplatesIntoSettings(){
+    const uEl = document.getElementById("waUnpaidTemplateInput");
+    const aEl = document.getElementById("waAbsenceTemplateInput");
+    if(uEl) uEl.value = getWaTemplate("waUnpaidTemplate");
+    if(aEl) aEl.value = getWaTemplate("waAbsenceTemplate");
+  }
+
+  function fillWaTemplate(tpl, s){
+    return String(tpl)
+      .replace(/\{name\}/g, s.name || "")
+      .replace(/\{grade\}/g, tGradeLabel(s.grade) || "")
+      .replace(/\{group\}/g, s.groupName || "")
+      .replace(/\{city\}/g, s.city || "");
+  }
+
+  function normalizeWaPhone(phone){
+    if(!phone) return null;
+    let p = String(phone).replace(/[^\d+]/g, "");
+    if(!p) return null;
+    if(p.startsWith("+")) p = p.slice(1);
+    if(p.startsWith("00")) p = p.slice(2);
+    if(p.startsWith("0")) p = WA_DEFAULT_COUNTRY_CODE + p.slice(1);
+    else if(p.length <= 11 && !p.startsWith(WA_DEFAULT_COUNTRY_CODE)) p = WA_DEFAULT_COUNTRY_CODE + p;
+    return p;
+  }
+
+  function waLink(phone, message){
+    const p = normalizeWaPhone(phone);
+    if(!p) return null;
+    return `https://wa.me/${p}?text=${encodeURIComponent(message)}`;
+  }
+
+  function waButtonHtml(s, templateKey){
+    const phone = s.parentPhone || s.studentPhone;
+    const link = phone ? waLink(phone, fillWaTemplate(getWaTemplate(templateKey), s)) : null;
+    if(!link) return `<span class="empty-note" style="padding:0;">${t("waNoPhone")}</span>`;
+    return `<a class="wa-btn" href="${link}" target="_blank" rel="noopener">💬 ${t("waBtn")}</a>`;
   }
 
   function applyTranslations(){
@@ -1729,6 +1836,7 @@ function goBack(){
     document.getElementById("historyView").style.display = "none";
     document.getElementById("examsView").style.display = "none";
     document.getElementById("settingsView").style.display = "";
+    loadWaTemplatesIntoSettings();
     closeSidebarOnMobileNav();
   });
 
@@ -2169,6 +2277,7 @@ function goBack(){
     renderGradeRadarChart();
     renderTopAttenders(students);
     renderUnpaidList(unpaidStudents);
+    renderAbsenceFollowupList(students);
     renderExamPerformerLists();
     renderCityGroupKpis(students);
     renderAttByCityChart(students);
@@ -2796,9 +2905,40 @@ function goBack(){
           ${s.city ? `<span class="grade-chip" style="background:rgba(40,86,90,0.12); color:var(--muted);">${s.city}</span>` : ""}
           ${s.groupName ? `<span class="grade-chip" style="background:rgba(91,140,110,0.14); color:var(--success);">${s.groupName}</span>` : ""}
         </div>
-        ${s.studentPhone ? `<a class="phone-link" href="tel:${s.studentPhone}">${s.studentPhone}</a>` : `<span class="empty-note" style="padding:0;">—</span>`}
+        <div class="list-actions">
+          ${s.studentPhone ? `<a class="phone-link" href="tel:${s.studentPhone}">${s.studentPhone}</a>` : ""}
+          ${waButtonHtml(s, "waUnpaidTemplate")}
+        </div>
       </div>
-    `).join("") + (unpaidStudents.length > 8 ? `<div class="empty-note">+${unpaidStudents.length - 8} more — see the table below</div>` : "");
+    `).join("") + (unpaidStudents.length > 8 ? `<div class="empty-note">+${unpaidStudents.length - 8} ${t("moreSeeTable")}</div>` : "");
+  }
+
+  function renderAbsenceFollowupList(students){
+    const el = document.getElementById("absenceFollowupList");
+    if(!el) return;
+    const ABSENCE_THRESHOLD = 70; // attendance rate % below which a student needs follow-up
+    const flagged = students
+      .map(s => ({ ...s, p: pct(s.attendanceCount, s.absenceCount) }))
+      .filter(s => s.p != null && s.p < ABSENCE_THRESHOLD && (s.attendanceCount + s.absenceCount) > 0)
+      .sort((a, b) => a.p - b.p);
+
+    if(!flagged.length){ el.innerHTML = `<div class="empty-note">${t("allCaughtUp")}</div>`; return; }
+
+    el.innerHTML = flagged.slice(0, 8).map(s => `
+      <div class="list-row">
+        <div class="list-name">
+          <span class="name">${s.name}</span>
+          ${currentGrade === "all" ? `<span class="grade-chip">${tGradeLabel(s.grade)}</span>` : ""}
+          ${s.city ? `<span class="grade-chip" style="background:rgba(40,86,90,0.12); color:var(--muted);">${s.city}</span>` : ""}
+          ${s.groupName ? `<span class="grade-chip" style="background:rgba(91,140,110,0.14); color:var(--success);">${s.groupName}</span>` : ""}
+          <span class="val low" style="font-size:12px;">${s.p}%</span>
+        </div>
+        <div class="list-actions">
+          ${s.studentPhone ? `<a class="phone-link" href="tel:${s.studentPhone}">${s.studentPhone}</a>` : ""}
+          ${waButtonHtml(s, "waAbsenceTemplate")}
+        </div>
+      </div>
+    `).join("") + (flagged.length > 8 ? `<div class="empty-note">+${flagged.length - 8} ${t("moreSeeTable")}</div>` : "");
   }
 
   function renderExamPerformerLists(){
