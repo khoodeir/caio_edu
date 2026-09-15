@@ -323,6 +323,8 @@ button.submit:disabled{ opacity:0.5; cursor:not-allowed; box-shadow:none; }
 .gov-toggle-row label{ margin:0; text-transform:none; letter-spacing:0; font-weight:500; font-size:13.5px; color:var(--text); cursor:pointer; flex:1; }
 .gov-toggle-row.is-hidden label{ color:var(--muted); text-decoration:line-through; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="preconnect" href="https://evbjulsahncllewwvlxp.supabase.co">
 </head>
 <body>
 <div class="card">
@@ -534,6 +536,7 @@ const I18N = {
     chatSend: "Send",
     errGeneric: "Something went wrong while submitting. Please try again.",
     errRegistrationFailed: "Registration failed.",
+    errPhoneRegistered: "This phone number is already registered.",
     chatNoResponse: "No response",
     chatServerError: "Server Error"
   },
@@ -582,6 +585,7 @@ const I18N = {
     chatSend: "إرسال",
     errGeneric: "حصل خطأ أثناء الإرسال. حاول تاني.",
     errRegistrationFailed: "فشل التسجيل.",
+    errPhoneRegistered: "رقم الهاتف ده مسجل بالفعل.",
     chatNoResponse: "لا يوجد رد",
     chatServerError: "خطأ في السيرفر"
   }
@@ -957,9 +961,92 @@ populateGovernorateOptions(false);
 populateCityOptions(false);
 
 /* ============================================================
-   FORM VALIDATION + SUBMISSION (n8n integration)
+   FORM VALIDATION + SUBMISSION (direct Supabase — no n8n)
    ============================================================ */
-const WEBHOOK_URL = "https://students.milestones-tech.com/webhook/Student_Registration_للعرض";
+const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* Maps the form's (educationalStage, grade) pair to the matching
+   attendance + payment table pair, mirroring the old n8n Switch nodes. */
+const GRADE_TABLE_MAP = {
+  Preparatory: {
+    "First Prep":  { attendance: "حضور_أولى_إعدادي", payment: "دفع_أولى_إعدادي" },
+    "Second Prep": { attendance: "حضور_تانية_إعدادي", payment: "دفع_تانية_إعدادي" },
+    "Third Prep":  { attendance: "حضور_تالتة_إعدادي", payment: "دفع_تالتة_إعدادي" }
+  },
+  Secondary: {
+    "First Grade":  { attendance: "حضور_أولى_ثانوي", payment: "دفع_أولى_ثانوي" },
+    "Second Grade": { attendance: "حضور_تانية_ثانوي", payment: "دفع_تانية_ثانوي" },
+    "Third Grade":  { attendance: "حضور_تالتة_ثانوي", payment: "دفع_تالتة_ثانوي" }
+  }
+};
+
+const ALL_ATTENDANCE_TABLES = Object.values(GRADE_TABLE_MAP)
+  .flatMap(stage => Object.values(stage).map(g => g.attendance));
+
+/* Same dedupe check the old "Student Exists?" node did, but querying
+   Supabase directly across all six attendance tables. */
+async function isPhoneAlreadyRegistered(studentPhone){
+  const checks = await Promise.all(
+    ALL_ATTENDANCE_TABLES.map(tableId =>
+      supa.from(tableId).select("id", { count: "exact", head: true }).eq("student_phone", studentPhone)
+    )
+  );
+  return checks.some(r => !r.error && (r.count ?? 0) > 0);
+}
+
+function generateQrCode(){
+  const random = Math.floor(100000 + Math.random() * 900000);
+  return `ST${random}`;
+}
+
+function buildQrUrl(qrCode){
+  return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qrCode)}`;
+}
+
+/* Runs the same three writes the n8n flow did per grade: insert the
+   attendance row, stamp it with the generated QR, then log the payment row. */
+async function registerStudent(payload){
+  const tables = GRADE_TABLE_MAP[payload.educationalStage]?.[payload.grade];
+  if (!tables) throw new Error(t('errGeneric'));
+
+  const createdAt = new Date().toISOString().split('T')[0];
+
+  const { data: inserted, error: insertErr } = await supa
+    .from(tables.attendance)
+    .insert({
+      full_name: payload.fullName,
+      student_phone: payload.studentPhone,
+      parent_phone: payload.parentPhone,
+      created_at: createdAt,
+      city: payload.city,
+      group_name: payload.group
+    })
+    .select()
+    .single();
+  if (insertErr) throw insertErr;
+
+  const qr_code = generateQrCode();
+  const qrUrl = buildQrUrl(qr_code);
+
+  const { error: updateErr } = await supa
+    .from(tables.attendance)
+    .update({ qr_code, qr_url: qrUrl })
+    .eq('id', inserted.id);
+  if (updateErr) throw updateErr;
+
+  const { error: paymentErr } = await supa
+    .from(tables.payment)
+    .insert({
+      qr_code,
+      full_name: payload.fullName,
+      created_at: createdAt
+    });
+  if (paymentErr) throw paymentErr;
+
+  return { id: inserted.id, full_name: payload.fullName, qrUrl };
+}
 
 const phoneRegex = /^01[0-9]{9}$/; // 11 digits total, starts with 01
 
@@ -1083,47 +1170,24 @@ form.addEventListener('submit', async (e) => {
   submitBtn.textContent = t('submitting');
 
   try{
-    const res = await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok){
-      statusEl.textContent = await extractErrorMessage(res);
+    const alreadyRegistered = await isPhoneAlreadyRegistered(payload.studentPhone);
+    if (alreadyRegistered){
+      statusEl.textContent = t('errPhoneRegistered');
       statusEl.className = 'status failure';
       submitBtn.disabled = false;
       submitBtn.textContent = t('btnSubmit');
       return;
     }
 
-    let data;
-    try{
-      data = await res.json();
-    } catch(parseErr){
-      statusEl.textContent = t('errGeneric');
-      statusEl.className = 'status failure';
-      submitBtn.disabled = false;
-      submitBtn.textContent = t('btnSubmit');
-      return;
-    }
+    const result = await registerStudent(payload);
 
-    if (data.success === true){
-      showQr(data.qr);
-      form.style.display = 'none';
-      titleWrap.style.display = 'none';
-      subtitle.style.display = 'none';
-      successView.style.display = 'block';
-    } else {
-      statusEl.textContent = data.message || t('errRegistrationFailed');
-      statusEl.className = 'status failure';
-      submitBtn.disabled = false;
-      submitBtn.textContent = t('btnSubmit');
-    }
+    showQr(result.qrUrl);
+    form.style.display = 'none';
+    titleWrap.style.display = 'none';
+    subtitle.style.display = 'none';
+    successView.style.display = 'block';
   } catch(err){
+    console.error(err);
     statusEl.textContent = t('errGeneric');
     statusEl.className = 'status failure';
     submitBtn.disabled = false;
