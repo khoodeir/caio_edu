@@ -1892,7 +1892,11 @@
     }catch(error){
       console.error(error);
       sending = false;
-      setStatus(t('status_cant_connect'), "error", false);
+      // مؤقتًا: وريله رسالة الخطأ الحقيقية من Postgres/الشبكة بدل الرسالة
+      // العامة، عشان نعرف السبب الفعلي. رجّعها لـ t('status_cant_connect')
+      // بعد ما نحدد المشكلة.
+      const realMsg = (error && (error.message || error.details || error.hint)) || t('status_cant_connect');
+      setStatus(t('status_cant_connect') + " — " + realMsg, "error", false);
       document.getElementById("scanFrame").classList.add("locked");
       beep("error");
       armAutoResume(false);
