@@ -844,12 +844,6 @@
     return `rgba(167, 58, 46, ${alpha})`;
   }
 
-  const WEBHOOKS = {
-    attendance: "https://students.milestones-tech.com/webhook/scannerللعرض",
-    payment:    "https://students.milestones-tech.com/webhook/scannerللعرض",
-    session:    "https://students.milestones-tech.com/webhook/Attendance_Session_Managerللعرض"
-  };
-
   const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1547,22 +1541,12 @@
     document.getElementById("groupLockHint").classList.add("show");
     document.getElementById("groupLockOverlay").classList.add("show");
 
-    // grade_label/group_label always stay in English here — the scanner's
-    // display language never changes what n8n receives.
-    fetch(WEBHOOKS.session, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "session_start",
-        grade: currentGrade,
-        grade_label: GRADE_LABELS_EN[currentGrade],
-        group: currentGroup,
-        group_label: GROUP_LABELS_EN[currentGroup],
-        mode: currentMode,
-        started_by: currentUser?.email || 'unknown',
-        timestamp: new Date().toISOString()
-      })
-    }).catch(()=>{});
+    // Calls fn_session_start directly in Postgres (marks the whole group
+    // "Absent" as a baseline for this session) — no n8n involved.
+    supabaseClient.rpc('fn_session_start', {
+      p_grade: currentGrade,
+      p_group_raw: currentGroup
+    }).then(({ error }) => { if(error) console.error(error); }).catch(()=>{});
 
     resumeSessionSync();
   }
@@ -1603,19 +1587,12 @@
     sessionStorage.removeItem('dismissedSessionId');
 
     try{
-      await fetch(WEBHOOKS.session, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "session_end",
-          grade: endedGrade,
-          grade_label: GRADE_LABELS_EN[endedGrade],
-          group: endedGroup,
-          group_label: GROUP_LABELS_EN[endedGroup],
-          mode: endedMode,
-          ended_by: currentUser?.email || 'unknown',
-          timestamp: new Date().toISOString()
-        })
+      // Calls fn_session_end directly: whoever is still "Absent" in this
+      // group gets absence_count +1, and the group's last session date is
+      // recorded. No n8n involved.
+      await supabaseClient.rpc('fn_session_end', {
+        p_grade: endedGrade,
+        p_group_raw: endedGroup
       });
     }catch(e){}
 
@@ -1846,7 +1823,7 @@
     startScanner();
   }
 
-  function onScanSuccess(decodedText){
+  async function onScanSuccess(decodedText){
     if(sending) return;
     if(!canScan()){
       setStatus(t('status_no_active_session'), "error", false);
@@ -1876,57 +1853,50 @@
     sending = true;
     pauseScanner();
 
-    const webhookUrl = WEBHOOKS[currentMode];
     setLoadingStatus(currentMode === "payment" ? t('status_confirming_payment') : t('status_sending_attendance'));
 
-    // Payload sent to n8n uses fixed English keys/labels — unaffected by the UI language.
-    const payload = {
-      qr_code: decodedText,
-      mode: currentMode,
-      grade: currentGrade,
-      grade_label: GRADE_LABELS_EN[currentGrade],
-      group: currentGroup,
-      group_label: GROUP_LABELS_EN[currentGroup],
-      lang: currentLang
-    };
-    if(currentMode === "payment"){
-      payload.month = month;
-      payload.amount = amount;
-    }
+    // Calls the Postgres RPC functions directly (fn_scan_attendance /
+    // fn_scan_payment) — no n8n involved.
+    try{
+      const { data, error } = currentMode === "payment"
+        ? await supabaseClient.rpc('fn_scan_payment', {
+            p_grade: currentGrade,
+            p_qr: decodedText,
+            p_amount: Number(amount),
+            p_month: month
+          })
+        : await supabaseClient.rpc('fn_scan_attendance', {
+            p_grade: currentGrade,
+            p_qr: decodedText
+          });
 
-    fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    })
-    .then(async response => {
-      let data = {};
-      try{ data = await response.json(); }catch(e){}
       sending = false;
+      if(error) throw error;
 
-      if(data.success){
-        const s = data.student || {};
+      const result = data || {};
+      if(result.success){
+        const s = result.student || {};
+        if(!s.time) s.time = new Date().toLocaleTimeString();
         renderResultCard(currentMode, s, { month, amount }, true);
         pushHistory(s.name || s.full_name || "Student", s.time || "", true);
         beep("success");
       } else {
-        const msg = data.message || t('status_generic_error');
-        const alreadyRecorded = data.already_recorded || /already|مسجل|مدفوع/i.test(msg);
+        const msg = result.message || t('status_generic_error');
+        const alreadyRecorded = result.already_recorded || /already|مسجل|مدفوع/i.test(msg);
         setStatus((alreadyRecorded ? "🔴 " : "⚠️ ") + msg, alreadyRecorded ? "error" : "warning", false);
         document.getElementById("scanFrame").classList.add("locked");
         beep(alreadyRecorded ? "error" : "duplicate");
-        pushHistory(data.student?.name || "Unknown", new Date().toLocaleTimeString(), false);
+        pushHistory(result.student?.name || "Unknown", new Date().toLocaleTimeString(), false);
         armAutoResume(false);
       }
-    })
-    .catch(error => {
+    }catch(error){
       console.error(error);
       sending = false;
       setStatus(t('status_cant_connect'), "error", false);
       document.getElementById("scanFrame").classList.add("locked");
       beep("error");
       armAutoResume(false);
-    });
+    }
   }
 
   function onScanFailure(){}
