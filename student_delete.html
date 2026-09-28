@@ -143,6 +143,20 @@
     color:var(--muted); font-size:15px; pointer-events:none;
   }
 
+  /* ===== Cleanup button + list ===== */
+  .btn-cleanup{
+    padding:11px 16px; border-radius:10px; border:1px solid rgba(179,38,30,0.35);
+    background:var(--danger-soft); color:var(--danger-2); cursor:pointer;
+    font-family:'Cairo','Inter',sans-serif; font-size:13px; font-weight:700; white-space:nowrap;
+    transition:all .15s ease;
+  }
+  .btn-cleanup:hover{ background:var(--danger); color:#FFF; }
+  .cleanup-list{ max-height:220px; overflow:auto; border:1px solid var(--line); border-radius:10px; margin-bottom:16px; }
+  .cleanup-list:empty{ display:none; }
+  .cleanup-list div{ padding:8px 12px; font-size:12.5px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:8px; }
+  .cleanup-list div:last-child{ border-bottom:none; }
+  .cleanup-list small{ color:var(--muted); }
+
   .result-count{ font-size:12px; color:var(--muted); margin-bottom:12px; }
 
   .state-msg{
@@ -283,6 +297,7 @@
       <div class="search-box">
         <input type="text" id="searchInput" placeholder="ابحث بالاسم أو رقم الهاتف…" oninput="renderResults()">
       </div>
+      <button class="btn-cleanup" onclick="openCleanupModal()">🧹 حذف غير النشطين (شهر + حضور صفر)</button>
     </div>
 
     <div class="state-msg show" id="loadingMsg">
@@ -337,6 +352,23 @@
   </div>
 </div>
 
+<!-- Cleanup (inactive students) modal -->
+<div class="modal-overlay" id="cleanupOverlay" onclick="if(event.target===this) closeCleanupModal()">
+  <div class="modal-box">
+    <div class="modal-icon">🧹</div>
+    <div class="modal-title">حذف الطلاب غير النشطين</div>
+    <div class="modal-sub" id="cleanupSummary"></div>
+    <div class="cleanup-list" id="cleanupList"></div>
+    <label class="confirm-label">للتأكيد اكتب كلمة: <span style="color:var(--danger-2);">حذف</span></label>
+    <input type="text" class="confirm-input" id="cleanupConfirmInput" oninput="checkCleanupInput()" autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCleanupModal()">إلغاء</button>
+      <button class="btn-confirm-delete" id="cleanupConfirmBtn" disabled onclick="performCleanup()">حذف الكل نهائيًا</button>
+    </div>
+    <div class="modal-status" id="cleanupStatus"></div>
+  </div>
+</div>
+
 <div class="app-footer">Powered by <a href="https://web.facebook.com/caio.egypt" target="_blank" rel="noopener noreferrer">CAIO</a></div>
 
 <script>
@@ -369,7 +401,8 @@
       lastAttendance: "last_attendance_date",
       amountPaid: "amount_paid",
       paymentStatus: "payment_status",
-      lastPaymentDate: "last_payment_date"
+      lastPaymentDate: "last_payment_date",
+      createdAt: "created_at"   // تاريخ التسجيل — لازم يكون موجود في جداول الحضور
     }
   };
 
@@ -445,7 +478,9 @@
         studentPhone: a[col.studentPhone] ?? "",
         city: a[col.city] ?? "",
         groupName: a[col.groupName] ?? "",
-        paymentStatus: p[col.paymentStatus] ?? ""
+        paymentStatus: p[col.paymentStatus] ?? "",
+        createdAt: a[col.createdAt] ?? null,
+        attendanceCount: Number(a[col.attendanceCount] ?? 0)
       };
     });
   }
@@ -514,7 +549,30 @@
     }).join("");
   }
 
-  /* ---------- Delete flow ---------- */
+  /* ---------- Shared delete (scores → payments → attendance) ---------- */
+  async function deleteStudentData(qrCode, grade){
+    const col = SCHEMA.col;
+
+    const { error: scoresErr } = await supa
+      .from(SCORES_SCHEMA.table)
+      .delete()
+      .eq(SCORES_SCHEMA.col.studentCode, qrCode);
+    if(scoresErr) throw new Error(`(الامتحانات) ${scoresErr.message}`);
+
+    const { error: payErr } = await supa
+      .from(SCHEMA.paymentsTable(grade))
+      .delete()
+      .eq(col.qrCode, qrCode);
+    if(payErr) throw new Error(`(الدفع) ${payErr.message}`);
+
+    const { error: attErr } = await supa
+      .from(SCHEMA.attendanceTable(grade))
+      .delete()
+      .eq(col.qrCode, qrCode);
+    if(attErr) throw new Error(`(الحضور) ${attErr.message}`);
+  }
+
+  /* ---------- Single delete flow ---------- */
   function openDeleteModal(qrCode, grade, name){
     pendingDelete = { qrCode, grade, name };
     document.getElementById("deleteStudentName").textContent = name || "هذا الطالب";
@@ -548,25 +606,7 @@
     statusEl.innerHTML = `<span class="spinner"></span> جاري حذف بيانات الطالب…`;
 
     try{
-      const col = SCHEMA.col;
-
-      const { error: scoresErr } = await supa
-        .from(SCORES_SCHEMA.table)
-        .delete()
-        .eq(SCORES_SCHEMA.col.studentCode, qrCode);
-      if(scoresErr) throw new Error(`(الامتحانات) ${scoresErr.message}`);
-
-      const { error: payErr } = await supa
-        .from(SCHEMA.paymentsTable(grade))
-        .delete()
-        .eq(col.qrCode, qrCode);
-      if(payErr) throw new Error(`(الدفع) ${payErr.message}`);
-
-      const { error: attErr } = await supa
-        .from(SCHEMA.attendanceTable(grade))
-        .delete()
-        .eq(col.qrCode, qrCode);
-      if(attErr) throw new Error(`(الحضور) ${attErr.message}`);
+      await deleteStudentData(qrCode, grade);
 
       statusEl.className = "modal-status ok";
       statusEl.textContent = `تم حذف ${name} وكل بياناته بنجاح`;
@@ -580,6 +620,87 @@
       statusEl.className = "modal-status err";
       statusEl.textContent = "تعذر حذف الطالب: " + (err.message || err);
       confirmBtn.disabled = false;
+    }
+  }
+
+  /* ---------- Cleanup inactive students ---------- */
+  const CLEANUP_DAYS = 30;   // عدد الأيام — غيّره لو عايز مدة تانية
+  let pendingCleanup = [];
+
+  function escHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function openCleanupModal(){
+    const limit = Date.now() - CLEANUP_DAYS * 24 * 60 * 60 * 1000;
+    const noDate = students.filter(s => !s.createdAt).length;
+
+    // الشرط: حضور = 0 + مسجل من CLEANUP_DAYS يوم أو أكتر (اللي مالوش تاريخ بيتخطى)
+    // لو عايز تستثني اللي دافع ضيف:  && !isPaid(s.paymentStatus)
+    pendingCleanup = students.filter(s =>
+      s.attendanceCount === 0 &&
+      s.createdAt && new Date(s.createdAt).getTime() <= limit
+    );
+
+    const scope = currentGrade === "all" ? "كل الصفوف" : GRADE_LABELS[currentGrade];
+    document.getElementById("cleanupSummary").innerHTML = pendingCleanup.length
+      ? `تم العثور على <b>${pendingCleanup.length}</b> طالب في (${scope}) مسجلين من ${CLEANUP_DAYS} يوم أو أكتر وحضورهم صفر.
+         ${noDate ? `<br><small>(تم تخطي ${noDate} طالب بدون تاريخ تسجيل)</small>` : ""}`
+      : `مفيش طلاب مطابقين للشرط في (${scope}).
+         ${noDate ? `<br><small>(${noDate} طالب بدون تاريخ تسجيل)</small>` : ""}`;
+
+    document.getElementById("cleanupList").innerHTML = pendingCleanup.map(s =>
+      `<div><span>${escHtml(s.name)}</span><small>${GRADE_LABELS[s.grade]} · ${new Date(s.createdAt).toLocaleDateString("ar-EG")}</small></div>`
+    ).join("");
+
+    document.getElementById("cleanupConfirmInput").value = "";
+    document.getElementById("cleanupConfirmBtn").disabled = true;
+    document.getElementById("cleanupStatus").textContent = "";
+    document.getElementById("cleanupStatus").className = "modal-status";
+    document.getElementById("cleanupOverlay").classList.add("show");
+  }
+
+  function closeCleanupModal(){
+    document.getElementById("cleanupOverlay").classList.remove("show");
+    pendingCleanup = [];
+  }
+
+  function checkCleanupInput(){
+    const ok = document.getElementById("cleanupConfirmInput").value.trim() === "حذف" && pendingCleanup.length > 0;
+    document.getElementById("cleanupConfirmBtn").disabled = !ok;
+  }
+
+  async function performCleanup(){
+    const statusEl = document.getElementById("cleanupStatus");
+    const btn = document.getElementById("cleanupConfirmBtn");
+    const list = [...pendingCleanup];
+    btn.disabled = true;
+
+    let done = 0;
+    const failed = [];
+    for(const s of list){
+      statusEl.className = "modal-status";
+      statusEl.innerHTML = `<span class="spinner"></span> جاري الحذف… ${done}/${list.length}`;
+      try{
+        await deleteStudentData(s.qrCode, s.grade);
+        students = students.filter(x => !(x.qrCode === s.qrCode && x.grade === s.grade));
+        done++;
+      }catch(err){
+        console.error(err);
+        failed.push(`${s.name}: ${err.message || err}`);
+      }
+    }
+
+    renderResults();
+    if(failed.length){
+      statusEl.className = "modal-status err";
+      statusEl.textContent = `تم حذف ${done} وفشل ${failed.length}. أول خطأ: ${failed[0]}`;
+      pendingCleanup = list.filter(s => students.some(x => x.qrCode === s.qrCode && x.grade === s.grade));
+      document.getElementById("cleanupConfirmBtn").disabled = false;
+    }else{
+      statusEl.className = "modal-status ok";
+      statusEl.textContent = `تم حذف ${done} طالب بنجاح`;
+      setTimeout(closeCleanupModal, 1500);
     }
   }
 
