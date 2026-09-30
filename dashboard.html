@@ -676,6 +676,69 @@
     margin-bottom:22px;
   }
   .hist-toolbar .left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+  /* ===== Premium filter buttons (Group / City) ===== */
+  .fx-bar{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:22px; }
+  .fx{ position:relative; }
+  .fx-btn{
+    display:flex; align-items:center; gap:12px; min-width:250px; padding:8px 14px 8px 8px;
+    border-radius:16px; border:1px solid var(--line); cursor:pointer; color:var(--ink);
+    background:linear-gradient(180deg, var(--card) 0%, var(--paper) 100%);
+    box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.55);
+    font-family:inherit; text-align:start; transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  }
+  [dir="rtl"] .fx-btn{ padding:8px 8px 8px 14px; }
+  .fx-btn:hover{ border-color:var(--gold); box-shadow:var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.55); transform:translateY(-1px); }
+  .fx-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .fx.open .fx-btn, .fx-btn.filtered{
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--gold) 16%, transparent), var(--shadow-md);
+  }
+  .fx-ico{
+    width:40px; height:40px; border-radius:12px; flex-shrink:0; display:grid; place-items:center; color:#fff;
+    background:linear-gradient(145deg, var(--gold) 0%, var(--gold-2) 100%);
+    box-shadow:0 6px 14px color-mix(in srgb, var(--gold) 35%, transparent), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  [data-theme="dark"] .fx-ico{ color:#0B1220; background:linear-gradient(145deg, var(--gold-2) 0%, var(--gold) 100%); }
+  .fx-ico svg{ width:20px; height:20px; }
+  .fx-txt{ display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; }
+  .fx-label{ font-size:11px; color:var(--muted); font-weight:600; }
+  .fx-value{ font-size:14px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fx-count{
+    font-family:'Space Grotesk',sans-serif; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px;
+    color:var(--gold-2); background:color-mix(in srgb, var(--gold) 12%, transparent); flex-shrink:0;
+  }
+  .fx-chev{ width:16px; height:16px; color:var(--muted); flex-shrink:0; transition:transform .2s ease; }
+  .fx.open .fx-chev{ transform:rotate(180deg); color:var(--gold); }
+  .fx-menu{
+    position:absolute; top:calc(100% + 8px); inset-inline-start:0; min-width:100%; width:max-content; max-width:340px; max-height:320px; overflow:auto;
+    z-index:60; padding:6px; border-radius:16px; border:1px solid var(--line); background:var(--card);
+    box-shadow:var(--shadow-lg); opacity:0; visibility:hidden; transform:translateY(-6px) scale(.98); transform-origin:top;
+    transition:opacity .16s ease, transform .16s ease, visibility .16s;
+  }
+  .fx.open .fx-menu{ opacity:1; visibility:visible; transform:none; }
+  .fx-opt{
+    display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border:none; border-radius:11px; cursor:pointer;
+    background:transparent; color:var(--ink); font-family:inherit; font-size:13px; font-weight:600; text-align:start;
+  }
+  .fx-opt:hover, .fx-opt:focus-visible{ background:var(--gold-soft); outline:none; }
+  .fx-opt .nm{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fx-opt .ct{ font-family:'Space Grotesk',sans-serif; font-size:11.5px; color:var(--muted); font-weight:600; }
+  .fx-opt.zero{ opacity:.45; }
+  .fx-opt.sel{ background:linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 100%); color:#fff; }
+  [data-theme="dark"] .fx-opt.sel{ color:#0B1220; }
+  .fx-opt.sel .ct{ color:inherit; opacity:.85; }
+  .fx-opt .tick{ width:15px; height:15px; flex-shrink:0; visibility:hidden; }
+  .fx-opt.sel .tick{ visibility:visible; }
+  .fx-opt.all{ margin-bottom:4px; }
+  @media (max-width:640px){
+    .fx-bar{ flex-direction:column; }
+    .fx, .fx-btn{ width:100%; }
+    .fx-menu{ max-width:none; width:100%; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .fx-btn, .fx-menu, .fx-chev{ transition:none !important; }
+  }
   .hist-select{
     padding:10px 14px; border-radius:9px; border:1px solid var(--line); background:var(--card);
     color:var(--ink); font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; cursor:pointer; outline:none;
@@ -920,15 +983,9 @@
 
     <div class="content" id="dashContent">
 
-      <div class="hist-toolbar" id="groupFilterToolbar" style="margin-bottom:20px;">
-        <div class="left">
-          <span style="font-size:12.5px; font-weight:700; color:var(--gold-2); display:flex; align-items:center; gap:6px;">
-            🧩 <span data-i18n="colGroup">Group</span>:
-          </span>
-          <select class="hist-select" id="groupFilterSelect" onchange="onGroupFilterChange()">
-            <option value="all">All Groups</option>
-          </select>
-        </div>
+      <div class="fx-bar" id="groupFilterToolbar">
+        <div class="fx" id="fx-group"></div>
+        <div class="fx" id="fx-city"></div>
       </div>
 
       <div class="kpi-grid">
@@ -1533,6 +1590,7 @@
   let currentGrade = "all";
   let payFilterState = "all";
   let currentGroupFilter = "all";
+  let currentCityFilter = "all";
   let combined = { students: [], statsRows: [], examAverages: {}, examStudentAverages: [] };
   let charts = { attVsPerf: null, gradeRadar: null, attByCity: null, studentsByGroup: null, revenueByCity: null, collectionByGroup: null };
   let histCharts = { rate: null, rev: null, students: null };
@@ -1563,7 +1621,7 @@
       waBulkDoneTitle: "All done!", waBulkDoneSub: "You've gone through everyone on this list.",
       waBulkNoPhones: "No parent phone numbers on file for this list.",
       searchNamePhone: "Search by name or phone…",
-      filterAll: "All", filterPaid: "Paid", filterUnpaid: "Unpaid", filterAllGroups: "All Groups", exportExcel: "Export Excel",
+      filterAll: "All", filterPaid: "Paid", filterUnpaid: "Unpaid", filterAllGroups: "All Groups", filterAllCities: "All Cities", fxStudents: "students", exportExcel: "Export Excel",
       colName: "Name", colCity: "City", colGroup: "Group", colGrade: "Grade", colPresent: "Present", colAbsent: "Absent",
       colAttendanceRate: "Attendance Rate", colStudentPhone: "Student Phone", colParentPhone: "Parent Phone",
       colPayment: "Payment", colMonthsPaid: "Months Paid", colLastAttendance: "Last Attendance",
@@ -1648,7 +1706,7 @@
       waBulkDoneTitle: "تم الإرسال للجميع!", waBulkDoneSub: "لقد انتهيت من كل من في هذه القائمة.",
       waBulkNoPhones: "لا توجد أرقام هواتف لأولياء الأمور في هذه القائمة.",
       searchNamePhone: "ابحث بالاسم أو رقم الهاتف…",
-      filterAll: "الكل", filterPaid: "مدفوع", filterUnpaid: "غير مدفوع", filterAllGroups: "كل المجموعات", exportExcel: "تصدير إكسل",
+      filterAll: "الكل", filterPaid: "مدفوع", filterUnpaid: "غير مدفوع", filterAllGroups: "كل المجموعات", filterAllCities: "كل المدن", fxStudents: "طالب", exportExcel: "تصدير إكسل",
       colName: "الاسم", colCity: "المدينة", colGroup: "المجموعة", colGrade: "الصف", colPresent: "حضور", colAbsent: "غياب",
       colAttendanceRate: "نسبة الحضور", colStudentPhone: "هاتف الطالب", colParentPhone: "هاتف ولي الأمر",
       colPayment: "الدفع", colMonthsPaid: "الشهور المدفوعة", colLastAttendance: "آخر حضور",
@@ -1975,6 +2033,7 @@ function goBack(){
       tab.classList.add("active");
       currentGrade = tab.dataset.grade;
       currentGroupFilter = "all";
+      currentCityFilter = "all";
       document.getElementById("dashboardView").style.display = "";
       document.getElementById("historyView").style.display = "none";
       document.getElementById("examsView").style.display = "none";
@@ -2028,32 +2087,104 @@ function goBack(){
   }
 
   function getGroupFilteredStudents(list){
-    return currentGroupFilter === "all" ? list : list.filter(s => (s.groupName || "").trim() === currentGroupFilter);
+    return list.filter(s =>
+      (currentGroupFilter === "all" || (s.groupName || "").trim() === currentGroupFilter) &&
+      (currentCityFilter === "all" || (s.city || "").trim() === currentCityFilter)
+    );
+  }
+
+  /* ---------- Premium filter dropdowns (Group / City) ---------- */
+  const FX_ICONS = {
+    group: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.2 2.7-5.2 6-5.2s6 2 6 5.2"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 14.2c1.9.6 3 2.2 3 4.8"/></svg>',
+    city: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>'
+  };
+  const FX_CHEV = '<svg class="fx-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  const FX_TICK = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+  const FX = {
+    group: { field: "groupName", labelKey: "colGroup", allKey: "filterAllGroups", get: () => currentGroupFilter, set: v => { currentGroupFilter = v; }, other: s => currentCityFilter === "all" || (s.city || "").trim() === currentCityFilter },
+    city:  { field: "city",      labelKey: "colCity",  allKey: "filterAllCities", get: () => currentCityFilter,  set: v => { currentCityFilter = v; },  other: s => currentGroupFilter === "all" || (s.groupName || "").trim() === currentGroupFilter }
+  };
+  const fxEsc = v => String(v).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+  function renderFx(kind, students){
+    const cfg = FX[kind];
+    const root = document.getElementById("fx-" + kind);
+    if(!root) return;
+    const values = Array.from(new Set(students.map(s => (s[cfg.field] || "").trim()).filter(Boolean)))
+      .sort((a,b) => a.localeCompare(b, currentLang === "ar" ? "ar" : "en"));
+    if(cfg.get() !== "all" && !values.includes(cfg.get())) cfg.set("all");
+
+    const counts = {};
+    students.filter(cfg.other).forEach(s => { const v = (s[cfg.field] || "").trim(); if(v) counts[v] = (counts[v] || 0) + 1; });
+    const totalInScope = students.filter(cfg.other).length;
+    const cur = cfg.get();
+    const shownValue = cur === "all" ? t(cfg.allKey) : cur;
+    const shownCount = cur === "all" ? totalInScope : (counts[cur] || 0);
+
+    const opt = (val, name, count, extra) =>
+      `<button type="button" role="option" class="fx-opt${extra || ""}${val === cur ? " sel" : ""}${count === 0 ? " zero" : ""}" data-fx-kind="${kind}" data-fx-value="${fxEsc(val)}" aria-selected="${val === cur}">
+         ${FX_TICK}<span class="nm">${fxEsc(name)}</span><span class="ct num">${count}</span>
+       </button>`;
+
+    const wasOpen = root.classList.contains("open");
+    root.innerHTML = `
+      <button type="button" class="fx-btn${cur !== "all" ? " filtered" : ""}" aria-haspopup="listbox" aria-expanded="${wasOpen}" data-fx-toggle="${kind}">
+        <span class="fx-ico">${FX_ICONS[kind]}</span>
+        <span class="fx-txt"><span class="fx-label">${t(cfg.labelKey)}</span><span class="fx-value">${fxEsc(shownValue)}</span></span>
+        <span class="fx-count">${shownCount} ${t("fxStudents")}</span>
+        ${FX_CHEV}
+      </button>
+      <div class="fx-menu" role="listbox">
+        ${opt("all", t(cfg.allKey), totalInScope, " all")}
+        ${values.map(v => opt(v, v, counts[v] || 0, "")).join("")}
+      </div>`;
   }
 
   function populateGroupFilterOptions(students){
-    const select = document.getElementById("groupFilterSelect");
-    if(!select) return;
-    const groups = Array.from(new Set(students.map(s => (s.groupName || "").trim()).filter(Boolean)))
-      .sort((a,b) => a.localeCompare(b, currentLang === "ar" ? "ar" : "en"));
+    renderFx("group", students);
+    renderFx("city", students);
+  }
 
-    const previousValue = currentGroupFilter;
-    select.innerHTML = `<option value="all">${t('filterAllGroups')}</option>` +
-      groups.map(g => `<option value="${g.replace(/"/g, '&quot;')}">${g}</option>`).join("");
+  function closeAllFx(){
+    document.querySelectorAll(".fx.open").forEach(el => {
+      el.classList.remove("open");
+      const b = el.querySelector(".fx-btn"); if(b) b.setAttribute("aria-expanded", "false");
+    });
+  }
 
-    if(previousValue !== "all" && groups.includes(previousValue)){
-      select.value = previousValue;
-      currentGroupFilter = previousValue;
-    } else {
-      select.value = "all";
-      currentGroupFilter = "all";
+  document.addEventListener("click", e => {
+    const toggle = e.target.closest("[data-fx-toggle]");
+    const opt = e.target.closest(".fx-opt");
+    if(opt){
+      FX[opt.dataset.fxKind].set(opt.dataset.fxValue);
+      renderAll();
+      return;
     }
-  }
+    if(toggle){
+      const root = toggle.closest(".fx");
+      const willOpen = !root.classList.contains("open");
+      closeAllFx();
+      if(willOpen){ root.classList.add("open"); toggle.setAttribute("aria-expanded", "true"); }
+      return;
+    }
+    closeAllFx();
+  });
 
-  function onGroupFilterChange(){
-    currentGroupFilter = document.getElementById("groupFilterSelect").value;
-    renderAll();
-  }
+  document.addEventListener("keydown", e => {
+    const root = e.target.closest && e.target.closest(".fx");
+    if(e.key === "Escape"){
+      const open = document.querySelector(".fx.open");
+      if(open){ closeAllFx(); const b = open.querySelector(".fx-btn"); if(b) b.focus(); }
+      return;
+    }
+    if(!root || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+    e.preventDefault();
+    if(!root.classList.contains("open")){ root.classList.add("open"); root.querySelector(".fx-btn").setAttribute("aria-expanded", "true"); }
+    const items = Array.from(root.querySelectorAll(".fx-opt"));
+    const i = items.indexOf(document.activeElement);
+    const next = e.key === "ArrowDown" ? (i + 1) % items.length : (i <= 0 ? items.length - 1 : i - 1);
+    items[next].focus();
+  });
 
   function wireTopScrollbar(topId, innerId, wrapId){
     const top = document.getElementById(topId);
