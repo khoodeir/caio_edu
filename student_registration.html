@@ -489,6 +489,7 @@ button.submit:disabled{ opacity:0.5; cursor:not-allowed; box-shadow:none; }
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 /* ============================================================
    LANGUAGE (English / Arabic) — UI text only.
@@ -1021,18 +1022,30 @@ function loadImage(src, cors){
   });
 }
 
-/* High error-correction QR (ecc=H) so the logo can cover the center and it still scans */
+/* QR is generated locally (no external image / CORS dependency), error correction H so the logo can cover the center */
 async function buildQrWithLogo(qrCode){
-  const hiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&ecc=H&margin=10&data=${encodeURIComponent(qrCode)}`;
-  const [qrImg, logoImg] = await Promise.all([loadImage(hiUrl, true), loadImage(QR_LOGO_SRC, false)]);
+  if (typeof qrcode !== 'function') throw new Error('qrcode library not loaded');
+  const logoImg = await loadImage(QR_LOGO_SRC, false);
 
-  const size = 500;
+  const qr = qrcode(0, 'H');
+  qr.addData(qrCode);
+  qr.make();
+  const count = qr.getModuleCount();
+  const quiet = 4;
+  const cell = Math.ceil(500 / (count + quiet * 2));
+  const size = cell * (count + quiet * 2);
+
   const canvas = document.createElement('canvas');
   canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, size, size);
-  ctx.drawImage(qrImg, 0, 0, size, size);
+  ctx.fillStyle = '#000000';
+  for (let r = 0; r < count; r++){
+    for (let c = 0; c < count; c++){
+      if (qr.isDark(r, c)) ctx.fillRect((c + quiet) * cell, (r + quiet) * cell, cell, cell);
+    }
+  }
 
   const logoSize = size * 0.22;
   const cx = size / 2, cy = size / 2;
