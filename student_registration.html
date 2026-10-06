@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Registration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&family=Cairo:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Light Premium — Off White / Beige / Petrol / Wood palette */
+  --bg-0:#F5F9FF; --bg-1:#DCE8FB; --bg-2:#CFE4FB;
+  --card:rgba(255,255,255,0.85); --card-border:rgba(40,86,90,0.18);
+  --gold:#1565C0; --gold-light:#3B82F6; --gold-deep:#0D47A1; --bronze:#2E8BF0;
+  --text:#10151D; --muted:#4B5A70; --border:rgba(40,86,90,0.16);
+  --error:#B5555A; --success:#5B8C6E; --radius:14px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; min-height:100vh;
+  background: linear-gradient(165deg, var(--bg-0) 0%, var(--bg-1) 55%, var(--bg-2) 100%);
+  font-family:'Inter', 'Segoe UI', Arial, sans-serif;
+  display:flex; align-items:center; justify-content:center; padding:48px 16px; color:var(--text);
+  transition: background .2s ease;
+}
+[dir="rtl"] body{ font-family:'Cairo','Inter',sans-serif; }
+[dir="rtl"] h1,
+[dir="rtl"] #successView h2{ font-family:'Cairo','Cormorant Garamond',serif; }
+[dir="rtl"] label{ direction:rtl; }
+
+.card{
+  position:relative; width:100%; max-width:540px;
+  background:var(--card);
+  -webkit-backdrop-filter: blur(16px) saturate(110%);
+  backdrop-filter: blur(16px) saturate(110%);
+  border-radius:20px; padding:38px 38px 34px;
+  box-shadow:0 18px 40px rgba(48,47,44,0.14);
+  border:1px solid var(--card-border);
+  animation:cardIn .5s ease both;
+}
+@keyframes cardIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+@media (prefers-reduced-motion: reduce){ .card{ animation:none; } }
+
+/* ===== Language toggle ===== */
+.lang-toggle{
+  position:absolute; top:18px; right:18px; display:flex; gap:3px;
+  background:rgba(40,86,90,0.07); border:1px solid var(--border);
+  border-radius:999px; padding:4px; z-index:5;
+}
+[dir="rtl"] .lang-toggle{ right:auto; left:18px; }
+.lang-toggle button{
+  border:none; background:transparent; padding:6px 13px; border-radius:999px;
+  font-family:inherit; font-size:11.5px; font-weight:700; color:var(--muted);
+  cursor:pointer; letter-spacing:.3px; transition:all .15s ease;
+}
+.lang-toggle button:hover{ color:var(--gold-light); }
+.lang-toggle button.active{ background:var(--gold-deep); color:#FFFFFF; }
+
+.title-wrap{
+  text-align:center;
+  margin-bottom:24px;
+}
+
+.crest{
+  width:175px;
+  margin:0 auto 10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.crest img{
+  width:100%;
+  height:auto;
+  display:block;
+}
+
+h1{
+  font-family:'Cormorant Garamond', 'Poppins', serif;
+  font-weight:600;
+  font-size:27px;
+  letter-spacing:0.2px;
+  margin:0 0 8px;
+  color:var(--gold-light);
+}
+
+.divider{
+  width:42px;
+  height:1px;
+  margin:0 auto 12px;
+  border:none;
+  background:var(--border);
+}
+
+.teacher-name{
+  text-align:center;
+  font-size:15px;
+  font-weight:700;
+  color:var(--gold-deep);
+  letter-spacing:0.1px;
+  margin:0 0 8px;
+}
+
+.teacher-tagline{
+  text-align:center;
+  font-size:12.5px;
+  font-weight:500;
+  font-style:italic;
+  color:var(--bronze);
+  margin:0 0 18px;
+}
+
+.subtitle{
+  text-align:center;
+  color:var(--muted);
+  font-size:13.5px;
+  line-height:1.6;
+  margin:0 auto 26px;
+  padding:0 10px;
+  max-width:460px;
+}
+label{ display:flex; align-items:center; gap:4px; font-weight:600; font-size:13px; margin-bottom:9px; color:var(--gold-light); text-transform:uppercase; letter-spacing:0.6px; }
+label .req{ color:var(--error); text-transform:none; }
+label .note{ color:var(--muted); font-size:10.5px; font-weight:500; text-transform:none; letter-spacing:0.2px; }
+.field{ margin-bottom:22px; }
+
+input[type="text"], input[type="tel"], select{
+  width:100%; padding:13px 15px; border:1.5px solid var(--border); border-radius:10px;
+  font-family:inherit; font-size:15px; color:var(--text); background:rgba(255,255,255,0.6); outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  appearance:none; -webkit-appearance:none;
+}
+input::placeholder{ color:#4B5A70; }
+select{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'><path d='M1 1l6 6 6-6' stroke='%2328565A' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat; background-position:right 16px center; padding-right:40px; cursor:pointer;
+}
+[dir="rtl"] select{
+  background-position:left 16px center; padding-right:15px; padding-left:40px;
+}
+select:invalid{ color:#4B5A70; }
+select option{ color:var(--text); background:#F5F9FF; }
+select option:checked, select option:hover{ background:var(--gold-deep); color:#FFFFFF; }
+.group-time{ font-size:10.5px; color:rgba(40,86,90,0.38); font-weight:400; letter-spacing:0; text-transform:none; margin-left:8px; }
+[dir="rtl"] .group-time{ margin-left:0; margin-right:8px; }
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--text);
+  caret-color:var(--text);
+  transition:background-color 9999s ease-in-out 0s;
+  box-shadow:0 0 0 1000px rgba(255,255,255,0.55) inset;
+}
+input:hover, select:hover{ border-color:rgba(40,86,90,0.36); }
+input:focus, select:focus{ border-color:var(--gold); background:rgba(255,255,255,0.85); box-shadow:0 0 0 3px rgba(40,86,90,0.14); }
+input.invalid{ border-color:var(--error); }
+input.invalid:focus{ box-shadow:0 0 0 3px rgba(181,85,90,0.16); }
+
+.hint{ font-size:12.5px; color:var(--muted); margin-top:7px; }
+.error-msg{ font-size:12.5px; color:var(--error); margin-top:7px; display:none; font-weight:500; }
+.field.has-error .error-msg{ display:block; }
+.field.has-error .hint{ display:none; }
+
+button.submit{
+  width:100%; padding:14px; margin-top:10px;
+  background: linear-gradient(135deg, var(--gold-deep) 0%, var(--gold) 100%);
+  color:#FFFFFF; border:none;
+  border-radius:10px; font-family:inherit; font-size:15.5px; font-weight:700; cursor:pointer;
+  letter-spacing:0.2px; box-shadow:0 6px 16px rgba(48,47,44,0.22);
+  transition:filter .15s ease, box-shadow .15s ease;
+}
+button.submit:hover{ filter:brightness(1.06); box-shadow:0 8px 20px rgba(48,47,44,0.28); }
+button.submit:active{ filter:brightness(0.96); }
+button.submit:disabled{ opacity:0.5; cursor:not-allowed; box-shadow:none; }
+
+.status{
+  margin-top:18px; text-align:center; font-size:14px; font-weight:500; padding:12px 14px;
+  border-radius:10px; display:none;
+}
+.status.success{ color:var(--success); background:rgba(91,140,110,0.1); border:1px solid rgba(91,140,110,0.28); display:block; }
+.status.failure{ color:var(--error); background:rgba(181,85,90,0.08); border:1px solid rgba(181,85,90,0.28); display:block; }
+
+@media (max-width:480px){ .card{ padding:34px 22px 28px; } h1{ font-size:25px; } .lang-toggle{ top:12px; right:12px; } [dir="rtl"] .lang-toggle{ left:12px; } }
+
+#successView{ display:none; text-align:center; }
+.icon-circle{
+  width:72px; height:72px; margin:4px auto 24px; border-radius:50%;
+  background:var(--success);
+  opacity:0.9;
+  display:flex; align-items:center; justify-content:center;
+  animation:popIn .4s ease .1s both;
+}
+@keyframes popIn{ from{ opacity:0; transform:scale(0.85); } to{ opacity:0.9; transform:scale(1); } }
+#successView h2{ font-family:'Cormorant Garamond', 'Poppins', serif; font-size:25px; font-weight:700; margin:0 0 12px; color:var(--gold-light); }
+#successView p{ font-size:15px; line-height:1.75; color:var(--muted); margin:0; }
+.qr-wrap{
+  display:none;
+  margin:22px auto 6px;
+  padding:18px;
+  background:#FFFFFF;
+  border:1px solid var(--border);
+  border-radius:14px;
+  width:fit-content;
+  box-shadow:0 8px 18px rgba(48,47,44,0.1);
+}
+.qr-wrap img{
+  display:block;
+  width:190px;
+  height:190px;
+  object-fit:contain;
+  margin:0 auto;
+}
+.qr-caption{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:10px;
+  text-align:center;
+}
+.qr-actions{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  margin-top:14px;
+}
+.qr-download, .qr-print{
+  font-size:13px;
+  font-weight:600;
+  color:var(--gold-light);
+  text-decoration:none;
+  border-bottom:1px solid var(--gold-light);
+  padding-bottom:1px;
+  background:none;
+  border-top:none; border-left:none; border-right:none;
+  font-family:inherit;
+  cursor:pointer;
+}
+@media print{
+  body *{ visibility:hidden; }
+  .qr-wrap, .qr-wrap *{ visibility:visible; }
+  .qr-actions{ display:none !important; }
+  .qr-wrap{
+    position:absolute; top:0; left:0; margin:0;
+    box-shadow:none; border:none; width:100%;
+  }
+}
+
+.powered-by{
+  margin-top:32px; text-align:center; font-size:11.5px; letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--bronze);
+}
+.powered-by span{ color:var(--gold); font-weight:600; }
+
+/* ===== Admin panel ===== */
+#adminOverlay{ display:none; width:100%; max-width:640px; }
+.admin-card{
+  background:var(--card); -webkit-backdrop-filter: blur(16px) saturate(110%); backdrop-filter: blur(16px) saturate(110%);
+  border-radius:20px; padding:32px; box-shadow:0 18px 40px rgba(48,47,44,0.14); border:1px solid var(--card-border);
+}
+.admin-gate{ max-width:360px; margin:0 auto; text-align:center; }
+.admin-gate h2{ font-family:'Cormorant Garamond','Poppins',serif; color:var(--gold-light); font-size:23px; margin:0 0 18px; }
+.admin-gate input{ width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:10px; font-family:inherit; font-size:15px; background:rgba(255,255,255,0.6); outline:none; text-align:center; letter-spacing:2px; }
+.admin-gate input:focus{ border-color:var(--gold); box-shadow:0 0 0 3px rgba(40,86,90,0.14); }
+.admin-gate .error-msg{ display:block; margin-top:10px; }
+.admin-gate button{ margin-top:14px; }
+.admin-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:10px; }
+.admin-top h2{ font-family:'Cormorant Garamond','Poppins',serif; color:var(--gold-light); font-size:22px; margin:0; }
+.admin-link, .btn-mini{
+  font-size:12.5px; font-weight:700; color:var(--gold-light); text-decoration:none; cursor:pointer;
+  background:rgba(40,86,90,0.08); border:1px solid var(--border); border-radius:999px; padding:7px 14px;
+  font-family:inherit;
+}
+.admin-link:hover, .btn-mini:hover{ background:rgba(40,86,90,0.14); }
+.stage-block{ border:1.5px solid var(--border); border-radius:14px; padding:16px 16px 18px; margin-bottom:16px; background:rgba(255,255,255,0.4); }
+.stage-block-head{ display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.stage-block-head input{ flex:1; min-width:160px; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:14.5px; font-weight:700; color:var(--gold-deep); background:rgba(255,255,255,0.7); }
+.grade-block{ border:1px dashed var(--border); border-radius:10px; padding:12px; margin:10px 0; background:rgba(255,255,255,0.5); }
+.grade-block-head{ display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.grade-block-head input{ flex:1; min-width:140px; padding:9px 11px; border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:13.5px; font-weight:600; background:rgba(255,255,255,0.75); }
+.group-row{ display:flex; align-items:center; gap:6px; margin-bottom:7px; flex-wrap:wrap; }
+.group-row input{ padding:8px 10px; border:1.5px solid var(--border); border-radius:7px; font-family:inherit; font-size:13px; background:rgba(255,255,255,0.85); }
+.group-row input.g-dayar{ width:130px; }
+.group-row input.g-time{ width:80px; }
+.field-tag{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-right:2px; }
+[dir="rtl"] .field-tag{ margin-right:0; margin-left:2px; }
+.btn-x{
+  border:none; background:rgba(181,85,90,0.12); color:var(--error); width:24px; height:24px; border-radius:50%;
+  cursor:pointer; font-size:13px; line-height:1; font-weight:700; flex-shrink:0;
+}
+.btn-x:hover{ background:rgba(181,85,90,0.22); }
+.btn-add-inline{
+  border:1px dashed var(--gold-light); background:transparent; color:var(--gold-light); font-weight:700;
+  font-size:12px; border-radius:8px; padding:6px 11px; cursor:pointer; font-family:inherit; margin-top:2px;
+}
+.btn-add-inline:hover{ background:rgba(40,86,90,0.08); }
+.admin-actions{ display:flex; gap:10px; margin-top:22px; flex-wrap:wrap; }
+.admin-actions button{ flex:1; min-width:140px; }
+.btn-secondary{
+  background:transparent; color:var(--gold-light); border:1.5px solid var(--gold-light);
+  padding:12px; border-radius:10px; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;
+}
+.btn-secondary:hover{ background:rgba(40,86,90,0.06); }
+.pw-change{ margin-top:26px; padding-top:18px; border-top:1px solid var(--border); }
+.pw-change h3{ font-size:13.5px; color:var(--gold-deep); margin:0 0 10px; }
+.pw-change-row{ display:flex; gap:8px; flex-wrap:wrap; }
+.pw-change-row input{ flex:1; min-width:130px; padding:9px 11px; border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px; background:rgba(255,255,255,0.7); }
+.admin-status{ margin-top:14px; text-align:center; font-size:13px; font-weight:600; padding:10px; border-radius:8px; display:none; }
+.admin-status.show-success{ display:block; color:var(--success); background:rgba(91,140,110,0.1); border:1px solid rgba(91,140,110,0.28); }
+.admin-status.show-error{ display:block; color:var(--error); background:rgba(181,85,90,0.08); border:1px solid rgba(181,85,90,0.28); }
+.admin-section-title{ font-family:'Cormorant Garamond','Poppins',serif; color:var(--gold-light); font-size:19px; font-weight:700; margin:26px 0 14px; padding-top:18px; border-top:1px solid var(--border); }
+.city-row{ display:flex; align-items:center; gap:6px; margin-bottom:7px; flex-wrap:wrap; }
+.city-row input{ flex:1; min-width:140px; padding:8px 10px; border:1.5px solid var(--border); border-radius:7px; font-family:inherit; font-size:13px; background:rgba(255,255,255,0.85); }
+
+/* Governorate visibility checklist */
+.gov-visibility-box{ border:1.5px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:16px; background:rgba(255,255,255,0.4); max-height:260px; overflow-y:auto; }
+.gov-visibility-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+.gov-visibility-head span{ font-size:13px; font-weight:700; color:var(--gold-deep); }
+.gov-visibility-quick{ display:flex; gap:6px; }
+.gov-toggle-row{ display:flex; align-items:center; gap:9px; padding:6px 2px; border-bottom:1px dashed var(--border); }
+.gov-toggle-row:last-child{ border-bottom:none; }
+.gov-toggle-row input[type="checkbox"]{ width:17px; height:17px; accent-color:var(--gold); cursor:pointer; flex-shrink:0; }
+.gov-toggle-row label{ margin:0; text-transform:none; letter-spacing:0; font-weight:500; font-size:13.5px; color:var(--text); cursor:pointer; flex:1; }
+.gov-toggle-row.is-hidden label{ color:var(--muted); text-decoration:line-through; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="preconnect" href="https://evbjulsahncllewwvlxp.supabase.co">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0f1116">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CAIO EDU">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+</head>
+<body>
+<div class="card">
+  <div class="lang-toggle" id="langToggle">
+    <button type="button" data-lang="en" class="active">EN</button>
+    <button type="button" data-lang="ar">AR</button>
+  </div>
+
+  <div class="title-wrap">
+    <div class="crest">
+<img src="logo.png" alt="logo">    </div>
+    <h1 data-i18n="title">Student Registration</h1>
+    <hr class="divider">
+  </div>
+  <p class="subtitle" data-i18n="subtitle">Fill out the form to register. A QR code will appear after submission — keep it, you'll need it to attend.</p>
+
+  <form id="regForm" novalidate>
+    <div class="field" id="fullNameField">
+      <label for="fullName" data-i18n="labelFullName">Full Name</label>
+      <input type="text" id="fullName" name="fullName" data-i18n-ph="phFullName" placeholder="Enter student's full name" required>
+      <div class="hint" data-i18n="hintName">Letters only, no numbers or symbols</div>
+      <div class="error-msg" data-i18n="errName">Full name must contain letters only</div>
+    </div>
+
+    <div class="field" id="studentPhoneField">
+      <label for="studentPhone"><span data-i18n="labelStudentPhone">Student Phone</span></label>
+      <input type="tel" id="studentPhone" name="studentPhone" inputmode="numeric" maxlength="11" data-i18n-ph="phPhone" placeholder="01xxxxxxxxx" required>
+      <div class="hint" data-i18n="hintPhone">11 digits, starting with 01 (e.g. 01012345678)</div>
+      <div class="error-msg" data-i18n="errPhone">Enter a valid 11-digit number starting with 01</div>
+    </div>
+
+    <div class="field" id="parentPhoneField">
+      <label for="parentPhone" data-i18n="labelParentPhone">Parent Phone</label>
+      <input type="tel" id="parentPhone" name="parentPhone" inputmode="numeric" maxlength="11" data-i18n-ph="phPhone" placeholder="01xxxxxxxxx" required>
+      <div class="hint" data-i18n="hintPhone">11 digits, starting with 01 (e.g. 01012345678)</div>
+      <div class="error-msg" data-i18n="errPhone">Enter a valid 11-digit number starting with 01</div>
+    </div>
+
+    <div class="field" id="governorateField">
+      <label for="governorate" data-i18n="labelGovernorate">Governorate</label>
+      <select id="governorate" name="governorate" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+      </select>
+    </div>
+
+    <div class="field" id="cityField">
+      <label for="city" data-i18n="labelCity">City</label>
+      <select id="city" name="city" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="stage" data-i18n="labelStage">Educational Stage</label>
+      <select id="stage" name="stage" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+        <option value="Preparatory" data-i18n="stagePreparatory">Preparatory</option>
+        <option value="Secondary" data-i18n="stageSecondary">Secondary</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="grade" data-i18n="labelGrade">Grade</label>
+      <select id="grade" name="grade" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="group" data-i18n="labelGroup">Group</label>
+      <select id="group" name="group" required>
+        <option value="" disabled selected data-i18n="selectPlaceholder">Select an option ...</option>
+      </select>
+    </div>
+
+    <button type="submit" class="submit" id="submitBtn" data-i18n="btnSubmit">Submit</button>
+    <div class="status" id="status"></div>
+  </form>
+
+  <div id="successView">
+    <div class="icon-circle">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 13l4 4L19 7" stroke="#0D47A1" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2 data-i18n="successTitle">Registration Submitted!</h2>
+    <p data-i18n="successText">Thanks for registering. Here is your QR code.</p>
+
+    <div class="qr-wrap" id="qrWrap">
+      <img id="qrImage" src="" alt="QR Code">
+      <div class="qr-caption" data-i18n="qrCaption">Keep this QR code — you'll need it to attend</div>
+      <div class="qr-actions">
+        <a href="#" download="student-qr.png" class="qr-download" id="qrDownload" data-i18n="qrDownload">Download QR</a>
+        <button type="button" class="qr-print" id="qrPrint" data-i18n="qrPrint">Print</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="powered-by"><span data-i18n="poweredBy">Powered by</span> <span><a href="https://web.facebook.com/caio.egypt" target="_blank" rel="noopener noreferrer" style="color:inherit;">CAIO</a></span></div>
+</div>
+
+<div id="adminOverlay">
+  <div class="admin-card">
+
+    <div id="adminGate" class="admin-gate">
+      <h2>لوحة التحكم</h2>
+      <input type="password" id="adminPasswordInput" name="adminPassField_noauto" placeholder="ادخل الباسورد" autocomplete="new-password">
+      <div class="error-msg" id="adminGateError">باسورد غلط، حاول تاني</div>
+      <button type="button" class="submit" id="adminGateBtn" style="margin-top:14px;">دخول</button>
+      <div style="margin-top:16px;"><a href="#" class="admin-link" id="adminBackFromGate">رجوع للصفحة الرئيسية</a></div>
+    </div>
+
+    <div id="adminPanel" style="display:none;">
+      <div class="admin-top">
+        <h2>تعديل السنين الدراسية والمجاميع</h2>
+        <a href="#" class="admin-link" id="adminBackTop">رجوع للتسجيل</a>
+      </div>
+
+      <div id="stagesContainer"></div>
+
+      <button type="button" class="btn-add-inline" id="addStageBtn">+ إضافة مرحلة دراسية</button>
+
+      <div class="admin-section-title">المحافظات والمدن</div>
+
+      <div class="gov-visibility-box">
+        <div class="gov-visibility-head">
+          <span>المحافظات اللي هتظهر في نموذج التسجيل</span>
+          <div class="gov-visibility-quick">
+            <button type="button" class="btn-mini" id="govShowAllBtn">إظهار الكل</button>
+            <button type="button" class="btn-mini" id="govHideAllBtn">إخفاء الكل</button>
+          </div>
+        </div>
+        <div id="govVisibilityList"></div>
+      </div>
+
+      <div class="field" style="margin-bottom:14px;">
+        <select id="adminGovSelect" style="width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:9px; font-family:inherit; font-size:14.5px; font-weight:600; color:var(--gold-deep); background:rgba(255,255,255,0.75); cursor:pointer;"></select>
+      </div>
+
+      <div id="govsContainer"></div>
+
+      <button type="button" class="btn-add-inline" id="addGovBtn">+ إضافة محافظة جديدة</button>
+
+      <div class="admin-actions">
+        <button type="button" class="submit" id="saveDataBtn">حفظ التعديلات</button>
+        <button type="button" class="btn-secondary" id="resetDataBtn">استرجاع الإعدادات الافتراضية</button>
+      </div>
+      <div class="admin-status" id="adminStatus"></div>
+
+      <div class="pw-change">
+        <h3>تغيير الباسورد</h3>
+        <div class="pw-change-row">
+          <input type="password" id="newPasswordInput" placeholder="باسورد جديد" autocomplete="off">
+          <button type="button" class="btn-mini" id="changePasswordBtn">تحديث الباسورد</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+/* ============================================================
+   LANGUAGE (English / Arabic) — UI text only.
+   ============================================================ */
+const I18N = {
+  en: {
+    title: "Student Registration",
+    subtitle: "Fill out the form to register. A QR code will appear after submission — keep it, you'll need it to attend.",
+    labelFullName: "Full Name",
+    phFullName: "Enter student's full name",
+    hintName: "Letters only, no numbers or symbols",
+    errName: "Full name must contain letters only",
+    labelStudentPhone: "Student Phone",
+    phPhone: "01xxxxxxxxx",
+    hintPhone: "11 digits, starting with 01 (e.g. 01012345678)",
+    errPhone: "Enter a valid 11-digit number starting with 01",
+    labelParentPhone: "Parent Phone",
+    labelGovernorate: "Governorate",
+    labelCity: "City",
+    labelStage: "Educational Stage",
+    labelGrade: "Grade",
+    labelGroup: "Group",
+    groupA: "A",
+    groupB: "B",
+    groupC: "C",
+    groupATime: "5:00",
+    groupBTime: "7:00",
+    groupCTime: "9:00",
+    selectPlaceholder: "Select an option ...",
+    stagePreparatory: "Preparatory",
+    stageSecondary: "Secondary",
+    gradeFirst: "First Grade",
+    gradeSecond: "Second Grade",
+    gradeThird: "Third Grade",
+    gradeThirdPrep: "Third Grade",
+    gradeFirstPrep: "First Grade",
+    gradeSecondPrep: "Second Grade",
+    btnSubmit: "Submit",
+    submitting: "Submitting...",
+    successTitle: "Registration Submitted!",
+    successText: "Thanks for registering. Here is your QR code.",
+    qrCaption: "Keep this QR code — you'll need it to attend",
+    qrDownload: "Download QR",
+    qrPrint: "Print",
+    poweredBy: "Powered by",
+    chatAssistant: "Teacher's assistant",
+    chatPlaceholder: "Ask about your schedule...",
+    chatSend: "Send",
+    errGeneric: "Something went wrong while submitting. Please try again.",
+    errRegistrationFailed: "Registration failed.",
+    errPhoneRegistered: "This phone number is already registered.",
+    chatNoResponse: "No response",
+    chatServerError: "Server Error"
+  },
+  ar: {
+    title: "تسجيل الطلاب",
+    subtitle: "املأ النموذج للتسجيل. هيظهرلك كود QR بعد التسجيل، لازم تحتفظ بيه عشان تحضر.",
+    labelFullName: "الاسم بالكامل",
+    phFullName: "اكتب اسمك بالكامل",
+    hintName: "حروف فقط، من غير أرقام أو رموز",
+    errName: "الاسم لازم يكون حروف فقط",
+    labelStudentPhone: "رقم هاتف الطالب",
+    phPhone: "01xxxxxxxxx",
+    hintPhone: "11 رقم، تبدأ بـ 01 (مثال: 01012345678)",
+    errPhone: "اكتب رقم صحيح مكوّن من 11 رقم يبدأ بـ 01",
+    labelParentPhone: "رقم هاتف ولي الأمر",
+    labelGovernorate: "المحافظة",
+    labelCity: "المدينة",
+    labelStage: "المرحلة الدراسية",
+    labelGrade: "الصف",
+    labelGroup: "المجموعة",
+    groupA: "A",
+    groupB: "B",
+    groupC: "C",
+    groupATime: "5:00",
+    groupBTime: "7:00",
+    groupCTime: "9:00",
+    selectPlaceholder: "اختر ...",
+    stagePreparatory: "المرحلة الإعدادية",
+    stageSecondary: "المرحلة الثانوية",
+    gradeFirst: "الصف الأول الثانوي",
+    gradeSecond: "الصف الثاني الثانوي",
+    gradeThird: "الصف الثالث الثانوي",
+    gradeThirdPrep: "الصف الثالث الإعدادي",
+    gradeFirstPrep: "الصف الأول الإعدادي",
+    gradeSecondPrep: "الصف الثاني الإعدادي",
+    btnSubmit: "تسجيل",
+    submitting: "جاري الإرسال...",
+    successTitle: "تم التسجيل بنجاح!",
+    successText: "شكرًا لتسجيلك. ده كود الـ QR بتاعك.",
+    qrCaption: "احتفظ بكود الـ QR ده، هتحتاجه عشان تحضر",
+    qrDownload: "تحميل الـ QR",
+    qrPrint: "طباعة",
+    poweredBy: "بدعم من",
+    chatAssistant: "مساعد المدرس",
+    chatPlaceholder: "اسأل عن جدولك...",
+    chatSend: "إرسال",
+    errGeneric: "حصل خطأ أثناء الإرسال. حاول تاني.",
+    errRegistrationFailed: "فشل التسجيل.",
+    errPhoneRegistered: "رقم الهاتف ده مسجل بالفعل.",
+    chatNoResponse: "لا يوجد رد",
+    chatServerError: "خطأ في السيرفر"
+  }
+};
+
+let currentLang = localStorage.getItem("regLang") || "en";
+
+function t(key){
+  return (I18N[currentLang] && I18N[currentLang][key] != null) ? I18N[currentLang][key] : (I18N.en[key] || key);
+}
+
+/* ============================================================
+   DATA MODEL — stages -> grades -> groups
+   Editable from the /#admin panel; persisted in localStorage.
+   Falls back to these defaults the first time the page loads.
+   ============================================================ */
+const DEFAULT_REG_DATA = {
+  stages: [
+    {
+      key: "Preparatory", labelEn: "Preparatory", labelAr: "المرحلة الإعدادية",
+      grades: [
+        { value: "First Prep", labelEn: "First Grade", labelAr: "الصف الأول الإعدادي",
+          groups: [ { value: "prep1-sattue-3", dayEn: "Sat & Tue", dayAr: "سبت وتلات", time: "3:00" } ] },
+        { value: "Second Prep", labelEn: "Second Grade", labelAr: "الصف الثاني الإعدادي",
+          groups: [ { value: "prep2-sattue-4", dayEn: "Sat & Tue", dayAr: "سبت وتلات", time: "4:00" } ] },
+        { value: "Third Prep", labelEn: "Third Grade", labelAr: "الصف الثالث الإعدادي",
+          groups: [ { value: "prep3-sattue-2", dayEn: "Sat & Tue", dayAr: "سبت وتلات", time: "2:00" } ] }
+      ]
+    },
+    {
+      key: "Secondary", labelEn: "Secondary", labelAr: "المرحلة الثانوية",
+      grades: [
+        { value: "First Grade", labelEn: "First Grade", labelAr: "الصف الأول الثانوي",
+          groups: [ { value: "sec1-sunwed-2", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "2:00" } ] },
+        { value: "Second Grade", labelEn: "Second Grade", labelAr: "الصف الثاني الثانوي",
+          groups: [
+            { value: "sec2-sunwed-3", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "3:00" },
+            { value: "sec2-sunwed-6", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "6:00" }
+          ] },
+        { value: "Third Grade", labelEn: "Third Grade", labelAr: "الصف الثالث الثانوي",
+          groups: [
+            { value: "sec3-sunwed-12", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "12:00" },
+            { value: "sec3-sunwed-5", dayEn: "Sun & Wed", dayAr: "حد واربع", time: "5:00" }
+          ] }
+      ]
+    }
+  ],
+  governorates: [
+    { key: "cairo", label: "القاهرة", cities: ["مدينة نصر","المعادي","حلوان","مصر الجديدة","الزيتون","شبرا","عين شمس","المرج","البساتين","دار السلام","السيدة زينب","الدرب الأحمر","وسط البلد","الزمالك","المقطم","القاهرة الجديدة","بدر","الشروق","العاصمة الإدارية الجديدة"].map(l=>({value:l,label:l})) },
+    { key: "giza", label: "الجيزة", cities: ["الجيزة","الدقي","العجوزة","إمبابة","بولاق الدكرور","الهرم","فيصل","أوسيم","كرداسة","أبو النمرس","الصف","أطفيح","البدرشين","منشأة القناطر","6 أكتوبر","الشيخ زايد","نزلة السمان","أبو رواش","منشأة دهشور","ساقية مكي","كفر طهرمس","الحوامدية","الطرانة","أبو غالب","إسطبل عنتر","البرجاية"].map(l=>({value:l,label:l})) },
+    { key: "alexandria", label: "الإسكندرية", cities: ["المنتزه","شرق","وسط","غرب","الجمرك","العامرية","برج العرب","العجمي","سيدي جابر","سموحة","ميامي","محرم بك","كرموز"].map(l=>({value:l,label:l})) },
+    { key: "dakahlia", label: "الدقهلية", cities: ["المنصورة","طلخا","ميت غمر","دكرنس","أجا","منية النصر","السنبلاوين","شربين","المنزلة","تمي الأمديد","الجمالية","بلقاس","نبروه","بني عبيد","المطرية","جمصة","دميرة","أبو الغيط","ميت الخولي","محلة دياي","شبراباص","ميت بدر حلاوة","كفر البيطاش","ميت الشرقي","جزيرة بني نصر","منية سمنود"].map(l=>({value:l,label:l})) },
+    { key: "sharqia", label: "الشرقية", cities: ["الزقازيق","بلبيس","منيا القمح","أبو حماد","أبو كبير","فاقوس","الحسينية","الإبراهيمية","ديرب نجم","كفر صقر","مشتول السوق","الصالحية الجديدة","ههيا","أولاد صقر","القرين","العاشر من رمضان","تل بسطة","كفر شبين","عرب غنيم","الصوالحة","ميت يعيش","كفر عبده","أولاد رزق","منشأة أبو عمر","كفر الحصر","أبو حجر"].map(l=>({value:l,label:l})) },
+    { key: "qalyubia", label: "القليوبية", cities: ["بنها","قليوب","شبرا الخيمة","القناطر الخيرية","طوخ","كفر شكر","الخانكة","شبين القناطر","العبور","الخصوص","مسطرد","سرياقوس","أبو زعبل","كفر العرب","أم دينار","بهتيم","شبرا النملة","كفر الجزار","ميت نما"].map(l=>({value:l,label:l})) },
+    { key: "gharbia", label: "الغربية", cities: ["طنطا","المحلة الكبرى","كفر الزيات","زفتى","سمنود","قطور","بسيون","السنطة","ميت حبيش","محلة مرحوم","سرسنا","منشأة سلطان","بشلا","كفر الشيخ إبراهيم","ميت النمر","ديروط الشريف","شبرا ملس","محلة أبو علي"].map(l=>({value:l,label:l})) },
+    { key: "monufia", label: "المنوفية", cities: ["شبين الكوم","منوف","سرس الليان","أشمون","الباجور","قويسنا","بركة السبع","تلا","الشهداء","السادات","شبرا بخوم","ميت حلفا","برهيم","كفر داود","منية عبيد","تتا","بجلة","ميت خلف","السبع آبار","شنشور"].map(l=>({value:l,label:l})) },
+    { key: "beheira", label: "البحيرة", cities: ["دمنهور","كفر الدوار","رشيد","إدكو","أبو حمص","أبو المطامير","إيتاي البارود","الدلنجات","المحمودية","الرحمانية","شبراخيت","كوم حمادة","بدر البحيرة","النوبارية","وادي النطرون","حوش عيسى","كفر جرجس","نقرها","الشونة","كوم الفرج","أبو خليل","الطواحن","صنهور","بولين","دهشتيت","كوم أشقر"].map(l=>({value:l,label:l})) },
+    { key: "kafr-elsheikh", label: "كفر الشيخ", cities: ["كفر الشيخ","دسوق","فوه","مطوبس","بلطيم","الحامول","بيلا","الرياض","سيدي سالم","قلين","البرلس","سيدي غازي","أبو الأسود","الغزيلة","الحدادي","تيدا","كفر الأشراف","منشأة كتخدا","بسنديلة","بلقطر"].map(l=>({value:l,label:l})) },
+    { key: "damietta", label: "دمياط", cities: ["دمياط","رأس البر","فارسكور","الزرقا","كفر سعد","كفر البطيخ","ميت أبو غالب","السرو","الروضة","عزبة البرج","شطا","جزيرة الوسطاني","الروضة الجديدة","كفر الرجال","الرمل","النخل الرمل","محلة روح"].map(l=>({value:l,label:l})) },
+    { key: "portsaid", label: "بورسعيد", cities: ["بورفؤاد","الشرق","الضواحي","المناخ","الزهور","الجنوب","حي العرب"].map(l=>({value:l,label:l})) },
+    { key: "ismailia", label: "الإسماعيلية", cities: ["الإسماعيلية","فايد","القنطرة شرق","القنطرة غرب","التل الكبير","أبو صوير","القصاصين","نفيشة","القصاصين الشرق","كوبري القديم","المحسمة","الفردان","الديفرسوار","تل المسخوطة","ساقية عبد الله"].map(l=>({value:l,label:l})) },
+    { key: "suez", label: "السويس", cities: ["السويس","عتاقة","الأربعين","الجناين","فيصل"].map(l=>({value:l,label:l})) },
+    { key: "north-sinai", label: "شمال سيناء", cities: ["العريش","الشيخ زويد","رفح","بئر العبد","الحسنة","نخل","الفلوسية","المهدية","الجورة","مسعيد","وادي العريش","أبو صياد","بئر لحفن","الريسة"].map(l=>({value:l,label:l})) },
+    { key: "south-sinai", label: "جنوب سيناء", cities: ["الطور","شرم الشيخ","دهب","نويبع","طابا","سانت كاترين","أبو رديس","رأس سدر","عيون موسى","أبو زنيمة","وادي فيران","نبق","وادي الشيخ","رأس محمد","الطرفة","وادي الغزالة","مويلح"].map(l=>({value:l,label:l})) },
+    { key: "fayoum", label: "الفيوم", cities: ["الفيوم","سنورس","إطسا","إبشواي","طامية","يوسف الصديق","قصر قارون","تونس","كوم أوشيم","سنهور","الديمة","الشوبك","عزبة الديمة","منشأة الكرام","جزيرة الذهب"].map(l=>({value:l,label:l})) },
+    { key: "beni-suef", label: "بني سويف", cities: ["بني سويف","الواسطى","ناصر","إهناسيا","ببا","سمسطا","الفشن","بياض العرب","الفنت","منقطين","النزلة","دميان","البهنسا","سدمنت الجبل","قلا الصمعان","الزرابي","بشواي"].map(l=>({value:l,label:l})) },
+    { key: "minya", label: "المنيا", cities: ["المنيا","ملوي","سمالوط","مغاغة","بني مزار","مطاي","أبو قرقاص","ديرمواس","العدوة","تونا الجبل","بني حسن","صنبو","نزلة الشيخ زيد","الشيخ عبادة","دير أبو حنس","كوم النجوم","بني خالد","عزبة الجزيرة"].map(l=>({value:l,label:l})) },
+    { key: "assiut", label: "أسيوط", cities: ["أسيوط","ديروط","منفلوط","القوصية","أبنوب","أبوتيج","صدفا","البدارى","ساحل سليم","الفتح","بني عدي","الحمراء","شطب","درنكة","الصوامعة","الوليدية","منقباد","البياضة","عرب المطاعنة"].map(l=>({value:l,label:l})) },
+    { key: "sohag", label: "سوهاج", cities: ["سوهاج","أخميم","جرجا","طهطا","طما","المراغة","البلينا","دار السلام","ساقلته","جهينة","المنشاة","العوامية","كوم الأحمر","الكولة","سمهود","شندويل","أولاد يحيى","الشيخ متولي","هو"].map(l=>({value:l,label:l})) },
+    { key: "qena", label: "قنا", cities: ["قنا","نجع حمادي","دشنا","أبوتشت","فرشوط","قوص","نقادة","الوقف","القلعة","أبو المنجا","أبو شوشة","فاو قبلي","دندرة","قفط","الدير","بهجورة","الطويرات"].map(l=>({value:l,label:l})) },
+    { key: "luxor", label: "الأقصر", cities: ["الأقصر","الزينية","البياضية","القرنة","الطود","أرمنت","إسنا","مدينة هابو","الكرنك","دير المدينة","الرزيقات","الرمادي","النجوع","القرنة الجديدة","مسعرة","جزيرة الموز"].map(l=>({value:l,label:l})) },
+    { key: "aswan", label: "أسوان", cities: ["أسوان","إدفو","كوم أمبو","دراو","نصر النوبة","البصيلية","السباعية","الرديسية","أبو سمبل","نجع الحصايه","غرب سهيل","جزيرة سهيل","النوبة الجديدة","الدكة","كلابشة","وادي السبوع","التوفيكية"].map(l=>({value:l,label:l})) },
+    { key: "new-valley", label: "الوادي الجديد", cities: ["الخارجة","الداخلة","الفرافرة","باريس","بلاط","القصر","بشندي","الماصرة","تنيدة","الشيخ واريد","عين أمور","الرشدة","موط","غرب المعصرة"].map(l=>({value:l,label:l})) },
+    { key: "matrouh", label: "مطروح", cities: ["مرسى مطروح","الحمام","العلمين","الضبعة","سيدي براني","السلوم","سيوة","النجيلة","الجارة","أغرمي","الظهر","مارينا","الساحل الشمالي","الزوايد","أبو منقار"].map(l=>({value:l,label:l})) },
+    { key: "red-sea", label: "البحر الأحمر", cities: ["الغردقة","سفاجا","القصير","مرسى علم","الشلاتين","حلايب","رأس غارب","الجونة","سهل حشيش","مرسى شاكر","وادي الجمال","رأس بناس","الكريمات","أم الحويطات","دهار"].map(l=>({value:l,label:l})) }
+  ]
+};
+
+const REG_DATA_KEY = "regFormData";
+const ADMIN_PASSWORD_KEY = "regAdminPassword";
+const DEFAULT_ADMIN_PASSWORD = "2026";
+
+function loadRegData(){
+  try{
+    const raw = localStorage.getItem(REG_DATA_KEY);
+    if (raw){
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.stages)){
+        if (!Array.isArray(parsed.governorates)){
+          parsed.governorates = [];
+        }
+        // Repair pass: make sure every default governorate (Cairo included)
+        // is present, even if a previous save left the list empty or
+        // missing an entry. Any governorate the admin added themselves is
+        // left untouched — this only ADDS back missing defaults, it never
+        // removes or overwrites existing entries.
+        const existingKeys = new Set(parsed.governorates.map(g => g.key));
+        let repaired = false;
+        DEFAULT_REG_DATA.governorates.forEach(defGov => {
+          if (!existingKeys.has(defGov.key)){
+            parsed.governorates.push(JSON.parse(JSON.stringify(defGov)));
+            repaired = true;
+          }
+        });
+        if (repaired){
+          localStorage.setItem(REG_DATA_KEY, JSON.stringify(parsed));
+        }
+        return parsed;
+      }
+    }
+  } catch(e){ /* fall through to defaults */ }
+  const fresh = JSON.parse(JSON.stringify(DEFAULT_REG_DATA));
+  localStorage.setItem(REG_DATA_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+
+function saveRegData(data){
+  localStorage.setItem(REG_DATA_KEY, JSON.stringify(data));
+}
+
+function getAdminPassword(){
+  return localStorage.getItem(ADMIN_PASSWORD_KEY) || DEFAULT_ADMIN_PASSWORD;
+}
+
+function makeSlug(prefix){
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/* Normalize a time string typed by the admin: a bare number like "6"
+   becomes "6:00", "6:5" becomes "6:05", already-valid values pass through. */
+function normalizeTimeValue(raw){
+  let v = String(raw == null ? '' : raw).trim();
+  if (!v) return v;
+  if (!v.includes(':')){
+    return `${v}:00`;
+  }
+  const parts = v.split(':');
+  const hh = parts[0].trim();
+  let mm = (parts[1] || '').trim();
+  if (mm.length === 0) mm = '00';
+  if (mm.length === 1) mm = '0' + mm;
+  return `${hh}:${mm}`;
+}
+
+let regData = loadRegData();
+
+function findStage(stageKey){
+  return regData.stages.find(s => s.key === stageKey);
+}
+function findGrade(stageKey, gradeValue){
+  const stage = findStage(stageKey);
+  return stage ? stage.grades.find(g => g.value === gradeValue) : null;
+}
+
+function getGroupLabel(groupValue){
+  for (const stage of regData.stages){
+    for (const grade of stage.grades){
+      const opt = grade.groups.find(o => o.value === groupValue);
+      if (opt){
+        const shortTime = opt.time.replace(':00', '');
+        return `${opt.dayAr} ${shortTime}`;
+      }
+    }
+  }
+  return groupValue;
+}
+
+function findGovernorate(govKey){
+  return regData.governorates.find(g => g.key === govKey);
+}
+function getGovernorateLabel(govKey){
+  const gov = findGovernorate(govKey);
+  return gov ? gov.label : govKey;
+}
+function getCityLabel(govKey, cityValue){
+  const gov = findGovernorate(govKey);
+  if (!gov) return cityValue;
+  const city = gov.cities.find(c => c.value === cityValue);
+  return city ? city.label : cityValue;
+}
+
+const stageSelect = document.getElementById('stage');
+const gradeSelect = document.getElementById('grade');
+const groupSelect = document.getElementById('group');
+const govSelect = document.getElementById('governorate');
+const citySelect = document.getElementById('city');
+
+function populateGovernorateOptions(preserveSelection){
+  const previousGov = preserveSelection ? govSelect.value : "";
+  govSelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  govSelect.appendChild(placeholder);
+
+  // Only governorates the admin has left visible (active !== false) show up
+  // on the public registration form.
+  regData.governorates.filter(gov => gov.active !== false).forEach(gov => {
+    const el = document.createElement('option');
+    el.value = gov.key;
+    el.textContent = gov.label;
+    if (preserveSelection && gov.key === previousGov){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    govSelect.appendChild(el);
+  });
+}
+
+function populateCityOptions(preserveSelection){
+  const govKey = govSelect.value;
+  const previousCity = preserveSelection ? citySelect.value : "";
+  const gov = findGovernorate(govKey);
+  const options = gov ? gov.cities : [];
+
+  citySelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  citySelect.appendChild(placeholder);
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    el.textContent = opt.label;
+    if (preserveSelection && opt.value === previousCity){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    citySelect.appendChild(el);
+  });
+
+  citySelect.disabled = options.length === 0;
+}
+
+govSelect.addEventListener('change', () => populateCityOptions(false));
+
+function populateStageOptions(preserveSelection){
+  const previousStage = preserveSelection ? stageSelect.value : "";
+  stageSelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  stageSelect.appendChild(placeholder);
+
+  regData.stages.forEach(stage => {
+    const el = document.createElement('option');
+    el.value = stage.key;
+    el.textContent = currentLang === 'ar' ? stage.labelAr : stage.labelEn;
+    if (preserveSelection && stage.key === previousStage){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    stageSelect.appendChild(el);
+  });
+}
+
+function populateGradeOptions(preserveSelection){
+  const stageValue = stageSelect.value;
+  const previousGrade = preserveSelection ? gradeSelect.value : "";
+  const stage = findStage(stageValue);
+  const options = stage ? stage.grades : [];
+
+  gradeSelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  gradeSelect.appendChild(placeholder);
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    el.textContent = currentLang === 'ar' ? opt.labelAr : opt.labelEn;
+    if (preserveSelection && opt.value === previousGrade){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    gradeSelect.appendChild(el);
+  });
+
+  gradeSelect.disabled = options.length === 0;
+}
+
+function populateGroupOptions(preserveSelection){
+  const stageValue = stageSelect.value;
+  const gradeValue = gradeSelect.value;
+  const previousGroup = preserveSelection ? groupSelect.value : "";
+  const grade = findGrade(stageValue, gradeValue);
+  const options = grade ? grade.groups : [];
+
+  groupSelect.innerHTML = "";
+
+  const placeholder = document.createElement('option');
+  placeholder.value = "";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = t('selectPlaceholder');
+  placeholder.setAttribute('data-i18n', 'selectPlaceholder');
+  groupSelect.appendChild(placeholder);
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    const dayText = currentLang === 'ar' ? opt.dayAr : opt.dayEn;
+    el.textContent = `${dayText} — ${opt.time}`;
+    if (preserveSelection && opt.value === previousGroup){
+      el.selected = true;
+      placeholder.selected = false;
+    }
+    groupSelect.appendChild(el);
+  });
+
+  groupSelect.disabled = options.length === 0;
+}
+
+stageSelect.addEventListener('change', () => {
+  populateGradeOptions(false);
+  populateGroupOptions(false);
+});
+gradeSelect.addEventListener('change', () => populateGroupOptions(false));
+
+function applyTranslations(){
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    if (el.tagName === 'OPTION' && (el.closest('#grade') || el.closest('#group'))) return; // handled by populate functions
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+    el.placeholder = t(el.dataset.i18nPh);
+  });
+  populateStageOptions(true);
+  populateGradeOptions(true);
+  populateGroupOptions(true);
+  populateGovernorateOptions(true);
+  populateCityOptions(true);
+}
+
+function setLanguage(lang){
+  currentLang = (lang === "ar") ? "ar" : "en";
+  localStorage.setItem("regLang", currentLang);
+  document.documentElement.lang = currentLang;
+  document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+  document.querySelectorAll("#langToggle button").forEach(b => {
+    b.classList.toggle("active", b.dataset.lang === currentLang);
+  });
+  applyTranslations();
+}
+
+document.querySelectorAll("#langToggle button").forEach(btn => {
+  btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
+});
+
+setLanguage(currentLang);
+populateStageOptions(false);
+populateGradeOptions(false);
+populateGroupOptions(false);
+populateGovernorateOptions(false);
+populateCityOptions(false);
+
+/* ============================================================
+   FORM VALIDATION + SUBMISSION (direct Supabase — no n8n)
+   ============================================================ */
+const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* Maps the form's (educationalStage, grade) pair to the matching
+   attendance + payment table pair, mirroring the old n8n Switch nodes. */
+const GRADE_TABLE_MAP = {
+  Preparatory: {
+    "First Prep":  { attendance: "حضور_أولى_إعدادي", payment: "دفع_أولى_إعدادي" },
+    "Second Prep": { attendance: "حضور_تانية_إعدادي", payment: "دفع_تانية_إعدادي" },
+    "Third Prep":  { attendance: "حضور_تالتة_إعدادي", payment: "دفع_تالتة_إعدادي" }
+  },
+  Secondary: {
+    "First Grade":  { attendance: "حضور_أولى_ثانوي", payment: "دفع_أولى_ثانوي" },
+    "Second Grade": { attendance: "حضور_تانية_ثانوي", payment: "دفع_تانية_ثانوي" },
+    "Third Grade":  { attendance: "حضور_تالتة_ثانوي", payment: "دفع_تالتة_ثانوي" }
+  }
+};
+
+const ALL_ATTENDANCE_TABLES = Object.values(GRADE_TABLE_MAP)
+  .flatMap(stage => Object.values(stage).map(g => g.attendance));
+
+/* Same dedupe check the old "Student Exists?" node did, but querying
+   Supabase directly across all six attendance tables. */
+async function isPhoneAlreadyRegistered(studentPhone){
+  const checks = await Promise.all(
+    ALL_ATTENDANCE_TABLES.map(tableId =>
+      supa.from(tableId).select("id", { count: "exact", head: true }).eq("student_phone", studentPhone)
+    )
+  );
+  return checks.some(r => !r.error && (r.count ?? 0) > 0);
+}
+
+function generateQrCode(){
+  const random = Math.floor(100000 + Math.random() * 900000);
+  return `ST${random}`;
+}
+
+function buildQrUrl(qrCode){
+  return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qrCode)}`;
+}
+
+/* ---- QR with logo in the center ---- */
+const QR_LOGO_SRC = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAgQDAwMEBAQFBgoGBgUFBgwICQcKDgwPDg4MDQ0PERYTDxAVEQ0NExoTFRcYGRkZDxIbHRsYHRYYGRj/2wBDAQQEBAYFBgsGBgsYEA0QGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBj/wAARCAEAAQADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD7wooooAKKKTPFAC0UUUAFFJk0ZoAWim0ZFADqTNRtIBUL3AHcUWAsFgKYXFVPtDO2EDMfRRmnLBfS9LdgPVjinYVyxv8Aek3j1FQS28lum+6ura3X1kkx/OqEmseHYCRceLNFiI6h7uMfzarjSlP4U2Zyqwh8TSNcSe9LvFY0eu+GZTiHxfoch9FvIz/7NWhAEuh/oeoWdx/1ylDfypzozh8UWgjVhL4WmWwwNOBquYL1OsO7/dOab5zRnEiMh/2his7Gpcoqus6nvUgcEcGkBJRSA0Z5oAWiiigAoooFABRRRQAUtJRQAUmOKWigBMUlL+FHagABozR7UZ4oAOKQkCkLAVWluAvegCZ5AB1qu9wS4VAWJ6ADNV765s9M0yTVNcvodOso+Wkmbb+H19uvtXIL4w8T+KAYPh3oi2Wnk4OvauhVGHrFH1f6nj2FdmHwVSunNaRW7eiXz7+Su/I8/F5jRw0lTldze0Uryfy6Lzdl5nZ3ckNhZNe6tf22nWq8tLcSBAPxJxXGS/FHw7PdtaeEdD1jxddKdpaygIgB95GwB9cGpbP4X6VNerqXi6/vPFWojnzNRf8Acof9iEfKB9c12kccFnaCGGKOCCMcRxqEVR7AcV02wVHvUf8A4DH/AOSf/kpzr+0MRq7Uo/8AgUv/AJFf+THn9zqPxk1K3MkcXhvwja44D5vbgegwPkzWLL4M8Rapz4j+Jnia9zy0VnItnGfwSu/vJ2u589I1+6v9agWOumGZVKa/dRjD0ir/AHu8vxM3llOf8Wcp+snb7laP4HBp8IfAjNvvNLudQfu17eyyk/8Ajwq6nwu+Hsa4XwbpJA/vRFv5mu0WPjpThGPSlLN8bLetL/wJ/wCZpDLMJD4aUf8AwFf5HFt8Lvh5IuD4M0gf7sO3+RqjN8HPh27b4dAazfs9ndSxEfk1eh+WPSmtGc0QzfGw+GvP/wACf+Y55bhJfFSj/wCAr/I86T4c6hpjbvDHxH8XaTjpG939qiH/AAB+taVrefHPRog0V94a8Y268NHcRmxuT9CPkzXYGKnQM8EwdfxHqKuWbVZ/xoxn/iir/wDgStL8SVl1KH8Jyh6N/k7r8DlYfjLoVldrZeP/AAvrXgy6Y4E1zCZbVj7SoMH8q7/T7qz1XT01HQtTtNTtH5Wa2lVwfxBxQ0dvfWLQzQxzwSDDxSoHVvYqeDXnuo/B7SbfUX1nwHqt94M1cnJk01s28p9JID8pH0x9Kxtl+J01pS/8Cj/8kv8Ayf0Nb4yj1VRf+Ay/+Rf/AJKelJP821gVYdQRg1YWQHoa8nHxK8TeDZ0sPi/oCGwLCOLxRo6M9ufTzUHzRn/OK9Hs7m1vtMh1TR76HUdPmXfHcW7h1I+o61x4vL62FSlNXi9pJ3i/R9/J2a6o6cNjaWIvGOkluno18v12NTNLVSOcMOtWFbIrhOsfRSZzS0AFFFGaACiiigBKOaXFJ3oAOaSlzSUAFMdwo60O4UVSLSXM4hhGWPU9gPU0AOaWSaURQgsx7Dt71zfiDxjaaDqiaBolk2v+KZhlLGA/LAP78rdEUe/P061R1zxLqep65N4H+Hsifbo+NU1t13RWA/ur/el64A6fXJHReFfCGj+EdLa202N5J5Tvur2c7prl+7O317dB+terDD08LBVcSryeqj+suy7Ld+Ss34tTFVsZN0cG7RWkp7+qj0b7t6LzeiwtN8AT6lqcWv8AxCvl1zU1+aK0AxZWnskf8R9z+vWu62gKFUAADAA6AelLS4rlxGLqYhpzei2WyXklsjtwmBo4SLVJavdvVt923qxmOOayb2czv5af6sf+PGrl3KWzEh4/iP8ASqnlZ7VnBW1OiTvoVBEKeI8dqteWPSjy/aruRYr7SBwKsWdk91NzlY1+839B71JDbNPKEXp3PoK2oo44YhHGMAVE522LjG5gXdo9rNt5KnlW9ah2GujniSeExuOD0PoaxZIHilMbjkfrRCd9xSjYqGP2phj471b2c0mw+lXcmxFbSGCTnOw9RWkAGUMDkHkGs9k56VYtZfLPluflPQ+lTJdSou2hPJDHPA8E0SSRSKVdHUMrA9QQeCK8vvvh1rvgnVJvEfwgu0s2dvMu/DNyxNleevl5P7p/THHuOlerYNIR610YTH1cK3yaxe8XrF+q/XddGmZYnCU8QlzaNbNaNej/AKT6nH+DPHmi+PEuILWGXR/ENkdt/ol6Nk0Ldzg43L/tD2yBXUxTsGKOCrDgg9q5Dx18O7XxXJBrWk3raJ4psfmsdZtxh1I6JIB9+M9MHOM8cZBg8EeOLnxJe3HhHxbZpo/jbTUzPb9IryPtNCf4kPXjpn0roxGDpV6bxOD2XxR3cfNPrHz3Wz6N4UcTUpTVDE7vaXSXk+0vLZ9Oy9BRwR1p+azoJmVzHICrqcEHtV5HyOteOekPxRilooAKKKKACkHrRmjmgANRu20U9m4qjdTBFPNAEc8skkohhG52OAK5HxTrWpXWsD4d+C59urToJNT1Qcrp8J7/APXQg4UdRn1ORf8AFfiGbwr4djksIBdeIdVf7LplrjJLn+Ij+6M5P4DvV3wV4Ui8KeHzDLN9r1O6f7RqF83LXEx5Jz6DJA/PvXqYWEcPT+tVVd/ZT6v+Z+S/F6bJni4ypPFVvqVF2S1nJdE9or+9Lv0Wu7Re8N+HNK8K+HodH0iExwR8s7cvK56u57sf/rVr4pO9PAzXBUqSqSc5u7e7PUpUoUoKnTVorRJCAc1FPJtGxD8x6n0qSR9q4HWq4TnPU1KNCAR0/wAv2qcJzS7Kq4rFfy6FhaRwqjk1YEZJwOtW4ohGvueppOQWEhhSGPYv4n1qQdKWisyxpGKguIBPH/tDoas00ihOwGQYyp2twR2ppT0rSnh3jcB8w/Wq2z2rVSuQ0VClMKYNXCntTTH7VXMKwW0uR5bnnsasFRVTYQc9KsxPvXB+8P1qH3GhCMVxvxA8BxeMdOtrywu20vxHprefpeqxcNBIOdresbdCPfPqD2xFNIxW2GxNTDVFVpOzX9fNPZrZrQzrUYVoOnUV0/6/4Y4XwN4wm8Z6Td2eq2Y03xdoz/Z9V07pkjpInqjdQfw9CeutbgOBzXA/Enw7qdjqNr8T/B8WfEGjRn7RbJwNSs+rwtjqQMlT7eoFdRpGuaZ4l8M6f4u0KXzNO1CMSAd427qw7EEEH3FdmYYenKCxeHVoS0a/ll29HvHyut0zmwdacZPDVneS1T/mXf1Wz89dmjpFYEU+qlvKGXNWhXknoC0UUUAIBRS01jigCKZ9q1nJ5c100lw4S1gUyzOxwoA55/L8hU15MEjJJ4rjvH0t1Noul+BdNkMeoeI5ts7r1htl5kb/AL5wPzrqweH+sVY072T3fZLVv5LU4sfi1haEqtrtbLu3ol820hnguOXxh4wvfiTfowtjustEhcf6uBSQ0uP7znP6+1eiDrUFlZW2nabb6fZRCK2t41iiQfwqowBVlRk1WMxCr1eaKtFaJdktl/n3d2Rl+EeFoqMneb1k+8nu/wBF2SSFApWbavvS9BmmbSTk1yncRbSTk1IFp6pTwtFwGbKXaO1S7acABSuOwxEC896finCikMTBoxS0UANoxTiKbQA2opI/4gPrU9IRmhOwFQrTSoNWWTB9qbtFXckqlOKbgq2RwatFKYV9qLgKpDpnv3pCKQAq+RUpwy5FICEjFeTaWg+G3xql8Myjy/CPi9mmsR0Szvx9+Iegfggeu0DvXrZGK5H4k+Ev+E0+Hl7pVuxj1GLF3p06nDRXMfzRkHtk/L/wKvTyzEQhN0Kz/d1NH5dpf9uvX0uupw46jKUFVpL34arz7r5rT1s+hsQF7e5e2lPzIcfUdjWpG2RXEeEPFA8afDfSfFZXy7zb9k1CLGDHOh2uCO3zAn6MK662l3KOa4MRQnh6sqNRWlFtP1R2Uasa1ONSGzV0XaKQdKWsTQKilbC1KelVbh8KaAKPl/a9Uht+qlst9Bya5fwu3/CS/FbxJ4tf57ayYaNp57AJzKw+rd/etfVNXGg+D9e8SHrZ2reV/v44H57ab8PNHOhfDTSLGQHz2gFxOT1Mknztn/vrH4V6eH/dYWpV6ytFem8v0XozxsV+/wAdRodIJzfr8Mfzk/WKOpFSIOKjWp0HSvOZ64Bc07ZTqWpHYQKBSgUopaBiYpaKKACiiigAoo7UUAFBFFFADSKKd2pMUAJTCop9FAEe2mlcmpqTFFwISgoC4qWkI4p3FYhYVGetTMOKhamhHlfhuAeF/wBoHxL4PbEemeJ7b+2rBegW4X5Z1HuT834Cu9sJGA2PwynBHoa4X4wh9GPhXx/B8smg6vF9ocdfss37uUfT7v513d0BBr0gQjZKBKpHQ5r1sz/fU6OK6yXK/wDFDT8Y8rfm2efgP3c6uH/ld16S1/PmXyNZDlRT6ghOVzU9eOekIelZ96+IjV9zgVkak+2Fj7U0JnHfENTc+ANF8PJnfrmsQQOo7xh9zfoor0UBVOEGFHAA9O1cD4iX7T8XvAGlfwWtvc37j3EYUH8674DAr0sV7mGoQ7py+92/KKPIwPv4vE1ezjH5KKl+c2YnjHxx4V+HvhKfxP4y1q20nTICFaaYkl2PREUZZ3PZVBNfLOvf8FDPCNnqUkHhr4d6zqtsrYFze3kdnvHqECuQPrg14F+2R8RtT8Z/tKan4ca5caP4Yf8As60t8/IJdoM0pH94sduf7qAetep/AD9inw741+FWmeOfiRq+rxtq8IubPTNNkWARQt9x5HKsWZhhsDAAI6muGySuz1bvZGp/w8Xh/wCiRy/+Dsf/ABmj/h4vD/0SKX/wdj/4zXo3/DBXwM/57eLP/BoP/jdL/wAMF/AzvN4s/wDBoP8A43SvALSPOf8Ah4xD/wBEjl/8HY/+M0f8PGYv+iRy/wDg7H/xmvR/+GCfgX/z38Wf+DQf/G6P+GCfgYP+W/iz/wAGg/8AjdF4BaRyHhP9vuLxR4+0Pw1/wq2S1Oqahb2Hn/2wH8rzZFTdt8kZxuzjIzX2fXzhoH7EnwX8N+K9M8Q6fL4nN5pt3FeQCbUgyeZG4ddw2cjKjIr6P7VMrdClfqFVNU1TTtE0S71jV7yGzsLOFri4uZm2pFGoyzMewABq3xXwB+3D8fv7W1ST4MeFLwmytJFbXriJuJpgcra5HVUOGf1bav8ACaUVd2Bux2Osf8FDvCVr4qe00T4e6tqejpJtF/JeJbyyr/eWEqcDuAzA+uK+pfh38Q/C3xR+H9n4x8IXxutOucqVddksEi8NFIv8Lqeo+hGQQa/K3wh+zz4/8afADX/ivpNqW07S3/c2hQma/jTPnyReoj/8eIcDled/9ln49S/Bj4ni31e5Y+D9adItSTki2bol0o/2c4bHVPdRWjgraEqT6n6uUVHBPDc20dxbypLDIodJI2DK6kZBBHBBHOakrIs8w+PXxhX4IfCuPxk3h9tb338NiLUXP2fHmBju3bW6bOmO9eafAj9rtPjZ8Vz4LHgF9EIsZr37UdSFx/q2Qbdvlr139c9qr/t8H/jFa2/7D9p/6BLXzV+wf/ydg3/YCu//AEOGtFFctyW9bH6Vavq2l6Dod1rOtahb6fp9pGZri6uZBHHEg6szHgCvlDxj/wAFAPh3o2qyWfhDwrrHiaOMlftjyLYwSe6bgzke5UVwP/BQP4j6o/ijQfhbY3LxaalqNWv0Q4+0SM7LCreqoEZserA9hXD/ALLn7Kth8aPD15408Y6vfWOgQXTWdtbaeVWa7kUAuxdgdiKWA4GSc8jHIoq12Jt3sj0s/wDBRaHPHwjk/wDB2P8A4zSf8PF4h/zSKT/wdj/4zXpH/DBXwM/57+LP/BoP/jdIf2C/gZ/z28Wf+DQf/G6LwC0jzf8A4eLw/wDRIpf/AAdj/wCM0H/gotDj/kkUv/g7H/xmvRz+wX8DP+e3iz/waD/43SH9gv4Gf89vFv8A4NB/8bovALSOW8Nf8FB/BOo6lHb+KfAmtaJA5wbq0uEvVj92XCNj6An2r6n8M+KfDnjTwva+JPCmsWuraVdLuhurZ9ytjqD3VgeCpAIPUV8I/tJ/seaL8M/hpcfED4f6vqdxY2DINQ0/UnWVkjZgnmxyKqnhmXKkHg5B4wed/Yf+I2p+Gvj9H4De5dtG8SxyK1ux+WO6jjLxyqOxKoyH1BX0FPlTV0F3ezP0A+IOjL4h+FviDRiuWuLCUJxn51Xcv/jyisrwhrB1/wCEnhDXyd0k1ikUrerqNrf+PK1dwQHIVuVbg/Q15R8Iw0PwYvdJY86Nr13ZgeiiUkf+h16VP95l1RfyTi1/28mn+UTgn7mOg/5otfc01+bPUbR9yCrg6VmWD5jU1pDpXkHpDX+7WHqrZiZfXituT7tYOqn5fxpoTMG7Pm/tQWUP8Nr4adh7FpsfyrvOxrgWOP2rJgf4vDC4/wDAiu+7HHNejj/+XS/uL9WeTlf/AC+f/TyX6I/IL9oT/k6v4jZ6f29df+hV+p3wQ/5No+H/AP2Ltj/6ISvy/wD2ldLu9J/a28fwXsZjabVpLqPI+9HKqyIw9sMK/R/9mXxnofjH9mDwg+kXcUs+m6ZBpt7bKwL200KBGVx1Gdu4Z6ggiuKeyPUjuevUDrR+B/Kj8D+VZFjqKM+x/Kj8D+VABRR37/lXO+O/G2gfDr4e6p4y8TXQt9N0+EyyEctIeixoO7sxCgepFAHlH7U3x5h+DHwtNto9xG3i7WVeDTIj8xt1HD3LD0TI256uQOgNfnn8D/hHrvx0+MkHh+Ke4SyVvtus6mxLNDCWyzbj1lc5C56kk9FNZnj3xp4x+O3xwm1y4tZrvV9YuUtNP0yA7vJQttht4/YZ5PclmPU1+nfwF+EGjfAb4KpplxPbHVJU+3a3qRwqySheRuPSOMZVfYE9WNbJcqstzNu+r2PTNB0HR/DXhew8PaHYxWOm2ECW1vbRDCxxqMAe/wBe5ya/NX9sH4AN8L/iAfGvhmy2eENbmJEca4XT7o5ZofZH5ZPT5l7DPvHiD4863q/xntvEegzSR6PprmK0tHJVbmI8O0g9XA4/ugL3Br6O1TTPB/xr+DNzpWowi90PWbYxyIeHib1B/hkRwCD2Kg16+ZZHissp06tdaTX3Ps/O369jxstz/C5lWq4ei/eh+K7ryv8Ap3Pln9h/4/8A9o6fF8F/Ft7/AKVaxltAuZW5lhAy1qSerIMsnqmR/CM/bdfjV8RfAni34F/G2fQrq5ntdR0u4S80zVIPk8+MNuhuIz26cjswZT0r9Nf2cfjdY/G74Sw6tKYoPEWn7bbWLJOAkuOJUH/POQDcPQ7l/hrxpx6o9uL6Hnv7fH/Jq1t/2H7T/wBAlr5p/YP/AOTsWH/UCu//AEOGvpb9vj/k1a2/7D9p/wCgS180/sH4/wCGsW/7AV3/AOhw04/AS/iF/byyf2ro/bQbT/0OavqH9hTH/DI1r/2F77/0YK+a/wBvvS7u0/aW03VJkItr3QoRC/ZjHLKHH1G5fzFe7/sD+L9DvvgFeeDUvoV1rTdSnnksmYCRoZSrJKo6lc7lJHQjnqKJfAhr4j6zpD1pc+x/Kmnr0P5VkWFIetL+B/KkP+6fyoA8c/aq/wCTOfH/AP2Df/asdfnp+ywP+Mx/Af8A1/yf+k8tfdv7ZPi/Q/Dn7KfiLR9Rvo49R1yNLCwtdw8yVjIrMwXrtVVYk9BwOpFfD/7I2mXWqfti+EGtomdLN7i9mYDISNIJASfxdR9SK1h8LIlufql0QH2ryz4ejybz4pWAGFh8RPMB/vqp/pXqZ4THtXl3gYk+Kvi02OP7YUD6iMV6WC/3TEryj/6XH/M8/F/7zh35y/8ASWd/ppzEDWuOlY2mZ8kVsr0ryD0xjj5TWBqwxEx9q6Fuh7ViaquYWFNCZzGpMIf2ntEuOgvfDk0QPqUkD/yNegKea828XOLb4g/DHXycK1xNpsh/66xYA/NTXpAz3r0MZ71OjP8Au2+6Ul/keVl/u1cRT7Tv98Yv87nzx+0z+zHbfGi1h8TeG7q307xhZQ+QjXGRBfwgkrFIQCVZSTtfBxkgjGCPhi9+CP7QfgLXJVi8CeM7G6/1ZutFSWVHA9JbckMPxr9cl6ipk68HH0riU2j02rn5D/8ACP8A7S3/AECvix/3xqNL/wAI9+0p30n4sf8AfGo1+vYz6n86UfU/nR7TyDk8z8gv+Ee/aU/6BPxY/wC+NRoPh/8AaW/6BXxZ/wC+NRr9fxz3NH0Jo9p5ByeZ+aX7N2jfHW2/al8HzeKtP+I0Ojpcym5fVFvfswX7PJjzPM+XG7b174rof2v9f+LPxU+If/CIeGPh/wCMZPCGgzFVePSLjZqF0PlafOzDIvKp65Zv4hj9DP8APWj8/wA6XPrew+XSx8ZfsWfs6XnhWJ/it490e4stbmDwaRp95EY5LOL7rzujDKyPyqg8hMn+Pj0D9pHxH401aNPAHhHw3rtzZMFk1K8trGV0lHVYVYLgjoWx7D1r6NpAysSFYHacHB6H0rvyzHxwWJjiZU1Nx2T2v0fy/M48fg3iqDoRny33a7dj8/8AS/h/42Xb5nhDXl/3rCUf+y17p8Grvxb4R1v+y9R8PawmkXrDzS9nIBDJ0Eg46dm9sHtX0b+Jor6HMeMZ4+jKjVoqz83958fheBVhMVDF0MTJSi+y17p+TPCv2ovgPb/Gn4WGXS4I18WaOrz6VMcL52Rl7Zj/AHXwMZ6MFPTOfhb4LQ/HP4L/ABbsvGWnfDDxtLZr/o2paeNIuALu2J+ZPuY3Ajcp7MB2Jr9XqPxNfHKVlY+8cb6nzH+2Xp2s+Ov2TtMbwt4f1nUp7nVrK7Wzt7GVrhIzHIcvEF3IRuAII4PBrwT9ifwD468OftOtqXiHwX4h0mzGi3UZub/TpoI9xeLC7nUDJwePY1+i/wCdH50KWlh21ueTfH/4FaH8dPh2mkXlx/Z+s2DNPpepBN/kSEYZXX+KNwAGHXgEcivzn8Sfs2/H74d+Ii6+CdcuZIGPk6n4cL3KEdNyvF8659GCmv1xo7570Rm0JxTPyB/4R/8AaVH/ADCviz/3xqNH/CP/ALSv/QK+LP8A3xqNfr5uB6NntwaTcN5Xf82M4zziq9p5C5PM/IX/AIR/9pTH/IJ+LH/fGo03/hH/ANpPodK+LH/fGo1+vhJzjJ/OmsTj7x/Oj2nkHJ5n5FaT8A/2gfiBr6l/AvimeaQ7Wv8AXg8CIPVpbgg4HoM/Svvj9m/9nLTvgb4eury/vYdV8VamipeXsSkRQRg5EEOedueWY4LEDgAAV7yxz15PvUJNDk2CVhpGTj14ryv4duJtN+I2qj7t14mniU+oTYten3FxHa20t1KQEhRpWPoFBY/yryv4WJJF+z9p15MNs2sajPfsPXfKxB/JRXp4b3cBXn3cI/feX/tp59f3sZRj2Un+S/U9F0sfuhWwvSsvTVxCtaoHy15B6Y01l6ghMTfStU1Ru0yhoQHnXxJjnl+CFxqNqN11oF/DqUY7gI4J/Rm/KvSbW7iv7GC+t2DQ3EazIR3VgGH6GuftrSDUH1Pw/eD/AEbUrV4GH1BH8ifyrF+D+ozz/DZNEv2P9oaDcSaTcqeoMbfIfxUj8q9JL2mD84S/CS/Rr8Tyf4OP8qkfxi/1UvwOyvX1wXCjTItMaLbybqSRWznttUjHSofM8Y/w2/h//v8AT/8AxFaqmpFPNcsaqStyo654dylfna+7/IzrSTxYb2IXsGiLbbv3hhlmLgewKgZ+tYfxVGoHwHGLb7f/AGf9vtv7X/s/f9o+weYPP2eX8/3fvbPm2b9vOK7IGpAcis5z5neyXobUqfIrczfqcH8Pv+FX/wBp3x+HK2ozDF9rOmrKLU8nbn/ll5nXOPnxjdxinfD698WX3gzU9e1zU5tSvJry9SzsGt47aOCOG5mjiQEKGJZUTLMTnggDv3gOPWjORioNTxT4TeNPHPiPxPZxa3qtpcLLp7z6rp0roJtPuMphEjSBGiAYuhSV2Y4DAnDEifEHxDL8fLLSLPUrxrCXW59KutLvFgzFGlvK4mWNIvMjQvGpSR5SHV/u8jHtn50UXFY82067u7f9pfXrHUPFOpJBc6XZzafpEwTyJceeJWj+TdlSqFsN/EN2RtxY0dddvrP4jWujT2+l6n/bEsdhdi0QAP8AY7YpJINv735yQWOSQMZ4GPQaB7UXGeefD/xd4j8arqXiKWwn0/T4IEsYdLuIvLc30YJuiWYZKrIRCD90mJ2GQQa5X4UeNPHHiPxVZx65qlrK0tjJNq2kyvGJdNnBUBEjSBWjCsWQrK7FgAwJwSfbc9s0UXAztf1m38PeF7/W7pHeK0haUxxqWZyBwoA6knAH1ryLwBN4v8MeOrW48V6RqtqniYMLyW4lSWJL/LSR+WEZjGhjJjwQOUXvmvbqMiu/DY6NCjOi4J8+7/K3o9et7LscGJwTr1oVVNrk2X539Vp0tr3OH0oTf8L/APEZbzfKOkWO3IO3O+bOO2elWfiiNZPwp1UaF/aP2nEXm/2Zn7V9n85PtHk4583yfN27fmzjHOK67NGa5q9f2slK1rJL7kl+h0Yeh7GLje92397ueMeH/wDhCv8AhZvhofCUbYsSnXPsCyC2+yeQ+z7Tu48/zvK25/eY8zPG6u08Oz+I7/4qeLm1DWZv7H065hs7DTlto0TDWkEryNJt3ud7sAAQBznPGOzz9aSsbm1j588O+JtX0vWryy03xXdTaq/jW8gTws+mqEls5L9/Nl3lPMwsbPKJw/ljZswe/qltLM3x11eD7PCsI0CydbkQKJCxuboFTJjJAAUhScAknHzHPXZx3NNLe9DYWPPPhDc3R8L6np+qeKNR1nVLPVLyK5i1DZ5toPtU3lqdqKcMgVhnIwRtwuBXT3Uni77XKLS30I2+4+WZppg5XtuAXGfpWyWOOSaYzVpTnyu9k/Uyq0+dWUmvQ58y+Nv+fbw5/wB/7j/4irGnv4ga4cavFpSRbfkNlJKzbs996gYx6VpsajJ7mtJVVJW5UjOFBxd+dv8Ar0OL+Lerto3wZ164iJ8+e3+xwgdS8xEYA/Bj+VSwaYmh+HPDXhiMAf2dYRo4H97aFP6hvzrE8dj/AISb4teCvA0Y3wpcNrd+vYRQ8Rg+xfI/KumaX+0PEt1dA5TfsT6Lx/ia7sV+5wVGl1k3N+nwx/KT+ZyYb97jKtXpFKK9fif5pfI3bJdsa1fHSq1su1Ks9q8g9UO1V51ylWKjcAg0Actfl7O8ivYx80Lh/rjqPyzXNySJ4S/aJWZDt0jxpbKyN/CL2IcfiyH8Sa7TU4PMiIxXIeJtAuPF/wANLvRLJ/L13SZF1DSZh95ZEOVAPvyv/AhXoZfUgqns6jtGa5X5X2fydn8jzcypTlSVSkrzg+Zedt1802vmeig1Ip4rmPA/iu38Z+BbHX4l8uWRTHcwdDDOvEiEdueR7EV0at6Vz1qM6NSVOorSTs/kdlGrGtCNSDumrosK3rUgNV1anhsVjY0LAalzUStTt1Kw7kmaM+9RbjRuNFh3JaKi3UZ9aLCuS0VGGpc0h3H0UzcQaN30oAfRmoiaTPvTsK5LkUhao91ISKLBceWppNML0xn96aQh7NUZams/FRM9OwDi3rUbyKqFnYKoGSxOAB3JpCxNeefFTVr2fS7LwFoMmNa8Sy/Y0K9YLf8A5bSn2C5H4n0rrweFlia0aSdr7vslq2/JK7ZzYvErD0pVXrbZd30XzehQ8BXkmqXPi74rzKw/tOb+y9HDdRbRHaGH+82W/wCAmu00O18u3Qe3es6eys7BNN8JaQm3T9HhWFQP4nAxk++OvuTXT6dBsiAxRmOJjiK8pwVo6KK7RSsvwWvmLAYd0KKhLWW7fdvV/j+BoxLhQKlxTVGKcDXCdglIRxS0dRQBRuogymuZuHm0rVotRgUkxn5lH8S9xXXyJuXpWNqFqJEYEdqaEzz69mj+HPxYTX4HC+DfFzr579Esb4j5XPor8g++fQV6lkhq417DTda0a/8ABXiKLzNK1FSinoYnPQg9jnBB7Ee9ZPgPXtU0bW5/hj4wlJ1jTo86fevwNTtB91we7qBgjrx7GvbqL6/h/bL+JTVpecVopeq2l5Wfc8im/qVb2T/hzfu+UnvH57rzuux6WJKkD1UD07zK8ix6ty2HFL5lVBL70eb70coXLnmijzB61T833p8bF24PFHKJSuW1bNP3AVCCAMCjdU2KJQwNY2t6yLUG0tW/fkfMw/gH+NM1rWk06HyYSDcuOB/cHqf6VyIkZ2LuxYsckk5JrvwmE5vfnscOJxXL7kdzqNC1jbtsbp/lPEbk9P8AZP8ASuj3CvOVauo0XVvtCC1uH/eqMIx/jHp9aeLwtvfj8ycLib+5L5G6WphNNLUm4V59j0BS4HekLioXbaaiMuapITZYL+tRmQVAZKY0nPWnyi5icyCmF/Soi4xTd5PAzmnyi5iPUdSs9K0m51PUbhLe0to2mmlboigZJrzzwMbu7k1L4wa9bGO+1VfsmhWcvW3tAflOPV/vH2/3qrai3/C2fG8vhuCcr4M0OUS61eK2EvZl5Furd0XGWP8A9jnrJbk67q6yRxeVZQDyraELgKg747Zx+AwK9Wt/sGHdL/l7UWv92O6XrLRvsrLq0eZS/wBtrqr/AMu4PT+9LZv0jsvO76IsaJZvjzZCWdyWZm6knqa62GPYg4qjY2wjQDFaYHavDPYHAcUUUUAFFFFACMKqzxbgeKt0xlyKAOT1bTxNGwC1g6/4fg+IGhQaVcXzad4m0xvtGkasnDq688nuDgBh369RXeXMAZTxXManprbxNEWSRDuV1OCCO4Nb4bE1MPUjVpO0l/X3d11Ma9CFem6dRXTMzwV41u9XnuPDXim0XS/FmnDF3ZnhZ1HSaL+8h68dM+ldgZMd64zXtCsviBBbLNdnR/GGn/NpusQjaSR/CfVT3X3JHcVU8O+Nr1da/wCEP8c2a6R4miHyjpBfr2khboc/3fy9B69TD08XB4jCKzWsofy+ce8fxjs9LN+VTxFTCzVDFO6fwy7+T7S/CXTXQ77zeKTzfeqnmY605C0jhV615vKelcuxFpHwv4+1Xl2ouFNVY9sabV/E+tP8yspamkdCxu96zNZ1qLSrUEYe4f8A1cef1PtUeq6xb6VYmeX5nPEcYPLn/D1Nef3F7PfXj3Vw+6Rzz6D2HtXfgcC6z55fCvxOLGYz2S5I/F+RdeeS4naeVy7ucsx7mpFbjrVFGO3g1YRicV7jp22PE9pfcuq1TxsVYMpIIOQR2qojdqsoaxlEpTOs03UheQ7JCBMo5H94etXt1cdDI8UqyI21l5BrorW9W5g3Dhh95fT/AOtXiYrDcj5o7Hs4TF+0XJLf8y6xDDB6VUkO1sU8v71FIQ64z+NcqVjsbGF+OtN31C7lWwaaZMKSSAAMkk4wK0sRcnLnNee+JNc1jxj4lk+HXgW48ufGNY1lOU06I8FFI6ysMjA6fmVhvNf134g6vN4Y+Hc/2axiOzU/ErD91bjukB/jkx3HT261s2Nto/hzw6vhDwVCYrJSftV6TmS6c/eYt3z3P4DAr1VCGXJVayvV+zF9P70v0j13emj8t1JZg3Tou1PrLv5R/WXyWu0kdppWk6Da+C/CcXk6RZjEkgOTcv3LHvk8k9z7AV0ml2AijX5apaTpgiRfl/Sunt4QqA4rw6tSVSTnN3b1b7ntU6cacVCCslsTRpsQCpB0oApazLCiiigAPWilPWkoAKKKKAI3TcKoXFsGByK0zyKjZAwxQBxmp6WJMsoII5BHBFZurQaJ4t0UeHvHdoZYkObfUoztmt27NuHIPv0PcV3Fxahh0rB1DTFkU/LWtGtOlNVKbtJbNbmVWjCrB06ivF7pnCz3XjD4bKkXiNZvE3hj/llr9ou+e3Tt56D7w/2h+Z6V3ui6rpWr6Qmo6Nf299bSdJoW3DPoe4PseayLO71Tw+7LaES2zfftpeUPrj0/CsWfwb4d1XU21jwRq03gnxC/LwoAbW4Po0f3Tn2x9K9f6zhsZ/H/AHc/5kvdfrFbesbr+71PI+rYnB/wP3kP5W/eXpJ7+ktf73Q9A8zFVr7U7fT7F7m4Y4HAUdWPYCuEuPFvjHwd+6+IfhSY2qcHW9FUz27e7x/eT/PFY7eLrHxbc/abC/gnjXiOGN8lB6leufXiuijktaT55aw/mTun81+uq7GdTOKNuWLtP+Vqz+5/poaV/qU+pXrXNweTwqDog9BTI+aqqCTg9atxKc5xxXscsYRUY7Hlc0pO73LUecdOKsxjkVDGuauRpzWE2WlckQd6sIOmaYqYFSL1rCTLtYlzUkM8kEwkQ4I7eo9KhzmlwTxg/hWTimrMjncXeLN+G5SeISIeO49DTt9cPfeNNB8PTFLvUY2nPH2SD97K/sFXv9ack/xB8VQl9I06PwppTcnU9XANxt9Vi6L9W/OuSWWVF78mow7y0X+b+SZ3Us7pT/dxvOovsxV38+i/7eaNnxN4o0Lw1YrcazfLC78RQIN80x9EQcn+XvXKvoniHxxZfb/G8kvhTwlnK6ar4vL4dhKRyoP90c+3etDS9N8KeFr977SopvEniBj+81nUWL7T6pnp/wAB/OrrWt/q94LvVLh7iT+HPCqPRR0FZvHUsLphFeX87W3+FdPV3fZI6I4Kvi9cZ7sP5E9/8UuvorLu5DGukm0uLQPD2nx6VoUI2R20S7S4/wBrH8u/cmtjS9LWJQNtWLLTQgGFxW5b2wQDIrx5Tcm5Sd2z2owUUoxVkhbe3CgcVcUcYoVQBxTqkoPwooooAKUUlKBQAh60Up60lABRRRQAUUUUANZcjmq01uGB4q3SYoAwbnT1bOVFYV7oquCNg/Ku3eIMORVaW1Vh0FO4rHGW1/r+jYS2ujNbjjyJxvXHt3H4GsPWPD3w38UTmXX/AAm2l35OTf6STE+fU7cZ/EGvQZtOVs8Vmz6OjA/IPyrow+KrYaXPRm4vydjDEYWliI8laCkvNXPPF+GepRkHwZ8UorlB92z1uISEe28Yb/x2myaH8XdKA+1eDtM1hF6yaZfBCffbJzXYXHh6Jycxg/UVCmnahaH/AEO+uoB6RysB+Wa9eHEOI/5fRjP1Vn98eV/eeTPIKH/LqUoejuvulzI44+I/ENlgal8MvFsGOphtxOPzWnr8QLKPibwv4sibuG0p/wDGu4TUPFMI+TVp2H+2qt/MVINe8Wrx9vU/WFf8K0/tui/iofdJ/rcyeSVk/dr/AHxX6WOJTx9BLxbeEvFtwfRNLcfzNW4td8WXmP7M+GXiOQnobzZbL/49XVNrni1+P7RC/wC7Cg/pULXHiScES6zd89kYJ/IColnNL7NBfOTf5WF/YdaXxYh/KMV+dzJTR/ivfgM+meH/AA/D1Ml3cmdh+C8VBJ4O09j/AMVh8SNQ1TubLSlEEZ9jsySPyrVbRprl911NNOT3kct/OrsGhRqBhP0rnlnVf/l2lD0Wv3u7/E0hw5hd6zlU/wAUnb7laP4Gdps3h/w8PL8G+EbW0kxj7bdDzJT+OS3/AI9Uk0WrazMJNVvJZx1EZ4QfRRxXQQaUqgfKBWhDp4HavLq1p1Zc9STb7t3PZoYenQgqdKKjFdErL8DDtNJjTG1P0rbt7AKoOKvRWqr2qysYHQVkbkMUAQDirCgYpcUtAC8YpKKKACiiigAoHWilFAAaSlakoAKKKKACiiigAooooAKQilooAYUB7VG0CmrFJQBSa0UjpUD2CnnFamKTFAGQdPUjpTf7OX+7WztpNtAGP/Zy/wB2nrp6jnbWrs9qNtAGetiByRUyWqgdKt7aXHtQBAIVHapQgHQU6igBMUtFFABRRRQAUUUUAFFFFABSikpRQB//2Q==";
+
+function loadImage(src, cors){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    if (cors) img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+/* QR is generated locally (no external image / CORS dependency), error correction H so the logo can cover the center */
+async function buildQrWithLogo(qrCode){
+  if (typeof qrcode !== 'function') throw new Error('qrcode library not loaded');
+  const logoImg = await loadImage(QR_LOGO_SRC, false);
+
+  const qr = qrcode(0, 'H');
+  qr.addData(qrCode);
+  qr.make();
+  const count = qr.getModuleCount();
+  const quiet = 4;
+  const cell = Math.ceil(500 / (count + quiet * 2));
+  const size = cell * (count + quiet * 2);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#000000';
+  for (let r = 0; r < count; r++){
+    for (let c = 0; c < count; c++){
+      if (qr.isDark(r, c)) ctx.fillRect((c + quiet) * cell, (r + quiet) * cell, cell, cell);
+    }
+  }
+
+  const logoSize = size * 0.30;
+  const cx = size / 2, cy = size / 2;
+
+  // white backing circle so the logo stays clear of the QR modules
+  ctx.beginPath();
+  ctx.arc(cx, cy, logoSize / 2 + 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+
+  // logo, cropped to its own circle
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, logoSize / 2, 0, Math.PI * 2);
+  ctx.clip();
+  const crop = logoImg.width * 0.055;
+  ctx.drawImage(logoImg, crop, crop, logoImg.width - crop * 2, logoImg.height - crop * 2,
+                cx - logoSize / 2, cy - logoSize / 2, logoSize, logoSize);
+  ctx.restore();
+
+  return canvas.toDataURL('image/png');
+}
+
+/* Runs the same three writes the n8n flow did per grade: insert the
+   attendance row, stamp it with the generated QR, then log the payment row. */
+async function registerStudent(payload){
+  const tables = GRADE_TABLE_MAP[payload.educationalStage]?.[payload.grade];
+  if (!tables) throw new Error(t('errGeneric'));
+
+  const createdAt = new Date().toISOString().split('T')[0];
+
+  const { data: inserted, error: insertErr } = await supa
+    .from(tables.attendance)
+    .insert({
+      full_name: payload.fullName,
+      student_phone: payload.studentPhone,
+      parent_phone: payload.parentPhone,
+      created_at: createdAt,
+      city: payload.city,
+      group_name: payload.group
+    })
+    .select()
+    .single();
+  if (insertErr) throw insertErr;
+
+  const qr_code = generateQrCode();
+  const qrUrl = buildQrUrl(qr_code);
+
+  const { error: updateErr } = await supa
+    .from(tables.attendance)
+    .update({ qr_code, qr_url: qrUrl })
+    .eq('id', inserted.id);
+  if (updateErr) throw updateErr;
+
+  const { error: paymentErr } = await supa
+    .from(tables.payment)
+    .insert({
+      qr_code,
+      full_name: payload.fullName,
+      created_at: createdAt
+    });
+  if (paymentErr) throw paymentErr;
+
+  return { id: inserted.id, full_name: payload.fullName, qrUrl, qrCode: qr_code };
+}
+
+const phoneRegex = /^01[0-9]{9}$/; // 11 digits total, starts with 01
+
+const form = document.getElementById('regForm');
+const submitBtn = document.getElementById('submitBtn');
+const statusEl = document.getElementById('status');
+const successView = document.getElementById('successView');
+const titleWrap = document.querySelector('.title-wrap');
+const subtitle = document.querySelector('.subtitle');
+const qrWrap = document.getElementById('qrWrap');
+const qrImage = document.getElementById('qrImage');
+const qrDownload = document.getElementById('qrDownload');
+const qrPrint = document.getElementById('qrPrint');
+
+qrPrint.addEventListener('click', () => window.print());
+
+/* Reliable download: turn the image into a Blob first (data: links are blocked in some browsers) */
+qrDownload.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const src = qrImage.src;
+  if (!src) return;
+  try{
+    const blob = await (await fetch(src)).blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'student-qr.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  } catch(err){
+    window.open(src, '_blank'); // fallback: open the image so it can be saved manually
+  }
+});
+
+function setupPhoneField(inputId, fieldId){
+  const input = document.getElementById(inputId);
+  const field = document.getElementById(fieldId);
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^0-9]/g, '').slice(0, 11);
+  });
+  function validate(){
+    const valid = phoneRegex.test(input.value);
+    field.classList.toggle('has-error', !valid);
+    input.classList.toggle('invalid', !valid);
+    return valid;
+  }
+  input.addEventListener('blur', validate);
+  return validate;
+}
+
+const validateStudentPhone = setupPhoneField('studentPhone', 'studentPhoneField');
+const validateParentPhone = setupPhoneField('parentPhone', 'parentPhoneField');
+
+const nameRegex = /^[A-Za-z\u0600-\u06FF\s]+$/; // English or Arabic letters and spaces only
+const nameInput = document.getElementById('fullName');
+const nameField = document.getElementById('fullNameField');
+
+nameInput.addEventListener('input', () => {
+  nameInput.value = nameInput.value.replace(/[^A-Za-z\u0600-\u06FF\s]/g, '');
+});
+
+function validateFullName(){
+  const valid = nameRegex.test(nameInput.value.trim()) && nameInput.value.trim().length > 0;
+  nameField.classList.toggle('has-error', !valid);
+  nameInput.classList.toggle('invalid', !valid);
+  return valid;
+}
+nameInput.addEventListener('blur', validateFullName);
+
+async function extractErrorMessage(res){
+  let rawText = '';
+  try{
+    rawText = await res.text();
+  } catch(e){
+    return t('errGeneric');
+  }
+
+  if (rawText){
+    try{
+      const data = JSON.parse(rawText);
+      const msg = data.message || data.error || data.msg || data.detail;
+      if (msg) return msg;
+    } catch(e){
+      return rawText.trim().slice(0, 200);
+    }
+  }
+
+  return res.statusText
+    ? `Submission failed: ${res.statusText}`
+    : t('errGeneric');
+}
+
+function resolveQrSrc(qrValue){
+  if (!qrValue || typeof qrValue !== 'string') return null;
+  const val = qrValue.trim();
+  if (!val) return null;
+  if (val.startsWith('data:image')) return val;
+  if (val.startsWith('http://') || val.startsWith('https://')) return val;
+  return `data:image/png;base64,${val}`;
+}
+
+function showQr(qrValue){
+  const src = resolveQrSrc(qrValue);
+  if (!src){
+    qrWrap.style.display = 'none';
+    return;
+  }
+  qrImage.src = src;
+  qrDownload.href = src;
+  qrWrap.style.display = 'block';
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusEl.className = 'status';
+  statusEl.textContent = '';
+
+  const nameOk = validateFullName();
+  const studentOk = validateStudentPhone();
+  const parentOk = validateParentPhone();
+
+  if (!form.checkValidity() || !nameOk || !studentOk || !parentOk){
+    form.reportValidity();
+    return;
+  }
+
+  const payload = {
+    fullName: document.getElementById('fullName').value.trim(),
+    studentPhone: document.getElementById('studentPhone').value.trim(),
+    parentPhone: document.getElementById('parentPhone').value.trim(),
+    governorate: getGovernorateLabel(govSelect.value),
+    city: getCityLabel(govSelect.value, citySelect.value),
+    educationalStage: document.getElementById('stage').value,
+    grade: document.getElementById('grade').value,
+    group: getGroupLabel(document.getElementById('group').value)
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = t('submitting');
+
+  try{
+    const alreadyRegistered = await isPhoneAlreadyRegistered(payload.studentPhone);
+    if (alreadyRegistered){
+      statusEl.textContent = t('errPhoneRegistered');
+      statusEl.className = 'status failure';
+      submitBtn.disabled = false;
+      submitBtn.textContent = t('btnSubmit');
+      return;
+    }
+
+    const result = await registerStudent(payload);
+
+    let qrSrc = result.qrUrl;
+    try{
+      qrSrc = await buildQrWithLogo(result.qrCode);
+    } catch(logoErr){
+      console.warn('QR logo failed, showing plain QR', logoErr);
+    }
+    showQr(qrSrc);
+    form.style.display = 'none';
+    titleWrap.style.display = 'none';
+    subtitle.style.display = 'none';
+    successView.style.display = 'block';
+  } catch(err){
+    console.error(err);
+    statusEl.textContent = t('errGeneric');
+    statusEl.className = 'status failure';
+    submitBtn.disabled = false;
+    submitBtn.textContent = t('btnSubmit');
+  }
+});
+
+/* ============================================================
+   ADMIN PANEL — edit stages / grades / groups, behind #admin
+   ============================================================ */
+const cardEl = document.querySelector('.card');
+const adminOverlay = document.getElementById('adminOverlay');
+const adminGate = document.getElementById('adminGate');
+const adminPanel = document.getElementById('adminPanel');
+const adminPasswordInput = document.getElementById('adminPasswordInput');
+const adminGateError = document.getElementById('adminGateError');
+const stagesContainer = document.getElementById('stagesContainer');
+const govsContainer = document.getElementById('govsContainer');
+const adminGovSelect = document.getElementById('adminGovSelect');
+const govVisibilityList = document.getElementById('govVisibilityList');
+const adminStatus = document.getElementById('adminStatus');
+
+let adminDraft = null; // working copy edited in the panel, only persisted on Save
+let adminUnlocked = false;
+let selectedGovKey = null; // which governorate's cities are shown in the editor below the dropdown
+
+function showAdminStatus(msg, isError){
+  adminStatus.textContent = msg;
+  adminStatus.className = 'admin-status ' + (isError ? 'show-error' : 'show-success');
+  setTimeout(() => { adminStatus.className = 'admin-status'; }, 3000);
+}
+
+/* Checklist of every governorate with a checkbox that controls whether it
+   shows up on the public registration form (gov.active). A governorate
+   with no `active` field yet (older saved data) is treated as visible. */
+function renderGovVisibilityList(){
+  govVisibilityList.innerHTML = '';
+
+  adminDraft.governorates.forEach(gov => {
+    const isVisible = gov.active !== false;
+    const row = document.createElement('div');
+    row.className = 'gov-toggle-row' + (isVisible ? '' : ' is-hidden');
+
+    const checkboxId = 'govvis-' + gov.key;
+    row.innerHTML = `
+      <input type="checkbox" id="${checkboxId}" ${isVisible ? 'checked' : ''}>
+      <label for="${checkboxId}">${escapeAttr(gov.label || '(بدون اسم)')}</label>
+    `;
+    row.querySelector('input').addEventListener('change', e => {
+      gov.active = e.target.checked;
+      row.classList.toggle('is-hidden', !e.target.checked);
+    });
+
+    govVisibilityList.appendChild(row);
+  });
+}
+
+document.getElementById('govShowAllBtn').addEventListener('click', () => {
+  adminDraft.governorates.forEach(gov => { gov.active = true; });
+  renderGovVisibilityList();
+});
+document.getElementById('govHideAllBtn').addEventListener('click', () => {
+  adminDraft.governorates.forEach(gov => { gov.active = false; });
+  renderGovVisibilityList();
+});
+
+function renderAdminPanel(){
+  stagesContainer.innerHTML = '';
+
+  adminDraft.stages.forEach((stage, stageIdx) => {
+    const stageBlock = document.createElement('div');
+    stageBlock.className = 'stage-block';
+
+    const head = document.createElement('div');
+    head.className = 'stage-block-head';
+    head.innerHTML = `
+      <input type="text" class="stage-ar" value="${escapeAttr(stage.labelAr)}" placeholder="اسم المرحلة الدراسية">
+      <button type="button" class="btn-x" title="حذف المرحلة">✕</button>
+    `;
+    head.querySelector('.stage-ar').addEventListener('input', e => { stage.labelAr = e.target.value; stage.labelEn = e.target.value; });
+    head.querySelector('.btn-x').addEventListener('click', () => {
+      if (confirm('تحذف المرحلة دي وكل السنين والمجاميع اللي جواها؟')){
+        adminDraft.stages.splice(stageIdx, 1);
+        renderAdminPanel();
+      }
+    });
+    stageBlock.appendChild(head);
+
+    stage.grades.forEach((grade, gradeIdx) => {
+      const gradeBlock = document.createElement('div');
+      gradeBlock.className = 'grade-block';
+
+      const gHead = document.createElement('div');
+      gHead.className = 'grade-block-head';
+      gHead.innerHTML = `
+        <input type="text" class="grade-ar" value="${escapeAttr(grade.labelAr)}" placeholder="اسم السنة الدراسية">
+        <button type="button" class="btn-x" title="حذف السنة الدراسية">✕</button>
+      `;
+      gHead.querySelector('.grade-ar').addEventListener('input', e => { grade.labelAr = e.target.value; grade.labelEn = e.target.value; });
+      gHead.querySelector('.btn-x').addEventListener('click', () => {
+        if (confirm('تحذف السنة الدراسية دي وكل المجاميع اللي جواها؟')){
+          stage.grades.splice(gradeIdx, 1);
+          renderAdminPanel();
+        }
+      });
+      gradeBlock.appendChild(gHead);
+
+      grade.groups.forEach((group, groupIdx) => {
+        const row = document.createElement('div');
+        row.className = 'group-row';
+        row.innerHTML = `
+          <span class="field-tag">اليوم</span><input type="text" class="g-dayar" value="${escapeAttr(group.dayAr)}" placeholder="سبت وتلات">
+          <span class="field-tag">الوقت</span><input type="text" class="g-time" value="${escapeAttr(group.time)}" placeholder="5:00">
+          <button type="button" class="btn-x" title="حذف المجموعة">✕</button>
+        `;
+        row.querySelector('.g-dayar').addEventListener('input', e => { group.dayAr = e.target.value; group.dayEn = e.target.value; });
+        const timeInput = row.querySelector('.g-time');
+        timeInput.addEventListener('input', e => { group.time = e.target.value; });
+        timeInput.addEventListener('blur', e => {
+          const normalized = normalizeTimeValue(e.target.value);
+          e.target.value = normalized;
+          group.time = normalized;
+        });
+        row.querySelector('.btn-x').addEventListener('click', () => {
+          grade.groups.splice(groupIdx, 1);
+          renderAdminPanel();
+        });
+        gradeBlock.appendChild(row);
+      });
+
+      const addGroupBtn = document.createElement('button');
+      addGroupBtn.type = 'button';
+      addGroupBtn.className = 'btn-add-inline';
+      addGroupBtn.textContent = '+ إضافة مجموعة';
+      addGroupBtn.addEventListener('click', () => {
+        grade.groups.push({ value: makeSlug('grp'), dayEn: '', dayAr: '', time: '' });
+        renderAdminPanel();
+      });
+      gradeBlock.appendChild(addGroupBtn);
+
+      stageBlock.appendChild(gradeBlock);
+    });
+
+    const addGradeBtn = document.createElement('button');
+    addGradeBtn.type = 'button';
+    addGradeBtn.className = 'btn-add-inline';
+    addGradeBtn.textContent = '+ إضافة سنة دراسية';
+    addGradeBtn.addEventListener('click', () => {
+      stage.grades.push({ value: makeSlug('grd'), labelEn: '', labelAr: '', groups: [] });
+      renderAdminPanel();
+    });
+    stageBlock.appendChild(addGradeBtn);
+
+    stagesContainer.appendChild(stageBlock);
+  });
+
+  renderGovVisibilityList();
+  renderGovSection();
+}
+
+/* Governorate picker: choose a governorate from the dropdown, then edit
+   only its cities below — avoids dumping all 27 governorates on screen. */
+function renderGovSection(){
+  adminGovSelect.innerHTML = '';
+
+  if (adminDraft.governorates.length === 0){
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'لا توجد محافظات مضافة';
+    adminGovSelect.appendChild(opt);
+    govsContainer.innerHTML = '';
+    return;
+  }
+
+  if (!selectedGovKey || !adminDraft.governorates.some(g => g.key === selectedGovKey)){
+    selectedGovKey = adminDraft.governorates[0].key;
+  }
+
+  adminDraft.governorates.forEach(gov => {
+    const opt = document.createElement('option');
+    opt.value = gov.key;
+    opt.textContent = gov.label || '(بدون اسم)';
+    if (gov.key === selectedGovKey) opt.selected = true;
+    adminGovSelect.appendChild(opt);
+  });
+
+  govsContainer.innerHTML = '';
+
+  const govIdx = adminDraft.governorates.findIndex(g => g.key === selectedGovKey);
+  const gov = adminDraft.governorates[govIdx];
+  if (!gov) return;
+
+  const govBlock = document.createElement('div');
+  govBlock.className = 'stage-block';
+
+  const gHead = document.createElement('div');
+  gHead.className = 'stage-block-head';
+  gHead.innerHTML = `
+    <input type="text" class="gov-label" value="${escapeAttr(gov.label)}" placeholder="اسم المحافظة">
+    <button type="button" class="btn-x" title="حذف المحافظة">✕</button>
+  `;
+  gHead.querySelector('.gov-label').addEventListener('input', e => {
+    gov.label = e.target.value;
+    const opt = Array.from(adminGovSelect.options).find(o => o.value === gov.key);
+    if (opt) opt.textContent = gov.label || '(بدون اسم)';
+    renderGovVisibilityList();
+  });
+  gHead.querySelector('.btn-x').addEventListener('click', () => {
+    if (confirm('تحذف المحافظة دي وكل المدن اللي جواها؟')){
+      adminDraft.governorates.splice(govIdx, 1);
+      selectedGovKey = null;
+      renderGovVisibilityList();
+      renderGovSection();
+    }
+  });
+  govBlock.appendChild(gHead);
+
+  gov.cities.forEach((city, cityIdx) => {
+    const row = document.createElement('div');
+    row.className = 'city-row';
+    row.innerHTML = `
+      <input type="text" class="city-label" value="${escapeAttr(city.label)}" placeholder="اسم المدينة أو المركز أو القرية">
+      <button type="button" class="btn-x" title="حذف المدينة">✕</button>
+    `;
+    row.querySelector('.city-label').addEventListener('input', e => { city.label = e.target.value; });
+    row.querySelector('.btn-x').addEventListener('click', () => {
+      gov.cities.splice(cityIdx, 1);
+      renderGovSection();
+    });
+    govBlock.appendChild(row);
+  });
+
+  const addCityBtn = document.createElement('button');
+  addCityBtn.type = 'button';
+  addCityBtn.className = 'btn-add-inline';
+  addCityBtn.textContent = '+ إضافة مدينة أو قرية';
+  addCityBtn.addEventListener('click', () => {
+    gov.cities.push({ value: makeSlug('city'), label: 'مدينة جديدة' });
+    renderGovSection();
+  });
+  govBlock.appendChild(addCityBtn);
+
+  govsContainer.appendChild(govBlock);
+}
+
+adminGovSelect.addEventListener('change', () => {
+  selectedGovKey = adminGovSelect.value;
+  renderGovSection();
+});
+
+function escapeAttr(str){
+  return String(str == null ? '' : str).replace(/"/g, '&quot;');
+}
+
+function openAdminPanel(){
+  adminDraft = JSON.parse(JSON.stringify(regData));
+  renderAdminPanel();
+  adminGate.style.display = 'none';
+  adminPanel.style.display = 'block';
+}
+
+document.getElementById('adminGateBtn').addEventListener('click', () => {
+  if (adminPasswordInput.value === getAdminPassword()){
+    adminUnlocked = true;
+    adminGateError.style.display = 'none';
+    openAdminPanel();
+  } else {
+    adminGateError.style.display = 'block';
+  }
+});
+adminPasswordInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); document.getElementById('adminGateBtn').click(); }
+});
+
+document.getElementById('addStageBtn').addEventListener('click', () => {
+  adminDraft.stages.push({ key: makeSlug('stage'), labelEn: '', labelAr: '', grades: [] });
+  renderAdminPanel();
+});
+
+document.getElementById('addGovBtn').addEventListener('click', () => {
+  const newGov = { key: makeSlug('gov'), label: 'محافظة جديدة', cities: [], active: true };
+  adminDraft.governorates.push(newGov);
+  selectedGovKey = newGov.key;
+  renderAdminPanel();
+  govsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+document.getElementById('saveDataBtn').addEventListener('click', () => {
+  // Clean up any rows the admin added but left completely empty, instead of
+  // blocking the whole save over one stray blank row (that used to wipe out
+  // every other edit and made it look like data had been deleted).
+  let removedCount = 0;
+
+  adminDraft.stages.forEach(stage => {
+    stage.grades.forEach(grade => {
+      const before = grade.groups.length;
+      grade.groups = grade.groups.filter(g => g.dayAr.trim() || g.dayEn.trim() || g.time.trim());
+      removedCount += before - grade.groups.length;
+    });
+    const beforeGrades = stage.grades.length;
+    stage.grades = stage.grades.filter(g => g.labelEn.trim() || g.labelAr.trim());
+    removedCount += beforeGrades - stage.grades.length;
+  });
+  const beforeStages = adminDraft.stages.length;
+  adminDraft.stages = adminDraft.stages.filter(s => s.labelEn.trim() || s.labelAr.trim());
+  removedCount += beforeStages - adminDraft.stages.length;
+
+  adminDraft.governorates.forEach(gov => {
+    const before = gov.cities.length;
+    gov.cities = gov.cities.filter(c => c.label.trim());
+    removedCount += before - gov.cities.length;
+  });
+  const beforeGovs = adminDraft.governorates.length;
+  adminDraft.governorates = adminDraft.governorates.filter(g => g.label.trim());
+  removedCount += beforeGovs - adminDraft.governorates.length;
+
+  if (!adminDraft.governorates.some(g => g.key === selectedGovKey)){
+    selectedGovKey = adminDraft.governorates.length ? adminDraft.governorates[0].key : null;
+  }
+
+  regData = adminDraft;
+  saveRegData(regData);
+  renderAdminPanel();
+  showAdminStatus(removedCount > 0 ? 'اتحفظ بنجاح ✓ (اتمسحت عناصر فاضية ماكانتش متسماة)' : 'اتحفظ بنجاح ✓', false);
+});
+
+document.getElementById('resetDataBtn').addEventListener('click', () => {
+  if (confirm('هيرجع كل حاجة زي ما كانت الأول (المجاميع والسنين اللي اتضافت هتتمسح). تكمل؟')){
+    regData = JSON.parse(JSON.stringify(DEFAULT_REG_DATA));
+    saveRegData(regData);
+    adminDraft = JSON.parse(JSON.stringify(regData));
+    renderAdminPanel();
+    showAdminStatus('رجع للإعدادات الافتراضية', false);
+  }
+});
+
+document.getElementById('changePasswordBtn').addEventListener('click', () => {
+  const newPw = document.getElementById('newPasswordInput').value.trim();
+  if (!newPw){
+    showAdminStatus('اكتب باسورد جديد الأول', true);
+    return;
+  }
+  localStorage.setItem(ADMIN_PASSWORD_KEY, newPw);
+  document.getElementById('newPasswordInput').value = '';
+  showAdminStatus('اتغير الباسورد بنجاح ✓', false);
+});
+
+function goHome(){
+  window.location.hash = '';
+}
+document.getElementById('adminBackFromGate').addEventListener('click', e => { e.preventDefault(); goHome(); });
+document.getElementById('adminBackTop').addEventListener('click', e => { e.preventDefault(); goHome(); });
+
+function routeByHash(){
+  if (window.location.hash === '#admin'){
+    cardEl.style.display = 'none';
+    adminOverlay.style.display = 'block';
+    adminPasswordInput.value = '';
+    if (adminUnlocked){
+      openAdminPanel();
+    } else {
+      adminGate.style.display = 'block';
+      adminPanel.style.display = 'none';
+      adminGateError.style.display = 'none';
+      setTimeout(() => { adminPasswordInput.value = ''; adminPasswordInput.focus(); }, 50);
+    }
+  } else {
+    adminOverlay.style.display = 'none';
+    cardEl.style.display = 'block';
+    // reflect any admin edits saved in a previous visit
+    regData = loadRegData();
+    populateStageOptions(true);
+    populateGradeOptions(true);
+    populateGroupOptions(true);
+    populateGovernorateOptions(true);
+    populateCityOptions(true);
+  }
+}
+
+window.addEventListener('hashchange', routeByHash);
+routeByHash();
+
+</script>
+
+<!-- CAIO EDU PWA: installable on Android/iOS when served over HTTPS -->
+<script>
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
