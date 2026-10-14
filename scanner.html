@@ -937,7 +937,7 @@
   // Groups per grade, per the requested mapping:
   //  prep1 -> Sat & Tue 3:00 | prep2 -> Sat & Tue 4:00 | prep3 -> Sat & Tue 2:00
   //  first -> Sun & Wed 2:00 | second -> Sun & Wed 3:00 & 6:00 | third -> Sun & Wed 12:00 & 5:00
-  const GRADE_GROUPS = {
+  let GRADE_GROUPS = {
     prep3: [
       { id: "سبت وثلاث 2", en: "Sat & Tue - 2:00", ar: "السبت والثلاثاء - الساعة 2" }
     ],
@@ -969,6 +969,60 @@
 
   function groupsForGrade(grade){
     return GRADE_GROUPS[grade] || [];
+  }
+
+  // ---- Groups come from the registration admin panel (Supabase app_config) ----
+  // The hardcoded GRADE_GROUPS above is only the fallback if the server is unreachable.
+  const REG_GRADE_TO_SCANNER = {
+    "First Prep":"prep1", "Second Prep":"prep2", "Third Prep":"prep3",
+    "First Grade":"first", "Second Grade":"second", "Third Grade":"third"
+  };
+  // The 8 original groups keep the exact id the DB functions already know,
+  // as long as the admin hasn't changed their day/time.
+  const LEGACY_GROUP_IDS = {
+    "prep1-sattue-3": {id:"سبت وثلاث 3", dayAr:"سبت وتلات", time:"3:00"},
+    "prep2-sattue-4": {id:"سبت وثلاث 4", dayAr:"سبت وتلات", time:"4:00"},
+    "prep3-sattue-2": {id:"سبت وثلاث 2", dayAr:"سبت وتلات", time:"2:00"},
+    "sec1-sunwed-2":  {id:"الأحد والأربعاء 2",  dayAr:"حد واربع", time:"2:00"},
+    "sec2-sunwed-3":  {id:"الأحد والأربعاء 3",  dayAr:"حد واربع", time:"3:00"},
+    "sec2-sunwed-6":  {id:"الأحد والأربعاء 6",  dayAr:"حد واربع", time:"6:00"},
+    "sec3-sunwed-12": {id:"الأحد والأربعاء 12", dayAr:"حد واربع", time:"12:00"},
+    "sec3-sunwed-5":  {id:"الأحد والأربعاء 5",  dayAr:"حد واربع", time:"5:00"}
+  };
+
+  function buildGroupsFromConfig(cfg){
+    const out = { prep1:[], prep2:[], prep3:[], first:[], second:[], third:[] };
+    (cfg.stages || []).forEach(stage => (stage.grades || []).forEach(grade => {
+      const key = REG_GRADE_TO_SCANNER[grade.value];
+      if(!key) return; // custom grades have no attendance tables yet
+      (grade.groups || []).forEach(g => {
+        const time = String(g.time || "");
+        const shortTime = time.replace(":00", "");
+        const legacy = LEGACY_GROUP_IDS[g.value];
+        // same string the registration page writes into group_name
+        const id = (legacy && legacy.dayAr === g.dayAr && legacy.time === time)
+          ? legacy.id : `${g.dayAr} ${shortTime}`;
+        out[key].push({
+          id,
+          en: `${g.dayEn || g.dayAr} - ${time}`,
+          ar: `${g.dayAr} - الساعة ${shortTime}`
+        });
+      });
+    }));
+    return out;
+  }
+
+  async function loadGroupsFromServer(){
+    try{
+      const { data, error } = await supabaseClient
+        .from('app_config').select('value').eq('key', 'reg_form_data').maybeSingle();
+      if(error || !data || !data.value || !Array.isArray(data.value.stages)) return;
+      GRADE_GROUPS = buildGroupsFromConfig(data.value);
+      if(typeof sessionActive !== 'undefined' && sessionActive) return; // don't change groups mid-session
+      const groups = groupsForGrade(currentGrade);
+      if(!groups.some(g => g.id === currentGroup)) currentGroup = groups[0] ? groups[0].id : "";
+      renderGroupOptions();
+    }catch(e){ console.warn('groups sync failed', e); }
   }
 
   function groupLabel(group){
@@ -1991,6 +2045,7 @@
   renderThemeOptions();
   renderLangButtons();
   setLanguage(currentLang);
+  loadGroupsFromServer();
 
   refreshSessionState();
   resumeSessionSync();
