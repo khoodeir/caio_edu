@@ -588,8 +588,7 @@
 
     <div class="hub-actions">
       <button class="link-btn" onclick="openChangePasswordOverlay()" data-i18n="changePasswordLink">تغيير كلمة المرور</button>
-      <button class="link-btn" onclick="CAIO_DL.start('teacher', this)" data-i18n="downloadLink">⬇ تحميل الصفحة</button>
-      <button class="link-btn" onclick="CAIO_DL.revokeAll(this)" data-i18n="revokeLink">🔒 إلغاء النسخ المحمّلة</button>
+      <button class="link-btn" data-install onclick="CAIO_INSTALL.start('teacher')" data-i18n="installLink">⬇ تثبيت البرنامج</button>
       <button class="link-btn" onclick="logoutTeacher()" data-i18n="logoutLink">تسجيل خروج</button>
     </div>
 
@@ -675,7 +674,7 @@
     </div>
 
     <div class="hub-actions">
-      <button class="link-btn" onclick="CAIO_DL.start('assistant', this)" data-i18n="downloadLink">⬇ تحميل الصفحة</button>
+      <button class="link-btn" data-install onclick="CAIO_INSTALL.start('assistant')" data-i18n="installLink">⬇ تثبيت البرنامج</button>
       <button class="link-btn" onclick="logoutAssistant()" data-i18n="logoutLink">تسجيل خروج</button>
     </div>
 
@@ -730,24 +729,6 @@
     </div>
   </div>
 
-  <!-- Download: ask the assistant password once so the copy can sign in by itself -->
-  <div class="overlay" id="dlPwOverlay">
-    <div class="auth-card">
-      <h3 data-i18n="dlPwTitle">تحميل نسخة المساعد</h3>
-      <div class="hint" data-i18n="dlPwHint">اكتب كلمة مرور المساعد مرة واحدة، والنسخة المحمّلة هتدخل بيها لوحدها</div>
-      <div class="field">
-        <label for="dlPw" data-i18n="passwordLabel">كلمة المرور</label>
-        <input type="password" id="dlPw" autocomplete="current-password" onkeydown="if(event.key==='Enter') CAIO_DL.confirm()">
-      </div>
-      <div class="msg-text error" id="dlPwError" data-i18n="wrongPassword">كلمة المرور غير صحيحة</div>
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="CAIO_DL.cancel()" data-i18n="cancel">إلغاء</button>
-        <button class="btn btn-primary" onclick="CAIO_DL.confirm()" data-i18n="dlGo">تحميل</button>
-      </div>
-    </div>
-  </div>
-  <!-- /dlPwOverlay -->
-
   <!-- Change password overlay -->
   <div class="overlay" id="changePasswordOverlay">
     <div class="auth-card">
@@ -775,7 +756,7 @@
   </div>
 
 <script src="caio-common.js"></script>
-<script src="caio-download.js"></script>
+<script src="caio-install.js"></script>
 <script>
   // ============================================================
   // CAIO Security Layer
@@ -906,8 +887,7 @@
       emailLabel:"الإيميل",
       wrongCredentials:"كلمة المرور غير صحيحة",
       signingIn:"جاري الدخول...",
-      hubAudit:"سجل العمليات", hubAuditDesc:"مين عدّل أو حذف إيه ومتى", revokeLink:"🔒 إلغاء النسخ المحمّلة",
-      downloadLink:"⬇ تحميل الصفحة", dlPwTitle:"تحميل نسخة المساعد", dlPwHint:"اكتب كلمة مرور المساعد مرة واحدة، والنسخة المحمّلة هتدخل بيها لوحدها", dlGo:"تحميل"
+      hubAudit:"سجل العمليات", hubAuditDesc:"مين عدّل أو حذف إيه ومتى", installLink:"⬇ تثبيت البرنامج"
     },
     en:{
       pageTitle:"Sign In | CAIO",
@@ -943,8 +923,7 @@
       emailLabel:"Email",
       wrongCredentials:"Incorrect password",
       signingIn:"Signing in...",
-      hubAudit:"Audit log", hubAuditDesc:"Who edited or deleted what, and when", revokeLink:"🔒 Revoke downloaded copies",
-      downloadLink:"⬇ Download page", dlPwTitle:"Download assistant copy", dlPwHint:"Type the assistant password once; the copy will sign in by itself", dlGo:"Download"
+      hubAudit:"Audit log", hubAuditDesc:"Who edited or deleted what, and when", installLink:"⬇ Install app"
     }
   };
 
