@@ -710,8 +710,12 @@ function loadRegData(){
   return fresh;
 }
 
+/* Saves locally (instant cache) AND to Supabase (shared with every other
+   device + the scanner). Returns a promise that rejects if the server
+   write failed, so the admin panel can tell the admin. */
 function saveRegData(data){
   localStorage.setItem(REG_DATA_KEY, JSON.stringify(data));
+  return pushRegDataToServer(data);
 }
 
 function getAdminPassword(){
@@ -967,6 +971,44 @@ populateGradeOptions(false);
 populateGroupOptions(false);
 populateGovernorateOptions(false);
 populateCityOptions(false);
+
+/* ============================================================
+   SHARED CONFIG — stages / grades / groups live in Supabase
+   (table app_config, key reg_form_data) so the admin's edits show up
+   on every device and in the scanner. localStorage is only a cache.
+   ============================================================ */
+const REG_CONFIG_ROW = 'reg_form_data';
+
+async function pushRegDataToServer(data){
+  const { error } = await supa
+    .from('app_config')
+    .upsert({ key: REG_CONFIG_ROW, value: data, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+async function pullRegDataFromServer(){
+  try{
+    const { data, error } = await supa
+      .from('app_config').select('value').eq('key', REG_CONFIG_ROW).maybeSingle();
+    if (error || !data || !data.value || !Array.isArray(data.value.stages)) return;
+    const v = data.value;
+    if (!Array.isArray(v.governorates)) v.governorates = [];
+    const have = new Set(v.governorates.map(g => g.key));
+    DEFAULT_REG_DATA.governorates.forEach(d => {
+      if (!have.has(d.key)) v.governorates.push(JSON.parse(JSON.stringify(d)));
+    });
+    regData = v;
+    localStorage.setItem(REG_DATA_KEY, JSON.stringify(v));
+    if (window.location.hash !== '#admin'){
+      populateStageOptions(true);
+      populateGradeOptions(true);
+      populateGroupOptions(true);
+      populateGovernorateOptions(true);
+      populateCityOptions(true);
+    }
+  } catch(e){ /* offline / table missing: keep the local copy */ }
+}
+pullRegDataFromServer();
 
 /* ============================================================
    FORM VALIDATION + SUBMISSION (direct Supabase — no n8n)
@@ -1547,7 +1589,7 @@ document.getElementById('adminGateBtn').addEventListener('click', () => {
   if (adminPasswordInput.value === getAdminPassword()){
     adminUnlocked = true;
     adminGateError.style.display = 'none';
-    openAdminPanel();
+    pullRegDataFromServer().then(openAdminPanel);
   } else {
     adminGateError.style.display = 'block';
   }
@@ -1569,7 +1611,7 @@ document.getElementById('addGovBtn').addEventListener('click', () => {
   govsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 
-document.getElementById('saveDataBtn').addEventListener('click', () => {
+document.getElementById('saveDataBtn').addEventListener('click', async () => {
   // Clean up any rows the admin added but left completely empty, instead of
   // blocking the whole save over one stray blank row (that used to wipe out
   // every other edit and made it look like data had been deleted).
@@ -1603,18 +1645,23 @@ document.getElementById('saveDataBtn').addEventListener('click', () => {
   }
 
   regData = adminDraft;
-  saveRegData(regData);
   renderAdminPanel();
-  showAdminStatus(removedCount > 0 ? 'اتحفظ بنجاح ✓ (اتمسحت عناصر فاضية ماكانتش متسماة)' : 'اتحفظ بنجاح ✓', false);
+  try{
+    await saveRegData(regData);
+    showAdminStatus(removedCount > 0 ? 'اتحفظ بنجاح ✓ (اتمسحت عناصر فاضية ماكانتش متسماة)' : 'اتحفظ بنجاح ✓ (ظاهر في الاسكانر كمان)', false);
+  } catch(e){
+    console.error(e);
+    showAdminStatus('اتحفظ على الجهاز ده بس — فشل الحفظ على السيرفر (اتأكد من جدول app_config)', true);
+  }
 });
 
-document.getElementById('resetDataBtn').addEventListener('click', () => {
+document.getElementById('resetDataBtn').addEventListener('click', async () => {
   if (confirm('هيرجع كل حاجة زي ما كانت الأول (المجاميع والسنين اللي اتضافت هتتمسح). تكمل؟')){
     regData = JSON.parse(JSON.stringify(DEFAULT_REG_DATA));
-    saveRegData(regData);
     adminDraft = JSON.parse(JSON.stringify(regData));
     renderAdminPanel();
-    showAdminStatus('رجع للإعدادات الافتراضية', false);
+    try{ await saveRegData(regData); showAdminStatus('رجع للإعدادات الافتراضية', false); }
+    catch(e){ showAdminStatus('رجع محلياً بس — فشل الحفظ على السيرفر', true); }
   }
 });
 
