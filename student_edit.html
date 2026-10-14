@@ -108,8 +108,9 @@
   const GRADES = CAIO.GRADES;
   const GRADE_KEYS = Object.keys(GRADES);
 
-  /* ---- access guard: teacher session OR assistant (Supabase session) ---- */
-  (async function guard(){
+  /* ---- access guard: teacher session OR assistant (Supabase session) ----
+     (called at the END of this script: init() uses $ / students, declared below) */
+  async function guard(){
     let ok = CAIO.teacherOk();
     if(!ok){
       try{
@@ -120,7 +121,7 @@
     if(!ok){ location.replace('index.html'); return; }
     document.documentElement.style.visibility = 'visible';
     init();
-  })();
+  }
 
   let students = [];       // merged attendance + payment rows
   let groupsByGrade = {};  // from shared config
@@ -339,6 +340,8 @@
       btn.disabled = false;
     }
   }
+
+  guard();
 </script>
 </body>
 </html>
