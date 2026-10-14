@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+// ---- CAIO access guard: teacher only ----
+(function(){
+  try{
+    var raw = sessionStorage.getItem('caioTeacherSession') || localStorage.getItem('caioTeacherSession');
+    var d = raw && JSON.parse(raw);
+    if(!(d && d.exp && Date.now() < d.exp)) window.location.replace('index.html');
+  }catch(e){ window.location.replace('index.html'); }
+})();
+</script>
+<title>سجل العمليات | CAIO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="caio-common.js"></script>
+<link rel="icon" type="image/png" href="./icon-192.png">
+<style>
+  :root{ --bg:#f5f6f8; --card:#fff; --ink:#1b1f27; --muted:#6b7280; --line:#e3e6ea; --gold:#b8861e; --bad:#c0392b; --ok:#1f8a4c; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#0f1116; --card:#171a22; --ink:#e8eaf0; --muted:#9aa3b2; --line:#2a2f3a; --gold:#e2b04a; } }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Cairo','Segoe UI',Tahoma,sans-serif; padding:18px; }
+  .wrap{ max-width:1100px; margin:0 auto; }
+  .top{ display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+  .top a{ color:var(--ink); text-decoration:none; border:1px solid var(--line); background:var(--card); border-radius:10px; padding:8px 14px; font-weight:600; }
+  h1{ margin:0; font-size:22px; color:var(--gold); flex:1; }
+  .filters{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
+  .filters label{ font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
+  select,input,button{ font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); }
+  button{ cursor:pointer; font-weight:600; } button.primary{ background:var(--gold); color:#fff; border-color:var(--gold); }
+  .stat{ color:var(--muted); font-size:13px; margin:6px 2px 10px; }
+  .table-wrap{ overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th,td{ padding:10px 12px; text-align:start; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ background:var(--bg); color:var(--muted); font-size:12px; position:sticky; top:0; }
+  .pill{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; background:rgba(184,134,30,.15); color:var(--gold); }
+  .pill.danger{ background:rgba(192,57,43,.14); color:var(--bad); } .pill.sec{ background:rgba(31,138,76,.14); color:var(--ok); }
+  .msg{ padding:14px; text-align:center; color:var(--muted); } .msg.err{ color:var(--bad); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="index.html">→ رجوع</a><h1>🧾 سجل العمليات — مين عمل إيه ومتى</h1></div>
+
+  <div class="filters">
+    <label>العملية <select id="fAction"></select></label>
+    <label>بواسطة <select id="fActor"><option value="all">الكل</option><option value="teacher">المدرس</option><option value="assistant">المساعد</option></select></label>
+    <label>من تاريخ <input type="date" id="fFrom"></label>
+    <label>إلى تاريخ <input type="date" id="fTo"></label>
+    <label>اسم الطالب <input type="text" id="fQ" placeholder="ابحث…"></label>
+    <label>&nbsp;<button class="primary" id="btnLoad">🔄 تحديث</button></label>
+    <label>&nbsp;<button id="btnCsv">⬇ تصدير Excel (CSV)</button></label>
+  </div>
+  <div class="stat" id="stat"></div>
+  <div class="msg" id="loading">جاري التحميل…</div>
+  <div class="msg err" id="err" style="display:none"></div>
+  <div class="table-wrap" id="wrap" style="display:none">
+    <table><thead><tr><th>الوقت</th><th>بواسطة</th><th>العملية</th><th>الطالب</th><th>الصف</th><th>التفاصيل</th></tr></thead><tbody id="body"></tbody></table>
+  </div>
+</div>
+<script>
+  const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const ACTIONS = {
+    delete_student:['حذف طالب','danger'], change_group:['تغيير مجموعة',''], change_grade:['تغيير صف',''], edit_student:['تعديل بيانات',''],
+    config_save:['تعديل مجموعات التسجيل',''], download_bundle:['تحميل نسخة مستقلة','sec'], revoke_bundles:['إلغاء النسخ المحمّلة','sec'],
+    offline_sync:['رفع مسحات أوفلاين','']
+  };
+  const FIELD = { full_name:'الاسم', student_phone:'هاتف الطالب', parent_phone:'هاتف ولي الأمر', city:'المدينة', created_at:'تاريخ التسجيل',
+    attendance_count:'الحضور', absence_count:'الغياب', last_attendance_date:'آخر حضور', payment_status:'حالة الدفع', amount_paid:'المبلغ', last_payment_date:'آخر دفع' };
+  const ROLE = { teacher:'المدرس', assistant:'المساعد' };
+  const gradeName = g => (window.CAIO && CAIO.GRADES[g]) ? CAIO.GRADES[g].ar : '—';
+
+  function detailText(r){
+    const d = r.details || {};
+    switch(r.action){
+      case 'change_group': case 'change_grade': return `${d.from ?? '—'}  ←  ${d.to ?? '—'}`;
+      case 'delete_student': return [d.via === 'bulk_cleanup' ? 'تنظيف جماعي' : '', d.group, d.phone].filter(Boolean).join(' · ');
+      case 'config_save': return `${(d.groups||[]).length} مجموعة محفوظة`;
+      case 'edit_student': {
+        const out = [];
+        ['attendance','payment'].forEach(sec => Object.entries(d[sec] || {}).forEach(([k,v]) => { if(k === 'full_name' && sec === 'payment') return; out.push(`${FIELD[k] || k}: ${v.from ?? '—'} ← ${v.to ?? '—'}`); }));
+        return out.join(' | ');
+      }
+      case 'download_bundle': return `نسخة ${d.role === 'assistant' ? 'المساعد' : 'المدرس'}${d.expires ? ' — تنتهي ' + new Date(d.expires).toLocaleDateString('ar-EG') : ''}`;
+      case 'revoke_bundles': return 'كل النسخ المحمّلة قبل الوقت ده بقت مرفوضة';
+      case 'offline_sync': return `اترفع ${d.sent ?? 0} · اترفض ${d.rejected ?? 0}${d.oldest ? ' — أقدم مسح: ' + new Date(d.oldest).toLocaleString('ar-EG') : ''}`;
+      default: return '';
+    }
+  }
+
+  const sel = $('fAction'); sel.add(new Option('كل العمليات','all'));
+  Object.entries(ACTIONS).forEach(([k,v]) => sel.add(new Option(v[0], k)));
+  let rows = [], shown = [];
+
+  function render(){
+    const act = $('fAction').value, who = $('fActor').value, q = $('fQ').value.trim().toLowerCase();
+    shown = rows.filter(r => (act === 'all' || r.action === act) && (who === 'all' || r.actor_role === who) && (!q || String(r.student_name||'').toLowerCase().includes(q)));
+    $('body').innerHTML = shown.map(r => { const a = ACTIONS[r.action] || [r.action, ''];
+      return `<tr><td style="white-space:nowrap">${esc(new Date(r.created_at).toLocaleString('ar-EG'))}</td><td>${esc(ROLE[r.actor_role] || r.actor_role || '—')}</td>
+      <td><span class="pill ${a[1]}">${esc(a[0])}</span></td><td>${esc(r.student_name || '—')}</td><td>${esc(gradeName(r.grade))}</td><td style="max-width:440px">${esc(detailText(r))}</td></tr>`; }).join('')
+      || '<tr><td colspan="6" class="msg">مفيش عمليات</td></tr>';
+    $('stat').textContent = `${shown.length} عملية` + (rows.length >= 1000 ? ' (أحدث 1000 عملية)' : '');
+    $('wrap').style.display = '';
+  }
+  async function load(){
+    $('loading').style.display = ''; $('err').style.display = 'none'; $('wrap').style.display = 'none';
+    try{
+      let q = supa.from('audit_log').select('*').order('created_at', { ascending:false }).limit(1000);
+      if($('fFrom').value) q = q.gte('created_at', new Date($('fFrom').value + 'T00:00:00').toISOString());
+      if($('fTo').value) q = q.lte('created_at', new Date($('fTo').value + 'T23:59:59').toISOString());
+      const { data, error } = await q; if(error) throw error;
+      rows = data || []; render();
+    }catch(e){
+      $('err').textContent = /audit_log/i.test(e.message || '') ? 'جدول audit_log مش موجود — شغّل ملف caio_upgrade.sql في Supabase الأول.' : 'تعذّر التحميل: ' + (e.message || e);
+      $('err').style.display = '';
+    }finally{ $('loading').style.display = 'none'; }
+  }
+  function csv(){
+    const cell = v => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+    const lines = [['الوقت','بواسطة','العملية','الطالب','الصف','التفاصيل'].map(cell).join(',')].concat(shown.map(r =>
+      [new Date(r.created_at).toLocaleString('ar-EG'), ROLE[r.actor_role] || r.actor_role, (ACTIONS[r.action]||[r.action])[0], r.student_name, gradeName(r.grade), detailText(r)].map(cell).join(',')));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'}));
+    a.download = 'audit-log-' + new Date().toISOString().slice(0,10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  }
+  $('btnLoad').onclick = load; $('btnCsv').onclick = csv;
+  ['fAction','fActor'].forEach(id => $(id).onchange = render); $('fQ').oninput = render;
+  load();
+</script>
+</body>
+</html>

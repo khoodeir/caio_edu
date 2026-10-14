@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" style="visibility:hidden">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تعديل بيانات طالب</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="caio-common.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#10151D; --paper:#EAF3FE; --card:#fff; --line:rgba(38,50,56,.15); --accent:#1565C0; --accent-2:#0D47A1;
+         --ok:#2F9E73; --err:#A94442; --muted:#4B5A70; --warn:#B87A1E; }
+  body.dark{ --ink:#DCE8FB; --paper:#0B1220; --card:#101B2E; --line:rgba(180,205,240,.16); --accent:#5B9DF5; --accent-2:#8DBBFA; --muted:#93A7C4; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:'Cairo',sans-serif; background:var(--paper); color:var(--ink); min-height:100vh; }
+  .topbar{ display:flex; align-items:center; gap:10px; padding:14px 18px; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  .topbar h1{ font-size:18px; margin:0; flex:1; }
+  .icon-btn{ border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:10px; padding:7px 11px; cursor:pointer; font-size:16px; font-family:inherit; }
+  .wrap{ max-width:980px; margin:0 auto; padding:18px; }
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  select,input,button{ font-family:inherit; font-size:14px; }
+  select,input[type=text],input[type=number],input[type=date],input[type=tel]{
+    padding:10px 12px; border:1.5px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); width:100%; }
+  .controls select{ width:auto; min-width:190px; } .controls .grow{ flex:1; min-width:200px; }
+  .count{ color:var(--muted); font-size:13px; margin:6px 2px 10px; }
+  .row{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin-bottom:8px; }
+  .row .main{ flex:1; min-width:0; } .row .name{ font-weight:700; } .row .sub{ font-size:12.5px; color:var(--muted); }
+  .btn{ border:0; border-radius:10px; padding:9px 16px; cursor:pointer; font-weight:600; background:var(--accent); color:#fff; }
+  .btn.ghost{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .state{ text-align:center; padding:26px; color:var(--muted); } .state.err{ color:var(--err); }
+  .overlay{ position:fixed; inset:0; background:rgba(8,16,30,.55); display:none; align-items:flex-start; justify-content:center; overflow:auto; padding:20px 12px; z-index:20; }
+  .overlay.show{ display:flex; }
+  .modal{ background:var(--card); border-radius:16px; width:100%; max-width:640px; padding:20px; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+  .modal h2{ margin:0 0 4px; font-size:19px; } .qr{ font-size:12px; color:var(--muted); direction:ltr; text-align:right; margin-bottom:14px; word-break:break-all; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; } @media(max-width:560px){ .grid{ grid-template-columns:1fr; } }
+  .field label{ display:block; font-size:12.5px; color:var(--muted); margin-bottom:4px; font-weight:600; }
+  .field.full{ grid-column:1/-1; }
+  .sect{ grid-column:1/-1; font-weight:700; font-size:13.5px; color:var(--accent); border-bottom:1px solid var(--line); padding-bottom:4px; margin-top:6px; }
+  .changed{ border-color:var(--warn) !important; }
+  .note{ grid-column:1/-1; font-size:12.5px; color:var(--warn); background:rgba(184,122,30,.1); padding:8px 10px; border-radius:8px; display:none; }
+  .actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+  .status{ margin-top:10px; font-size:13.5px; min-height:20px; } .status.ok{ color:var(--ok); } .status.err{ color:var(--err); }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#10151D; color:#fff; padding:10px 18px; border-radius:10px; display:none; z-index:50; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="icon-btn" onclick="goBack()" title="رجوع">↩️</button>
+  <h1>✏️ تعديل بيانات طالب</h1>
+  <button class="icon-btn" id="darkBtn" onclick="toggleDark()">🌙</button>
+</div>
+
+<div class="wrap">
+  <div class="controls">
+    <select id="gradeSelect" onchange="loadData()"><option value="all">كل الصفوف</option></select>
+    <input class="grow" type="text" id="searchInput" placeholder="ابحث بالاسم أو رقم الهاتف أو كود الـ QR…" oninput="renderList()">
+  </div>
+  <div class="state" id="loading">جاري تحميل الطلاب…</div>
+  <div class="state err" id="errBox" style="display:none"></div>
+  <div id="listWrap" style="display:none">
+    <div class="count" id="countLine"></div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<div class="overlay" id="editOverlay" onclick="if(event.target===this) closeEdit()">
+  <div class="modal">
+    <h2 id="mName">—</h2>
+    <div class="qr" id="mQr"></div>
+    <div class="grid">
+      <div class="sect">البيانات الأساسية</div>
+      <div class="field full"><label>الاسم بالكامل</label><input type="text" id="fName"></div>
+      <div class="field"><label>هاتف الطالب</label><input type="tel" id="fStudentPhone" inputmode="numeric"></div>
+      <div class="field"><label>هاتف ولي الأمر</label><input type="tel" id="fParentPhone" inputmode="numeric"></div>
+      <div class="field"><label>المدينة</label><input type="text" id="fCity"></div>
+      <div class="field"><label>تاريخ التسجيل</label><input type="date" id="fCreated"></div>
+
+      <div class="sect">الصف والمجموعة</div>
+      <div class="field"><label>الصف الدراسي</label><select id="fGrade" onchange="onGradeFieldChange()"></select></div>
+      <div class="field"><label>المجموعة</label><select id="fGroup"></select></div>
+      <div class="note" id="moveNote">تغيير الصف هينقل الطالب (الحضور والدفع) للجداول بتاعة الصف الجديد بنفس كود الـ QR. درجات الامتحانات بتفضل مربوطة بالكود.</div>
+
+      <div class="sect">الحضور</div>
+      <div class="field"><label>عدد مرات الحضور</label><input type="number" id="fAtt" min="0"></div>
+      <div class="field"><label>عدد مرات الغياب</label><input type="number" id="fAbs" min="0"></div>
+      <div class="field"><label>تاريخ آخر حضور</label><input type="date" id="fLastAtt"></div>
+
+      <div class="sect">الدفع</div>
+      <div class="field"><label>حالة الدفع</label>
+        <select id="fPayStatus"><option value="">—</option><option value="Paid">مدفوع</option><option value="Unpaid">غير مدفوع</option></select></div>
+      <div class="field"><label>المبلغ المدفوع</label><input type="number" id="fAmount" min="0"></div>
+      <div class="field"><label>تاريخ آخر دفع</label><input type="date" id="fLastPay"></div>
+    </div>
+    <div class="status" id="saveStatus"></div>
+    <div class="actions">
+      <button class="btn ghost" onclick="closeEdit()">إلغاء</button>
+      <button class="btn" id="saveBtn" onclick="saveEdit()">💾 حفظ التعديلات</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const GRADES = CAIO.GRADES;
+  const GRADE_KEYS = Object.keys(GRADES);
+
+  /* ---- access guard: teacher session OR assistant (Supabase session) ---- */
+  (async function guard(){
+    let ok = CAIO.teacherOk();
+    if(!ok){
+      try{
+        const { data } = await supa.auth.getSession();
+        ok = !!(data && data.session) && localStorage.getItem('mgAssistantOk') === '1';
+      }catch(e){}
+    }
+    if(!ok){ location.replace('index.html'); return; }
+    document.documentElement.style.visibility = 'visible';
+    init();
+  })();
+
+  let students = [];       // merged attendance + payment rows
+  let groupsByGrade = {};  // from shared config
+  let editing = null;      // the student being edited (original snapshot)
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function goBack(){ if(history.length > 1) history.back(); else location.href = 'index.html'; }
+  function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',2600); }
+  function toggleDark(){ const on=!document.body.classList.contains('dark'); document.body.classList.toggle('dark',on); $('darkBtn').textContent=on?'☀️':'🌙'; try{localStorage.setItem('editDark',on?'1':'0')}catch(e){} }
+  try{ if(localStorage.getItem('editDark')==='1'){ document.body.classList.add('dark'); } }catch(e){}
+
+  async function init(){
+    if(document.body.classList.contains('dark')) $('darkBtn').textContent='☀️';
+    GRADE_KEYS.forEach(k => $('gradeSelect').add(new Option(GRADES[k].ar, k)));
+    GRADE_KEYS.forEach(k => $('fGrade').add(new Option(GRADES[k].ar, k)));
+    groupsByGrade = await CAIO.loadGroups(supa);
+    loadData();
+  }
+
+  async function fetchGrade(k){
+    const g = GRADES[k];
+    const [a, p] = await Promise.all([ supa.from(g.att).select('*'), supa.from(g.pay).select('*') ]);
+    if(a.error) throw new Error(`(${g.att}) ${a.error.message}`);
+    if(p.error) throw new Error(`(${g.pay}) ${p.error.message}`);
+    const payByQr = {}; (p.data||[]).forEach(r => payByQr[r.qr_code] = r);
+    return (a.data||[]).map(r => ({ grade:k, att:r, pay:payByQr[r.qr_code] || null }));
+  }
+
+  async function loadData(){
+    $('loading').style.display='block'; $('errBox').style.display='none'; $('listWrap').style.display='none';
+    try{
+      const sel = $('gradeSelect').value;
+      const keys = sel === 'all' ? GRADE_KEYS : [sel];
+      students = (await Promise.all(keys.map(fetchGrade))).flat();
+      $('listWrap').style.display='block';
+      renderList();
+    }catch(e){ $('errBox').textContent = 'تعذر تحميل البيانات: ' + (e.message||e); $('errBox').style.display='block'; }
+    finally{ $('loading').style.display='none'; }
+  }
+
+  function renderList(){
+    const q = $('searchInput').value.trim().toLowerCase();
+    let list = students;
+    if(q) list = list.filter(s => (s.att.full_name||'').toLowerCase().includes(q) || String(s.att.student_phone||'').includes(q) || String(s.att.parent_phone||'').includes(q) || String(s.att.qr_code||'').toLowerCase().includes(q));
+    $('countLine').textContent = `${list.length} طالب` + (list.length > 100 ? ' (أول 100 — استخدم البحث)' : '');
+    $('list').innerHTML = list.slice(0,100).map(s => `
+      <div class="row">
+        <div class="main">
+          <div class="name">${esc(s.att.full_name)}</div>
+          <div class="sub">${esc(GRADES[s.grade].ar)} · ${esc(s.att.group_name||'بدون مجموعة')} · ${esc(s.att.student_phone||'')}</div>
+        </div>
+        <button class="btn" onclick="openEdit('${esc(s.grade)}','${esc(String(s.att.qr_code).replace(/'/g,"\\'"))}')">✏️ تعديل</button>
+      </div>`).join('') || '<div class="state">مفيش نتائج</div>';
+  }
+
+  /* ---------- edit modal ---------- */
+  function fillGroupSelect(gradeKey, current){
+    const sel = $('fGroup'); sel.innerHTML = '';
+    const list = groupsByGrade[gradeKey] || [];
+    list.forEach(g => sel.add(new Option(g.label, g.id)));
+    if(current && !list.some(g => g.id === current)) sel.add(new Option(`${current} (الحالية)`, current), 0);
+    if(!sel.options.length) sel.add(new Option('— مفيش مجموعات —', ''));
+    sel.value = current && [...sel.options].some(o => o.value === current) ? current : (sel.options[0] ? sel.options[0].value : '');
+  }
+  function onGradeFieldChange(){
+    const k = $('fGrade').value;
+    $('moveNote').style.display = (editing && k !== editing.grade) ? 'block' : 'none';
+    fillGroupSelect(k, k === editing.grade ? (editing.att.group_name||'') : '');
+  }
+  const dateVal = v => v ? String(v).slice(0,10) : '';
+
+  function openEdit(grade, qr){
+    const s = students.find(x => x.grade === grade && String(x.att.qr_code) === qr);
+    if(!s) return;
+    editing = s;
+    const a = s.att, p = s.pay || {};
+    $('mName').textContent = a.full_name || '';
+    $('mQr').textContent = 'QR: ' + a.qr_code;
+    $('fName').value = a.full_name || '';
+    $('fStudentPhone').value = a.student_phone || '';
+    $('fParentPhone').value = a.parent_phone || '';
+    $('fCity').value = a.city || '';
+    $('fCreated').value = dateVal(a.created_at);
+    $('fGrade').value = grade;
+    fillGroupSelect(grade, a.group_name || '');
+    $('moveNote').style.display = 'none';
+    $('fAtt').value = a.attendance_count ?? 0;
+    $('fAbs').value = a.absence_count ?? 0;
+    $('fLastAtt').value = dateVal(a.last_attendance_date);
+    const ps = String(p.payment_status ?? '');
+    const psSel = $('fPayStatus');
+    if(ps && ![...psSel.options].some(o => o.value === ps)) psSel.add(new Option(ps, ps));
+    psSel.value = ps;
+    $('fAmount').value = p.amount_paid ?? '';
+    $('fLastPay').value = dateVal(p.last_payment_date);
+    $('saveStatus').textContent = ''; $('saveStatus').className = 'status';
+    $('saveBtn').disabled = false;
+    $('editOverlay').classList.add('show');
+  }
+  function closeEdit(){ $('editOverlay').classList.remove('show'); editing = null; }
+
+  const numOrNull = v => (v === '' || v == null) ? null : Number(v);
+  const strOrNull = v => { v = String(v ?? '').trim(); return v === '' ? null : v; };
+
+  async function phoneUsedElsewhere(phone, qr){
+    for(const k of GRADE_KEYS){
+      const { data } = await supa.from(GRADES[k].att).select('qr_code,full_name').eq('student_phone', phone).limit(5);
+      const hit = (data||[]).find(r => String(r.qr_code) !== String(qr));
+      if(hit) return hit.full_name || 'طالب تاني';
+    }
+    return null;
+  }
+
+  async function saveEdit(){
+    if(!editing) return;
+    const s = editing, a = s.att, p = s.pay || {};
+    const st = $('saveStatus'); const btn = $('saveBtn');
+    const newName = $('fName').value.trim();
+    if(!newName){ st.className='status err'; st.textContent='الاسم مطلوب'; return; }
+    const phoneRe = /^01[0-9]{9}$/;
+    const sp = $('fStudentPhone').value.trim(), pp = $('fParentPhone').value.trim();
+    if(sp && !phoneRe.test(sp)){ st.className='status err'; st.textContent='هاتف الطالب لازم يكون 11 رقم ويبدأ بـ 01'; return; }
+    if(pp && !phoneRe.test(pp)){ st.className='status err'; st.textContent='هاتف ولي الأمر لازم يكون 11 رقم ويبدأ بـ 01'; return; }
+
+    // --- build attendance + payment diffs ---
+    const attNew = {
+      full_name: newName,
+      student_phone: sp || null, parent_phone: pp || null,
+      city: strOrNull($('fCity').value),
+      created_at: strOrNull($('fCreated').value),
+      group_name: $('fGroup').value || null,
+      attendance_count: numOrNull($('fAtt').value) ?? 0,
+      absence_count: numOrNull($('fAbs').value) ?? 0,
+      last_attendance_date: strOrNull($('fLastAtt').value)
+    };
+    const payNew = {
+      full_name: newName,
+      payment_status: strOrNull($('fPayStatus').value),
+      amount_paid: numOrNull($('fAmount').value),
+      last_payment_date: strOrNull($('fLastPay').value)
+    };
+    const same = (x, y) => {
+      x = String(x ?? ''); y = String(y ?? '');
+      if(x === y) return true;
+      if(/^\d{4}-\d{2}-\d{2}/.test(x) && /^\d{4}-\d{2}-\d{2}/.test(y)) return x.slice(0,10) === y.slice(0,10);
+      if(x !== '' && y !== '' && isFinite(x) && isFinite(y)) return Number(x) === Number(y);
+      return false;
+    };
+    const attChanges = {}, payChanges = {};
+    Object.keys(attNew).forEach(k => { if(!same(a[k], attNew[k])) attChanges[k] = { from: a[k] ?? null, to: attNew[k] }; });
+    Object.keys(payNew).forEach(k => { if(!same(p[k], payNew[k])) payChanges[k] = { from: p[k] ?? null, to: payNew[k] }; });
+    const newGrade = $('fGrade').value;
+    const gradeChanged = newGrade !== s.grade;
+
+    if(!Object.keys(attChanges).length && !Object.keys(payChanges).length && !gradeChanged){
+      st.className='status'; st.textContent='مفيش أي تغيير للحفظ'; return;
+    }
+    if(gradeChanged && !confirm(`هتنقل ${newName} من "${GRADES[s.grade].ar}" إلى "${GRADES[newGrade].ar}". تكمل؟`)) return;
+
+    btn.disabled = true; st.className='status'; st.textContent='جاري الحفظ…';
+    try{
+      if(attChanges.student_phone && attNew.student_phone){
+        const other = await phoneUsedElsewhere(attNew.student_phone, a.qr_code);
+        if(other && !confirm(`رقم الهاتف ده مسجل قبل كده باسم "${other}". تكمل برضه؟`)){ btn.disabled=false; st.textContent=''; return; }
+      }
+      const g = GRADES[s.grade];
+      const qr = a.qr_code;
+
+      if(!gradeChanged){
+        if(Object.keys(attChanges).length){
+          const patch = {}; Object.keys(attChanges).forEach(k => patch[k] = attNew[k]);
+          const { error } = await supa.from(g.att).update(patch).eq('qr_code', qr);
+          if(error) throw new Error(`(الحضور) ${error.message}`);
+        }
+        if(Object.keys(payChanges).length){
+          const patch = {}; Object.keys(payChanges).forEach(k => patch[k] = payNew[k]);
+          const { error } = await supa.from(g.pay).update(patch).eq('qr_code', qr);
+          if(error) throw new Error(`(الدفع) ${error.message}`);
+        }
+      } else {
+        // MOVE to another grade: copy rows to the new tables, then remove the old ones.
+        const ng = GRADES[newGrade];
+        const attRow = { ...a, ...attNew }; delete attRow.id;
+        const payRow = { ...(s.pay || { qr_code: qr }), ...payNew, qr_code: qr }; delete payRow.id;
+        if(!payRow.created_at) payRow.created_at = attNew.created_at || new Date().toISOString().slice(0,10);
+        const r1 = await supa.from(ng.att).insert(attRow);
+        if(r1.error) throw new Error(`(الحضور - الصف الجديد) ${r1.error.message}`);
+        const r2 = await supa.from(ng.pay).insert(payRow);
+        if(r2.error){ await supa.from(ng.att).delete().eq('qr_code', qr); throw new Error(`(الدفع - الصف الجديد) ${r2.error.message}`); }
+        const d1 = await supa.from(g.pay).delete().eq('qr_code', qr);
+        const d2 = await supa.from(g.att).delete().eq('qr_code', qr);
+        if(d1.error || d2.error) throw new Error('اتنقل الطالب بس مسح الصف القديم فشل — راجع الجداول القديمة: ' + ((d1.error||d2.error).message));
+      }
+
+      // --- audit log (one row per kind of change) ---
+      const base = { grade: newGrade, student_name: newName, qr_code: String(qr) };
+      const rest = { ...attChanges }; const restPay = { ...payChanges };
+      if(attChanges.group_name){
+        await CAIO.audit(supa, { ...base, action:'change_group', details:{ from: attChanges.group_name.from, to: attChanges.group_name.to } });
+        delete rest.group_name;
+      }
+      if(gradeChanged){
+        await CAIO.audit(supa, { ...base, action:'change_grade', details:{ from: GRADES[s.grade].ar, to: GRADES[newGrade].ar } });
+      }
+      if(Object.keys(rest).length || Object.keys(restPay).length){
+        await CAIO.audit(supa, { ...base, action:'edit_student', details:{ attendance: rest, payment: restPay } });
+      }
+
+      st.className='status ok'; st.textContent='اتحفظت التعديلات ✓';
+      toast('اتحفظت التعديلات ✓');
+      setTimeout(() => { closeEdit(); loadData(); }, 700);
+    }catch(e){
+      console.error(e);
+      st.className='status err'; st.textContent = 'فشل الحفظ: ' + (e.message || e);
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
