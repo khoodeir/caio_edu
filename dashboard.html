@@ -975,8 +975,8 @@
     <div class="tab-group" data-group="other">
       <div class="tab exams-tab" id="examsTab" data-i18n="tabExams">📝 Exam Grades</div>
       <div class="tab history-tab" id="historyTab" data-i18n="tabHistory">📂 Monthly History</div>
-      <div class="tab" id="absTab">📉 <span id="absTabLbl">غياب متتالي</span></div>
-      <div class="tab" id="auditTab">🧾 <span id="auditTabLbl">سجل العمليات</span></div>
+      <div class="tab" id="absTab"><span id="absTabLbl">📉 غياب متتالي</span></div>
+      <div class="tab" id="auditTab"><span id="auditTabLbl">🧾 سجل العمليات</span></div>
     </div>
     <div class="tab-group-label" data-group="settings" onclick="toggleGroup(this)">▼ Settings</div>
     <div class="tab-group" data-group="settings">
@@ -3966,8 +3966,15 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
   const ALL_VIEWS = ['dashboardView','historyView','examsView','settingsView','absView','auditView'];
 
   function labels(){
-    $('absTabLbl').textContent = L('غياب متتالي','Consecutive Absences');
-    $('auditTabLbl').textContent = L('سجل العمليات','Audit Log');
+    $('absTabLbl').textContent = '📉 ' + L('غياب متتالي','Consecutive Absences');
+    $('auditTabLbl').textContent = '🧾 ' + L('سجل العمليات','Audit Log');
+    // sidebar section headings (were hard-coded English)
+    const GROUPS = { grades:['الصفوف','Grades'], other:['أخرى','Other'], settings:['الإعدادات','Settings'] };
+    document.querySelectorAll('.tab-group-label').forEach(el => {
+      const g = GROUPS[el.dataset.group]; if(!g) return;
+      const grp = document.querySelector('.tab-group[data-group="' + el.dataset.group + '"]');
+      el.textContent = (grp && grp.classList.contains('collapsed') ? '▶ ' : '▼ ') + L(g[0], g[1]);
+    });
     $('absTitle').textContent = L('طلاب غابوا حصص متتالية','Students absent several sessions in a row');
     $('absMinLbl').textContent = L('على الأقل: ','At least: ');
     $('auditTitle').textContent = L('سجل العمليات (مين عمل إيه ومتى)','Audit log (who did what and when)');
