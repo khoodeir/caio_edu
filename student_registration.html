@@ -324,6 +324,7 @@ button.submit:disabled{ opacity:0.5; cursor:not-allowed; box-shadow:none; }
 .gov-toggle-row.is-hidden label{ color:var(--muted); text-decoration:line-through; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="caio-common.js"></script>
 <link rel="preconnect" href="https://evbjulsahncllewwvlxp.supabase.co">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0f1116">
@@ -988,7 +989,8 @@ async function pushRegDataToServer(data){
   try{
     const groups = [];
     (data.stages || []).forEach(st => (st.grades || []).forEach(gr => (gr.groups || []).forEach(g => groups.push(`${gr.labelAr}: ${g.dayAr} ${g.time}`))));
-    await supa.from('audit_log').insert({ actor_role:'teacher', actor:'المدرس', action:'config_save', details:{ groups } });
+    const who = (window.CAIO && CAIO.actor()) || { role:'teacher', name:'المدرس' };
+    await supa.from('audit_log').insert({ actor_role:who.role, actor:who.name, action:'config_save', details:{ groups } });
   }catch(e){}
 }
 
