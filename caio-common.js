@@ -36,11 +36,31 @@
     }catch(e){ return false; }
   }
 
+  // Assistant: local password session created by index.html (same idea as the teacher session).
+  function assistantOk(){
+    try{
+      const raw = localStorage.getItem('caioAssistantSession');
+      if(!raw) return false;
+      const d = JSON.parse(raw);
+      return !!(d && d.exp && Date.now() < d.exp);
+    }catch(e){ return false; }
+  }
+
   window.CAIO = {
     GRADES,
     teacherOk,
+    assistantOk,
+    /* Who is acting RIGHT NOW. index.html records the role whose hub was opened last
+       (caioActiveRole, per tab first, then per device). A leftover teacher session on a
+       shared device must not make the assistant's changes look like the teacher's. */
     actor(){
-      return teacherOk() ? { role:'teacher', name:'المدرس' } : { role:'assistant', name:'المساعد' };
+      let r = null;
+      try{ r = sessionStorage.getItem('caioActiveRole') || localStorage.getItem('caioActiveRole'); }catch(e){}
+      const t = teacherOk(), a = assistantOk();
+      if(r === 'assistant' && a) return { role:'assistant', name:'المساعد' };
+      if(r === 'teacher' && t)   return { role:'teacher',   name:'المدرس' };
+      if(a && !t) return { role:'assistant', name:'المساعد' };
+      return t ? { role:'teacher', name:'المدرس' } : { role:'assistant', name:'المساعد' };
     },
     /* Fire-and-forget audit entry. Never throws, never blocks the real action. */
     async audit(supa, entry){
