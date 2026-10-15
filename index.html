@@ -1068,10 +1068,17 @@
   function closeAssistantOverlay(){
     document.getElementById('assistantOverlay').classList.remove('open');
   }
+  // Supabase refuses passwords shorter than 6 characters, so a short code like 2026 is
+  // expanded before sign-in. The Supabase user's password must then be: caio-assistant-<code>
+  // (e.g. code 2026  ->  caio-assistant-2026). Longer passwords are sent as typed.
+  function assistantSecret(typed){
+    typed = String(typed || '').trim();
+    return typed.length > 0 && typed.length < 6 ? 'caio-assistant-' + typed : typed;
+  }
   async function submitAssistantLogin(){
     const dict = translations[currentLang];
     const email = ASSISTANT_EMAIL; // fixed account — the assistant only types the password
-    const password = document.getElementById('assistantPassword').value;
+    const password = assistantSecret(document.getElementById('assistantPassword').value);
     const errEl = document.getElementById('assistantError');
     const btn = document.getElementById('assistantSubmitBtn');
     errEl.classList.remove('show');
