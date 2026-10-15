@@ -1,6 +1,6 @@
 // Bump this number on EVERY release so installed phones fetch the new files.
-const CACHE = "caio-edu-shell-v7";
-const SHELL = ["./", "./index.html", "./manifest.json", "./logo.png", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png", "./caio.html", "./dashboard.html", "./manage_exams.html", "./parent_portal.html", "./scanner.html", "./student_delete.html", "./student_edit.html", "./student_registration.html", "./student_serch.html", "./caio-common.js", "./caio-download.js", "./audit_log.html"];
+const CACHE = "caio-edu-shell-v9";
+const SHELL = ["./", "./index.html", "./manifest.json", "./logo.png", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png", "./caio.html", "./dashboard.html", "./manage_exams.html", "./parent_portal.html", "./scanner.html", "./student_delete.html", "./student_edit.html", "./student_registration.html", "./student_serch.html", "./caio-common.js", "./caio-install.js", "./manifest-parent.json", "./audit_log.html"];
 // Third-party libraries the pages need (QR scanner, Supabase client, charts).
 // Cached after the first online visit so the scanner can open with no internet.
 const CDN_HOSTS = ["cdn.jsdelivr.net", "unpkg.com", "cdnjs.cloudflare.com"];
